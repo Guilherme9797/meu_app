@@ -422,6 +422,29 @@ def ask():
     return jsonify({"resposta": resposta}), 200
 
 # ===== helpers: detecção de aceite =====
+def _coerce_text(v) -> str:
+    """Extrai texto de estruturas diversas de forma robusta."""
+    if v is None:
+        return ""
+    if isinstance(v, str):
+        return v.strip()
+    if isinstance(v, bytes):
+        try:
+            return v.decode().strip()
+        except Exception:
+            return v.decode("utf-8", errors="ignore").strip()
+    if isinstance(v, dict):
+        for key in ("text", "body", "message", "conversation"):
+            if key in v:
+                return _coerce_text(v[key])
+        try:
+            return json.dumps(v, ensure_ascii=False)
+        except Exception:
+            return str(v)
+    if isinstance(v, (list, tuple, set)):
+        return " ".join(_coerce_text(x) for x in v).strip()
+    return str(v).strip()
+
 def _normalize_text(s) -> str:
     # robusto para qualquer tipo (usa _coerce_text quando necessário)
     if not isinstance(s, str):
