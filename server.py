@@ -1,4 +1,4 @@
-import os, json, time, uuid, logging, unicodedata, traceback
+import os, json, time, uuid, logging, unicodedata, traceback, re
 from functools import wraps
 from typing import Optional
 from flask import Flask, jsonify, request, g, make_response, has_request_context
@@ -462,8 +462,13 @@ def _is_aceite_text(msg) -> bool:
         "aceito", "fechado", "vamos fechar", "ok pode seguir", "pode seguir",
         "contratar", "concordo", "vamos sim", "ok, pode ser", "podemos seguir",
     ]
-    return any(g in m for g in gatilhos)
-
+    for g in gatilhos:
+        if re.search(rf"\b{re.escape(g)}\b", m):
+            # ignora expressões do tipo "não aceito" ou "nao pode seguir"
+            if re.search(rf"(?:nao|não)\W*{re.escape(g)}", m):
+                continue
+            return True
+    return False
 # ===== webhook de recebimento (WhatsApp → Z-API) =====
 @app.route("/conversao/aceite", methods=["POST"])
 def conversao_aceite():
