@@ -335,16 +335,14 @@ def health():
 @app.route("/metrics")
 def metrics_route():
     body = (
-         body = "\n".join(
-        [
-            "# HELP app_requests_total Total de requests",
-            "# TYPE app_requests_total counter",
-            f"app_requests_total {metrics['requests_total']}",
-            "# HELP app_errors_total Total de erros",
-            "# TYPE app_errors_total counter",
-            f"app_errors_total {metrics['errors_total']}",
-        ]
-    )
+        "# HELP app_requests_total Total de requests\n"
+        "# TYPE app_requests_total counter\n"
+        f"app_requests_total {metrics['requests_total']}\n"
+        "# HELP app_errors_total Total de erros\n"
+        "# TYPE app_errors_total counter\n"
+        f"app_errors_total {metrics['errors_total']}\n"
+    ).strip()
+    
     resp = make_response(body, 200)
     resp.headers["Content-Type"] = "text/plain; version=0.0.4"
     return resp
