@@ -75,7 +75,8 @@ class _JSONHandler(logging.StreamHandler):
                 ensure_ascii=False,
             )
         self.stream.write(msg + "\n")
-        self.flush()root = logging.getLogger()
+        self.flush()
+root = logging.getLogger()
 root.handlers = [_JSONHandler()]
 root.setLevel(logging.INFO)
 
@@ -334,19 +335,15 @@ def health():
 
 @app.route("/metrics")
 def metrics_route():
-    body = (
-        "# HELP app_requests_total Total de requests
-"
-        "# TYPE app_requests_total counter
-"
-        f"app_requests_total {metrics['requests_total']}
-"
-        "# HELP app_errors_total Total de erros
-"
-        "# TYPE app_errors_total counter
-"
-        f"app_errors_total {metrics['errors_total']}
-"
+    body = "\n".join(
+        [
+            "# HELP app_requests_total Total de requests",
+            "# TYPE app_requests_total counter",
+            f"app_requests_total {metrics['requests_total']}",
+            "# HELP app_errors_total Total de erros",
+            "# TYPE app_errors_total counter",
+            f"app_errors_total {metrics['errors_total']}",
+        ]
     )
     resp = make_response(body, 200)
     resp.headers["Content-Type"] = "text/plain; version=0.0.4"
