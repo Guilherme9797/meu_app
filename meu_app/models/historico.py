@@ -35,4 +35,15 @@ class HistoricoConversaPersistente:
         self.repo.adicionar(self.cliente_id, autor, mensagem, meta)
 
     def obter_historico(self):
-        return self.repo.get_history(self.cliente_id)
+        raw = self.repo.get_history(self.cliente_id)
+        normalized = []
+        for r in raw:
+            normalized.append(
+                {
+                    "autor": r.get("autor") or r.get("role"),
+                    "mensagem": r.get("mensagem") or r.get("content"),
+                    "timestamp": r.get("timestamp") or r.get("created_at"),
+                    "meta": r.get("meta"),
+                }
+            )
+        return normalized
