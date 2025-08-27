@@ -43,3 +43,4 @@ Pipeline da Etapa 1:
 Instale as dependências:
 ```bash
 pip install -r requirements.txt
+# meu_app
