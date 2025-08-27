@@ -30,7 +30,7 @@ class OpenAIClient:
         api_key: Optional[str] = None,
         *,
         chat_model: Optional[str] = None,
-        temperature: float = 0.2,
+        temperature: float = 1.0,
     ) -> None:
         key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
         if not key:
@@ -64,12 +64,13 @@ class OpenAIClient:
     def chat(self, system: str, user: str, *, extra: Optional[Dict[str, Any]] = None) -> str:
         params: Dict[str, Any] = {
             "model": self.chat_model,
-            "temperature": self.temperature,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
+        if self.temperature != 1.0:
+            params["temperature"] = self.temperature
         if extra:
             params.update(extra)
 

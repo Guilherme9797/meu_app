@@ -94,7 +94,7 @@ def _ensure_openai_key() -> str:
 def _make_oai() -> OpenAIClient:
     key = _ensure_openai_key()
     model = os.getenv("OPENAI_MODEL") or os.getenv("OPENAI_CHAT_MODEL") or "gpt-4o-mini"
-    temp = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
+    temp = float(os.getenv("OPENAI_TEMPERATURE", "1"))
     return OpenAIClient(api_key=key, chat_model=model, temperature=temp)
 
 
