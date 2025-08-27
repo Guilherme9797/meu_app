@@ -180,7 +180,7 @@ class ConversorPropostas:
                 "Escreva em português do Brasil."
             )
             out = self.oai.chat(system=system, user=user)
-            data_txt = (out or "").trim() if hasattr(str, "trim") else (out or "").strip()  # compat
+            data_txt = (out or "").strip()
             data: Dict[str, Any] = {}
             try:
                 data = json.loads(data_txt)

@@ -3,12 +3,11 @@ class RefinadorResposta:
         self.client = openai_client
 
     def refinar(self, resposta_bruta: str) -> str:
-        prompt = f"""
-Você é um redator jurídico para clientes leigos.
-Reescreva o texto a seguir de forma clara, objetiva e organizada (use parágrafos curtos e, se fizer sentido, bullets).
-Mantenha eventuais seções de "Fontes" ao final, sem alterações nos links.
-
-TEXTO ORIGINAL:
-{resposta_bruta}
-"""
-        return self.client.completar(prompt)
+        system = "Você é um redator jurídico para clientes leigos."
+        user = (
+            "Reescreva o texto a seguir de forma clara, objetiva e organizada (use parágrafos curtos e, se fizer sentido, bullets).\n"
+            "Mantenha eventuais seções de \"Fontes\" ao final, sem alterações nos links.\n\n"
+            "TEXTO ORIGINAL:\n"
+            f"{resposta_bruta}"
+        )
+        return self.client.chat(system=system, user=user)

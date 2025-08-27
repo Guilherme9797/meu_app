@@ -49,9 +49,10 @@ class BuscadorPDF:
     def atualizar_indice_verbose(self) -> Dict[str, Any]:
         return self.indexador.atualizar_indice_verbose()
 
-    def atualizar_indice(self) -> str:
-        return self.indexador.atualizar_indice()
-
+    def atualizar_indice(self) -> Dict[str, Any]:
+        """Atualiza o índice de PDFs sem logs detalhados."""
+        return self.indexador.indexar_pdfs()
+    
     def buscar_resposta(self, problema: str) -> str:
         texto_pdf = self.indexador.buscar_resposta(pergunta=problema, k=6, max_distance=0.35) or ""
         if len(texto_pdf.strip()) >= self._min_chars_pdf:
