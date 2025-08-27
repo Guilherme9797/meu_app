@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.build/
+dist/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Virtualenv
+venv/
+.venv/
+
+# Credenciais e env
+.env
+.env.*
+*.secret
+*.key
+
+# Logs
+*.log
+
+# Banco local (se existir)
+*.sqlite
+*.sqlite3
+instance/
+
+# Seus dados/índices locais
+data/pdfs/
+index/faiss_index/
+ngrok.log

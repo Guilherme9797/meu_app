@@ -1,0 +1,14 @@
+openai>=1.40,<2
+tavily-python>=0.5,<1.0
+langchain>=0.3.0,<0.4
+langchain-openai>=0.2.0,<0.3
+faiss-cpu>=1.12.0,<2
+PyMuPDF>=1.24.3,<2
+python-dotenv>=1.0.1,<2
+Flask>=3,<4
+requests>=2.32,<3
+pyngrok>=7.1.1,<8
+gunicorn>=22,<23
+numpy>=2,<3
+
+langchain-community>=0.2.0,<0.4
