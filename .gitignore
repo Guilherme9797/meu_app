@@ -34,3 +34,25 @@ instance/
 data/pdfs/
 index/faiss_index/
 ngrok.log
+# Databases
+*.db
+*.db-wal
+*.db-shm
+
+# Backups/temporários
+*.bak
+*~
+server.py.bak*
+unified_meu_app_patch/
+unified_meu_app_patch_v2/
+# Databases
+*.db
+*.db-wal
+*.db-shm
+
+# Backups/temporários
+*.bak
+*~
+server.py.bak*
+unified_meu_app_patch/
+unified_meu_app_patch_v2/
