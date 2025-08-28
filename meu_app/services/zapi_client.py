@@ -34,6 +34,10 @@ class ZapiClient:
         if self.client_token:
             # muitas rotas exigem esse header
             self._headers["Client-Token"] = self.client_token
+    @classmethod
+    def from_env(cls) -> "ZapiClient":
+        """Instancia o cliente lendo variáveis de ambiente padrão."""
+        return cls()
 
     def _url(self, path: str) -> str:
         return f"{self.base_url}/instances/{self.instance_id}/token/{self.token}/{path.lstrip('/')}"
