@@ -516,11 +516,11 @@ if __name__ == "__main__":
                 ngrok.set_auth_token(token)
 
             domain = os.getenv("NGROK_DOMAIN")
-            opts = {"bind_tls": True}
+            kwargs = {"bind_tls": True}
             if domain:
-                opts["domain"] = domain
+                 kwargs["domain"] = domain
 
-            url = ngrok.connect(addr=port, proto="http", options=opts).public_url
+            url = ngrok.connect(addr=port, proto="http", **kwargs).public_url
             print(f"[ngrok] público: {url}")
         except Exception as exc:
             print(f"[ngrok] erro ao iniciar: {exc}")
