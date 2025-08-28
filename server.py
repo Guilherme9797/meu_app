@@ -28,7 +28,7 @@ from meu_app.persistence.repositories import (
     ContatoRepository,
     PropostaRepository,
 )
-
+from meu_app.utils.paths import get_index_dir
 # ====== JSON logger “safe” (único) ======
 def _json_log_format(record: logging.LogRecord) -> str:
     base = {
@@ -242,7 +242,7 @@ def build_buscador() -> BuscadorPDF:
         openai_key=os.getenv("OPENAI_API_KEY"),
         tavily_key=os.getenv("TAVILY_API_KEY"),
         pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
-        index_dir=os.getenv("INDEX_DIR", "index/faiss_index"),
+        index_dir=get_index_dir(),
     )
 
 def build_atendimento_for_phone(phone: str, sender_name: Optional[str] = None) -> Atendimento:
@@ -326,7 +326,7 @@ def health():
         checks["db"] = "ok"
     except Exception as e:
         checks["db"] = f"error: {e}"
-    has_index = os.path.exists(os.path.join(os.getenv("INDEX_DIR", "index/faiss_index"), "index.faiss"))
+    has_index = os.path.exists(os.path.join(get_index_dir(), "index.faiss"))
     checks["faiss_index"] = "present" if has_index else "absent"
     checks["openai_key"] = "set" if os.getenv("OPENAI_API_KEY") else "missing"
     status = 200 if checks["db"] == "ok" else 500
@@ -334,7 +334,7 @@ def health():
 
 @app.route("/metrics")
 def metrics_route():
-    body = (
+    body = "\n".join(
         "# HELP app_requests_total Total de requests\n"
         "# TYPE app_requests_total counter\n"
         f"app_requests_total {metrics['requests_total']}\n"

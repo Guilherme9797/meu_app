@@ -42,7 +42,7 @@ req ADMIN_API_KEY
 sec "Core da aplicação"
 kv PORT                "${PORT:-5000}"
 kv APP_DB_PATH         "${APP_DB_PATH:-data/app.db}"
-kv INDEX_DIR           "${INDEX_DIR:-index/faiss_index}"
+kv INDEX_DIR           "${INDEX_DIR:-$(pwd)/index/faiss_index}"
 
 sec "OpenAI"
 kv OPENAI_MODEL        "${OPENAI_MODEL:-gpt-4o-mini}"
