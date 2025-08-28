@@ -45,3 +45,8 @@ Instale as dependências:
 ```bash
 pip install -r requirements.txt
 # meu_app
+
+```
+
+### Variáveis adicionais
+- `INDEX_DIR`: caminho para o índice FAISS (padrão `index/faiss_index`)
