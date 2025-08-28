@@ -10,6 +10,8 @@ import argparse
 import datetime as dt
 from typing import Optional, Dict, Any, List
 
+from meu_app.utils.paths import get_index_dir
+
 # -------------------------------------------------------------------------
 # Suporte para execução direta OU como módulo (-m meu_app.main)
 # -------------------------------------------------------------------------
@@ -103,7 +105,7 @@ def _build_buscador() -> BuscadorPDF:
         openai_key=os.getenv("OPENAI_API_KEY"),
         tavily_key=os.getenv("TAVILY_API_KEY"),
         pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
-        index_dir=os.getenv("INDEX_DIR", "index/faiss_index"),
+         index_dir=get_index_dir(),
     )
 
 
@@ -173,7 +175,7 @@ def cmd_index_rebuild(args):
 
 
 def cmd_index_info(args):
-    index_dir = os.getenv("INDEX_DIR", "index/faiss_index")
+    index_dir = get_index_dir()
     manifest_path = os.path.join(index_dir, "manifest.json")
     faiss_file = os.path.join(index_dir, "index.faiss")
     ok = os.path.exists(faiss_file)
