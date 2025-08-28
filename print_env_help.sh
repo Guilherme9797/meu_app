@@ -59,6 +59,7 @@ kv ZAPI_WEBHOOK_RECEIVED_URL "${ZAPI_WEBHOOK_RECEIVED_URL:-}"
 
 sec "ngrok (opcional)"
 kv NGROK_AUTHTOKEN     "$(mask "${NGROK_AUTHTOKEN:-}")"
+kv NGROK_DOMAIN        "${NGROK_DOMAIN:-}"
 kv NGROK_REGION        "${NGROK_REGION:-sa}"
 kv NGROK_PROTO         "${NGROK_PROTO:-http}"
 kv NGROK_EDGE_PATH     "${NGROK_EDGE_PATH:-}"

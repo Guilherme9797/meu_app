@@ -504,7 +504,27 @@ def zapi_webhook_delivery():
 
 # ===== main =====
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
+    port = int(os.getenv("PORT", "5000"))
+
+    if os.getenv("NGROK_AUTHTOKEN") or os.getenv("NGROK_DOMAIN"):
+        try:
+            from pyngrok import ngrok
+
+            token = os.getenv("NGROK_AUTHTOKEN")
+            if token:
+                ngrok.set_auth_token(token)
+
+            domain = os.getenv("NGROK_DOMAIN")
+            opts = {"bind_tls": True}
+            if domain:
+                opts["domain"] = domain
+
+            url = ngrok.connect(addr=port, proto="http", options=opts).public_url
+            print(f"[ngrok] público: {url}")
+        except Exception as exc:
+            print(f"[ngrok] erro ao iniciar: {exc}")
+
+    app.run(host="0.0.0.0", port=port)
 
 
 
