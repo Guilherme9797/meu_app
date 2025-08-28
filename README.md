@@ -38,7 +38,8 @@ Pipeline da Etapa 1:
   - `OPENAI_API_KEY` (obrigatório)
   - `TAVILY_API_KEY` (opcional)
   - `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN` (para WhatsApp via Z-API)
-- (Opcional) **ngrok** (`NGROK_AUTHTOKEN`, `NGROK_DOMAIN`) para testes locais com webhook público
+  - (Opcional) **ngrok** (`NGROK_AUTHTOKEN`, `NGROK_DOMAIN`) para testes locais com webhook público
+
 
 Instale as dependências:
 ```bash

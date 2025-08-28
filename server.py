@@ -29,6 +29,7 @@ from meu_app.persistence.repositories import (
     PropostaRepository,
 )
 from meu_app.utils.paths import get_index_dir
+
 # ====== JSON logger “safe” (único) ======
 def _json_log_format(record: logging.LogRecord) -> str:
     base = {
