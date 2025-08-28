@@ -145,81 +145,61 @@ def _hotfix_missing_autor_in_history(phone: str) -> int:
 
 app = Flask(__name__)
 
-@app.route("/zapi/webhook/received", methods=["POST"])
+def normalize_zapi_incoming(payload: dict) -> dict | None:
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("type", "").lower() == "receivedcallback" or "text" in payload:
+        phone = payload.get("phone")
+        from_me = bool(payload.get("fromMe", False))
+        text = None
+        txt = payload.get("text")
+        if isinstance(txt, dict):
+            text = txt.get("message")
+        if not text:
+            img = payload.get("image") or {}
+            if isinstance(img, dict):
+                text = img.get("caption")
+        if not text:
+            doc = payload.get("document") or {}
+            if isinstance(doc, dict):
+                text = doc.get("title") or doc.get("fileName")
+        return {"phone": phone, "text": text, "from_me": from_me}
+
+    if "message" in payload:
+        m = payload["message"]
+        phone = m.get("from") or payload.get("from")
+        body = None
+        if isinstance(m, dict):
+            body = (m.get("text") or {}).get("body") or m.get("body")
+        return {"phone": phone, "text": body, "from_me": False}
+
+    return None
+
+@app.post("/zapi/webhook/received")
+@app.post("/zapi/webhook/recebido")  # alias em PT-BR
+
 def zapi_webhook_received():
-    """Webhook de mensagens RECEBIDAS da Z-API (robusto e tolerante)."""
-    import logging
-    log = logging.getLogger("server")
+    data = request.get_json(silent=True, force=True) or {}
+    info = normalize_zapi_incoming(data)
+    app.logger.info(f"[webhook] path={request.path} raw={str(data)[:800]}")
+    app.logger.info(f"[webhook] norm={info}")
 
-    # (opcional) rate limit específico para webhook
-    try:
-        if 'limiter' in globals() and Limiter and limiter:
-            limiter.limit(os.getenv("RATE_LIMIT_WEBHOOK", "60 per minute"))(lambda: None)()
-    except Exception:
-        pass
+    if not info or not info.get("phone") or not info.get("text"):
+        return jsonify({"ok": True, "ignored": True})
 
-    payload = request.get_json(silent=True) or {}
-    body = payload.get("body") or payload
+    if info.get("from_me"):
+        return jsonify({"ok": True, "ignored": "from_me"})
 
-    # extrair phone/chatId/sender
-    chat_id = (body.get("chatId") or payload.get("chatId") or "") if isinstance(body, dict) else ""
-    chat_id_phone = chat_id.split("@")[0] if isinstance(chat_id, str) else ""
-    phone = (
-        (body.get("phone") if isinstance(body, dict) else None)
-        or (body.get("customer") if isinstance(body, dict) else None)
-        or payload.get("phone")
-        or payload.get("customer")
-        or chat_id_phone
-        or ""
-    )
-    phone = str(phone).strip()
-
-    sender_name = (
-        (body.get("senderName") if isinstance(body, dict) else None)
-        or payload.get("senderName")
-        or ((body.get("contact") or {}) if isinstance(body, dict) else {}).get("pushname")
-        or ""
-    )
-    sender_name = str(sender_name).strip()
-
-    # conteúdo (string ou dict)
-    if isinstance(body, dict):
-        raw_msg = body.get("message")
-        if raw_msg is None:
-            raw_msg = body.get("text")
-    else:
-        raw_msg = payload.get("message") or payload.get("text")
-
-    msg = _coerce_text(raw_msg)
-
-    # >>>>>>>>>>>>> CONTEXTO PADRÃO PARA O PIPELINE <<<<<<<<<<<<<
-    _ensure_ctx_defaults(phone, sender_name)
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    phone = info["phone"]
+    text = info["text"].strip()
 
     try:
-        atendimento = build_atendimento_for_phone(phone, sender_name)
-        try:
-            resposta = atendimento.receber_mensagem(msg)
-        except KeyError as ke:
-            if getattr(ke, "args", None) and len(ke.args) > 0 and ke.args[0] == "autor":
-                log.warning("webhook.received: KeyError 'autor' — aplicando default e reprocessando")
-                _ensure_ctx_defaults(phone, sender_name)
-                try:
-                    resposta = atendimento.receber_mensagem(msg)
-                except KeyError as ke2:
-                    if getattr(ke2, "args", None) and len(ke2.args) > 0 and ke2.args[0] == "autor":
-                        # tentativa de hotfix em histórico legado sem 'autor'
-                        fixed = _hotfix_missing_autor_in_history(phone)
-                        log.warning("webhook.received: KeyError persistente — hotfix historico autor (linhas=%s)", fixed)
-                        _ensure_ctx_defaults(phone, sender_name)
-                        resposta = atendimento.receber_mensagem(msg)
-                    else:
-                        raise
-    except Exception:
-        log.exception("webhook.received: erro no pipeline de atendimento")
-        resposta = "Recebemos sua mensagem e já estamos analisando. 👍"
+        from meu_app.services.zapi_client import ZapiClient
+        ZapiClient.from_env().send_text(phone, f"✅ Recebido: {text}")
+    except Exception as e:
+        app.logger.exception("Falha ao responder via Z-API: %s", e)
 
-    return jsonify({"status": "ok", "echo": msg, "resposta": resposta}), 200
+    return jsonify({"ok": True})
 
 log = app.logger
 log.setLevel(logging.INFO)
