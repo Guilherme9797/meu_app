@@ -1,0 +1,730 @@
+('C:\\Users\\Larissa Moura\\Documents\\meu_app\\dist\\meu_app_server.exe',
+ True,
+ False,
+ False,
+ 'C:\\Users\\Larissa '
+ 'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\images\\icon-console.ico',
+ None,
+ False,
+ False,
+ b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<assembly xmlns='
+ b'"urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">\n  <trustInfo x'
+ b'mlns="urn:schemas-microsoft-com:asm.v3">\n    <security>\n      <requested'
+ b'Privileges>\n        <requestedExecutionLevel level="asInvoker" uiAccess='
+ b'"false"/>\n      </requestedPrivileges>\n    </security>\n  </trustInfo>\n  '
+ b'<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">\n    <'
+ b'application>\n      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f'
+ b'0}"/>\n      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>\n '
+ b'     <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"/>\n      <s'
+ b'upportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"/>\n      <supporte'
+ b'dOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>\n    </application>\n  <'
+ b'/compatibility>\n  <application xmlns="urn:schemas-microsoft-com:asm.v3">'
+ b'\n    <windowsSettings>\n      <longPathAware xmlns="http://schemas.micros'
+ b'oft.com/SMI/2016/WindowsSettings">true</longPathAware>\n    </windowsSett'
+ b'ings>\n  </application>\n  <dependency>\n    <dependentAssembly>\n      <ass'
+ b'emblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version='
+ b'"6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" langua'
+ b'ge="*"/>\n    </dependentAssembly>\n  </dependency>\n</assembly>',
+ True,
+ False,
+ None,
+ None,
+ None,
+ 'C:\\Users\\Larissa '
+ 'Moura\\Documents\\meu_app\\build\\meu_app_server\\meu_app_server.pkg',
+ [('pyi-contents-directory _internal', '', 'OPTION'),
+  ('PYZ-00.pyz',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\PYZ-00.pyz',
+   'PYZ'),
+  ('struct',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\localpycs\\struct.pyc',
+   'PYMODULE'),
+  ('pyimod01_archive',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\localpycs\\pyimod01_archive.pyc',
+   'PYMODULE'),
+  ('pyimod02_importers',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\localpycs\\pyimod02_importers.pyc',
+   'PYMODULE'),
+  ('pyimod03_ctypes',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\localpycs\\pyimod03_ctypes.pyc',
+   'PYMODULE'),
+  ('pyimod04_pywin32',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\localpycs\\pyimod04_pywin32.pyc',
+   'PYMODULE'),
+  ('pyiboot01_bootstrap',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\loader\\pyiboot01_bootstrap.py',
+   'PYSOURCE'),
+  ('pyi_rth_inspect',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
+   'PYSOURCE'),
+  ('pyi_rth_pkgutil',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
+   'PYSOURCE'),
+  ('pyi_rth_multiprocessing',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_multiprocessing.py',
+   'PYSOURCE'),
+  ('pyi_rth_setuptools',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
+   'PYSOURCE'),
+  ('run_server',
+   'C:\\Users\\Larissa Moura\\Documents\\meu_app\\run_server.py',
+   'PYSOURCE'),
+  ('python313.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\python313.dll',
+   'BINARY'),
+  ('numpy.libs\\msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy.libs\\msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll',
+   'BINARY'),
+  ('numpy.libs\\libscipy_openblas64_-860d95b1c38e637ce4509f5fa24fbf2a.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy.libs\\libscipy_openblas64_-860d95b1c38e637ce4509f5fa24fbf2a.dll',
+   'BINARY'),
+  ('unicodedata.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\unicodedata.pyd',
+   'EXTENSION'),
+  ('_lzma.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_lzma.pyd',
+   'EXTENSION'),
+  ('_bz2.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_bz2.pyd',
+   'EXTENSION'),
+  ('_decimal.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_decimal.pyd',
+   'EXTENSION'),
+  ('_hashlib.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_hashlib.pyd',
+   'EXTENSION'),
+  ('select.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\select.pyd',
+   'EXTENSION'),
+  ('_socket.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_socket.pyd',
+   'EXTENSION'),
+  ('_overlapped.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_overlapped.pyd',
+   'EXTENSION'),
+  ('_ssl.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_ssl.pyd',
+   'EXTENSION'),
+  ('_queue.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_queue.pyd',
+   'EXTENSION'),
+  ('_ctypes.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_ctypes.pyd',
+   'EXTENSION'),
+  ('_multiprocessing.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_multiprocessing.pyd',
+   'EXTENSION'),
+  ('pyexpat.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\pyexpat.pyd',
+   'EXTENSION'),
+  ('_asyncio.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_asyncio.pyd',
+   'EXTENSION'),
+  ('_wmi.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_wmi.pyd',
+   'EXTENSION'),
+  ('yaml\\_yaml.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\yaml\\_yaml.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('_uuid.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_uuid.pyd',
+   'EXTENSION'),
+  ('_sqlite3.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_sqlite3.pyd',
+   'EXTENSION'),
+  ('zstandard\\_cffi.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\zstandard\\_cffi.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('zstandard\\backend_c.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\zstandard\\backend_c.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('charset_normalizer\\md__mypyc.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\charset_normalizer\\md__mypyc.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('charset_normalizer\\md.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\charset_normalizer\\md.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\_core\\_multiarray_umath.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\_core\\_multiarray_umath.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\linalg\\_umath_linalg.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\linalg\\_umath_linalg.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\_core\\_multiarray_tests.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\_core\\_multiarray_tests.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\mtrand.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\mtrand.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\bit_generator.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\bit_generator.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_sfc64.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_sfc64.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_philox.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_philox.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_pcg64.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_pcg64.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_mt19937.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_mt19937.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_generator.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_generator.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_common.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_common.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\random\\_bounded_integers.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\random\\_bounded_integers.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('numpy\\fft\\_pocketfft_umath.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy\\fft\\_pocketfft_umath.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('regex\\_regex.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\regex\\_regex.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('tiktoken\\_tiktoken.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\tiktoken\\_tiktoken.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('pydantic_core\\_pydantic_core.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\pydantic_core\\_pydantic_core.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('_zoneinfo.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_zoneinfo.pyd',
+   'EXTENSION'),
+  ('markupsafe\\_speedups.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\markupsafe\\_speedups.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('_elementtree.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_elementtree.pyd',
+   'EXTENSION'),
+  ('yarl\\_quoting_c.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\yarl\\_quoting_c.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('propcache\\_helpers_c.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\propcache\\_helpers_c.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('multidict\\_multidict.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\multidict\\_multidict.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('aiohttp\\_http_writer.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\aiohttp\\_http_writer.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('aiohttp\\_http_parser.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\aiohttp\\_http_parser.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('frozenlist\\_frozenlist.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\frozenlist\\_frozenlist.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('aiohttp\\_websocket\\mask.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\aiohttp\\_websocket\\mask.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('aiohttp\\_websocket\\reader_c.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\aiohttp\\_websocket\\reader_c.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('jiter\\jiter.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\jiter\\jiter.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('orjson\\orjson.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\orjson\\orjson.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('pymupdf\\_mupdf.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\pymupdf\\_mupdf.pyd',
+   'EXTENSION'),
+  ('pymupdf\\_extra.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\pymupdf\\_extra.pyd',
+   'EXTENSION'),
+  ('sqlalchemy\\cyextension\\util.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\sqlalchemy\\cyextension\\util.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('sqlalchemy\\cyextension\\resultproxy.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\sqlalchemy\\cyextension\\resultproxy.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('sqlalchemy\\cyextension\\processors.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\sqlalchemy\\cyextension\\processors.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('sqlalchemy\\cyextension\\immutabledict.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\sqlalchemy\\cyextension\\immutabledict.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('sqlalchemy\\cyextension\\collections.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\sqlalchemy\\cyextension\\collections.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('greenlet\\_greenlet.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\greenlet\\_greenlet.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('faiss\\_swigfaiss.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\faiss\\_swigfaiss.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('faiss\\_swigfaiss_avx2.cp313-win_amd64.pyd',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\faiss\\_swigfaiss_avx2.cp313-win_amd64.pyd',
+   'EXTENSION'),
+  ('VCRUNTIME140.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\VCRUNTIME140.dll',
+   'BINARY'),
+  ('VCRUNTIME140_1.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\VCRUNTIME140_1.dll',
+   'BINARY'),
+  ('libcrypto-3.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\libcrypto-3.dll',
+   'BINARY'),
+  ('libssl-3.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\libssl-3.dll',
+   'BINARY'),
+  ('libffi-8.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\libffi-8.dll',
+   'BINARY'),
+  ('sqlite3.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\sqlite3.dll',
+   'BINARY'),
+  ('python3.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\AppData\\Local\\Programs\\Python\\Python313\\python3.dll',
+   'BINARY'),
+  ('MSVCP140.dll', 'C:\\WINDOWS\\system32\\MSVCP140.dll', 'BINARY'),
+  ('pymupdf\\mupdfcpp64.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\pymupdf\\mupdfcpp64.dll',
+   'BINARY'),
+  ('faiss_cpu.libs\\vcomp140-55aba23cdcd6484fbb06f4155b8ca75a.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\faiss_cpu.libs\\vcomp140-55aba23cdcd6484fbb06f4155b8ca75a.dll',
+   'BINARY'),
+  ('faiss_cpu.libs\\libopenblas-e824cf9fc22e5949807ce995a32e413a.dll',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\faiss_cpu.libs\\libopenblas-e824cf9fc22e5949807ce995a32e413a.dll',
+   'BINARY'),
+  ('certifi\\cacert.pem',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\certifi\\cacert.pem',
+   'DATA'),
+  ('certifi\\py.typed',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\certifi\\py.typed',
+   'DATA'),
+  ('langchain\\chains\\llm_summarization_checker\\prompts\\are_all_true_prompt.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\chains\\llm_summarization_checker\\prompts\\are_all_true_prompt.txt',
+   'DATA'),
+  ('langchain\\chains\\llm_summarization_checker\\prompts\\create_facts.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\chains\\llm_summarization_checker\\prompts\\create_facts.txt',
+   'DATA'),
+  ('langchain\\llms\\grammars\\list.gbnf',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\llms\\grammars\\list.gbnf',
+   'DATA'),
+  ('langchain\\document_transformers\\xsl\\html_chunks_with_headers.xslt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\document_transformers\\xsl\\html_chunks_with_headers.xslt',
+   'DATA'),
+  ('langchain\\chains\\llm_summarization_checker\\prompts\\check_facts.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\chains\\llm_summarization_checker\\prompts\\check_facts.txt',
+   'DATA'),
+  ('langchain\\llms\\grammars\\json.gbnf',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\llms\\grammars\\json.gbnf',
+   'DATA'),
+  ('langchain\\chains\\llm_summarization_checker\\prompts\\revise_summary.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\chains\\llm_summarization_checker\\prompts\\revise_summary.txt',
+   'DATA'),
+  ('langchain\\py.typed',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain\\py.typed',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\RECORD',
+   'DATA'),
+  ('setuptools\\_vendor\\jaraco\\text\\Lorem ipsum.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\jaraco\\text\\Lorem '
+   'ipsum.txt',
+   'DATA'),
+  ('langchain_community-0.3.29.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain_community-0.3.29.dist-info\\INSTALLER',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\INSTALLER',
+   'DATA'),
+  ('attrs-25.3.0.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\attrs-25.3.0.dist-info\\METADATA',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\licenses\\LICENSE',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\licenses\\LICENSE',
+   'DATA'),
+  ('click-8.2.1.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\click-8.2.1.dist-info\\METADATA',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\METADATA',
+   'DATA'),
+  ('click-8.2.1.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\REQUESTED',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\REQUESTED',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\WHEEL',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
+   'DATA'),
+  ('attrs-25.3.0.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\attrs-25.3.0.dist-info\\WHEEL',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\METADATA',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\REQUESTED',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\REQUESTED',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\WHEEL',
+   'DATA'),
+  ('langchain_community-0.3.29.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain_community-0.3.29.dist-info\\WHEEL',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\RECORD',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\WHEEL',
+   'DATA'),
+  ('attrs-25.3.0.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\attrs-25.3.0.dist-info\\RECORD',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\WHEEL',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\REQUESTED',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\REQUESTED',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\INSTALLER',
+   'DATA'),
+  ('urllib3-2.5.0.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\urllib3-2.5.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.2.1.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\click-8.2.1.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('urllib3-2.5.0.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\urllib3-2.5.0.dist-info\\WHEEL',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.2.1.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\entry_points.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\entry_points.txt',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\licenses\\LICENSE',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\licenses\\LICENSE',
+   'DATA'),
+  ('langchain_community-0.3.29.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain_community-0.3.29.dist-info\\RECORD',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\RECORD',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\entry_points.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\entry_points.txt',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\entry_points.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\entry_points.txt',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\entry_points.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\entry_points.txt',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\METADATA',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\top_level.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\top_level.txt',
+   'DATA'),
+  ('urllib3-2.5.0.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\urllib3-2.5.0.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\METADATA',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\RECORD',
+   'DATA'),
+  ('attrs-25.3.0.dist-info\\licenses\\LICENSE',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\attrs-25.3.0.dist-info\\licenses\\LICENSE',
+   'DATA'),
+  ('langchain_community-0.3.29.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain_community-0.3.29.dist-info\\METADATA',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.2.1.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\click-8.2.1.dist-info\\WHEEL',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\WHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\WHEEL',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
+   'DATA'),
+  ('attrs-25.3.0.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\attrs-25.3.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\METADATA',
+   'DATA'),
+  ('langchain-0.3.27.dist-info\\REQUESTED',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain-0.3.27.dist-info\\REQUESTED',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\DELVEWHEEL',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\DELVEWHEEL',
+   'DATA'),
+  ('flask-3.1.2.dist-info\\INSTALLER',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\flask-3.1.2.dist-info\\INSTALLER',
+   'DATA'),
+  ('langchain_community-0.3.29.dist-info\\entry_points.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain_community-0.3.29.dist-info\\entry_points.txt',
+   'DATA'),
+  ('openai-1.102.0.dist-info\\RECORD',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\openai-1.102.0.dist-info\\RECORD',
+   'DATA'),
+  ('urllib3-2.5.0.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\urllib3-2.5.0.dist-info\\METADATA',
+   'DATA'),
+  ('urllib3-2.5.0.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\urllib3-2.5.0.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('langchain_community-0.3.29.dist-info\\REQUESTED',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\langchain_community-0.3.29.dist-info\\REQUESTED',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\METADATA',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\METADATA',
+   'DATA'),
+  ('numpy-2.3.2.dist-info\\LICENSE.txt',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\numpy-2.3.2.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('base_library.zip',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\build\\meu_app_server\\base_library.zip',
+   'DATA')],
+ [],
+ False,
+ False,
+ 1756343541,
+ [('run.exe',
+   'C:\\Users\\Larissa '
+   'Moura\\Documents\\meu_app\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
+   'EXECUTABLE')],
+ 'C:\\Users\\Larissa '
+ 'Moura\\AppData\\Local\\Programs\\Python\\Python313\\python313.dll')

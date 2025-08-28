@@ -317,7 +317,17 @@ def cmd_proposta_send(args):
         if args.phone:
             zc = ZapiClient()
             body = f"Olá {args.nome}!\n\n{texto.texto}\n\nPreço sugerido: {_fmt_brl(texto.preco_reais)}"
-            message_id = zc.send_text(args.phone, body)  # depende da sua implementação
+            resp = zc.send_text(args.phone, body)  # depende da sua implementação
+            if isinstance(resp, dict):
+                message_id = (
+                    resp.get("id")
+                    or resp.get("messageId")
+                    or resp.get("message_id")
+                )
+            else:
+                message_id = resp
+            if message_id is not None and not isinstance(message_id, str):
+                message_id = str(message_id)
     except Exception:
         pass  # sem Z-API configurada, segue sem enviar
 
