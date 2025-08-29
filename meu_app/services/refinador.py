@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Optional, Dict
 
 class RefinadorResposta:
     """Responsável por reescrever respostas em linguagem acessível."""
@@ -73,19 +73,37 @@ class GroundingGuard:
         return GroundedContext(pdf_chunks=pdf_chunks, web_evidence=web_evidence)
 
     # ------------------ método solicitado ------------------
-    def build_prompt(self, user_text: str, ctx: GroundedContext) -> str:
+    def build_prompt(
+        self,
+        user_text: str,
+        ctx: GroundedContext,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
         """
         Prompt anti-alucinação SEM exposição de fontes.
-        - Use os trechos (PDFs/Web) internamente para fundamentar a resposta.
-        - NÃO mencione, liste ou cite fontes, autores, URLs, páginas, trechos, índices ou metadados ao usuário.
-        - Se a base for insuficiente, admita incerteza e solicite dados/arquivos adicionais, mas sem citar fontes.
-        - Escreva em PT-BR, claro e objetivo, com foco prático.
+        - Usa PDFs/Web apenas como base interna; NÃO revele fontes/URLs/metadados ao usuário.
+        - Se faltar base, admita incerteza e peça dados, sem citar fontes.
+        - Usa 'history' para manter coerência de curto prazo (não mostre o histórico ao usuário).
+        - Responda em PT-BR, claro e objetivo.
         - Estruture a resposta em:
-          1) Entendimento do caso (resumo em 1–2 linhas)
-          2) O que pode ser feito (passos objetivos)
-          3) Observações e limites (o que falta para maior precisão)
-          4) Próximo passo (pergunta ou instrução)
+         1) Entendimento do caso
+          2) O que pode ser feito (passos)
+          3) Observações e limites
+          4) Próximo passo
         """
+        # ===== HISTÓRICO (INSTRUÇÃO INTERNA — NÃO EXPOR) =====
+        history_block = ""
+        if history:
+            lines: List[str] = []
+            for h in history[-10:]:
+                role = "Usuário" if h.get("role") == "user" else "Assistente"
+                text = (h.get("text") or "").strip()
+                if len(text) > 800:
+                    text = text[:800] + " …"
+                lines.append(f"{role}: {text}")
+            history_block = "\n".join(lines)
+
+        # ===== BASE INTERNA (NÃO EXPOR) =====
 
         pdf_block = ""
         for i, c in enumerate(ctx.pdf_chunks, start=1):
@@ -95,12 +113,15 @@ class GroundingGuard:
         for i, w in enumerate(ctx.web_evidence, start=1):
             web_block += f"\n[WEB{i}] {getattr(w, 'title', '')} :: {getattr(w, 'snippet', '')}\n"
 
+         # ===== REGRAS DO SISTEMA =====
+
         system_rules = (
             "REGRAS CRÍTICAS (NÃO VAZAR AO USUÁRIO): "
             "1) Não cite, não liste e não mencione fontes, documentos, páginas, URLs ou autores. "
-            "2) Use os trechos fornecidos apenas para embasar a resposta. "
-            "3) Se faltar base, admita incerteza e peça dados, sem citar as fontes internas. "
-            "4) Não invente fatos. Não preencha lacunas com suposições."
+            "2) Use os trechos abaixo apenas para embasar a resposta. "
+            "3) Se faltar base, admita incerteza e peça dados/documentos, sem citar fontes. "
+            "4) Não invente fatos; não preencha lacunas com suposições. "
+            "5) Use o histórico apenas para coerência; não reproduza o histórico literalmente."
         )
 
         layout = (
@@ -114,6 +135,7 @@ class GroundingGuard:
         return (
             f"{system_rules}\n\n"
             f"Pergunta do cliente:\n{user_text}\n\n"
+            f"HISTÓRICO (não expor):\n{history_block or '(sem histórico relevante)'}\n\n"
             f"BASE INTERNA - TRECHOS DE PDFs (NÃO EXPOR):\n{pdf_block or '(nenhum trecho)'}\n"
             f"BASE INTERNA - SINAIS DA WEB (NÃO EXPOR):\n{web_block or '(não usado)'}\n\n"
             f"{layout}"

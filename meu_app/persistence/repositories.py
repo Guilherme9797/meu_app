@@ -3,9 +3,17 @@ from __future__ import annotations
 import json
 import uuid
 import sqlite3
+from contextlib import contextmanager
 from typing import Any, Dict, Optional, List
 
-from .db import get_conn, init_db
+from .db import (
+    get_conn,
+    init_db,
+    get_session,
+    Client,
+    Session as SessionModel,
+    Message as MessageModel,
+)
 
 
 def _gen_id(prefix: str) -> str:
@@ -419,3 +427,107 @@ class PaymentRepository:
 # ========= Auditoria genérica de webhooks (compat) =========
 class WebhookLogRepository:
     pass
+# ========= Novos repositórios (SQLAlchemy) =========
+
+
+@contextmanager
+def _session_scope() -> Any:
+    with get_session() as db:
+        yield db
+
+
+class SessionRepository:
+    """Operações relacionadas às sessões de atendimento."""
+
+    def __init__(self) -> None:
+        init_db()
+
+    def get_or_create(self, client_phone: str) -> SessionModel:
+        with _session_scope() as db:
+            client = db.query(Client).filter_by(phone=client_phone).first()
+            if not client:
+                client = Client(phone=client_phone)
+                db.add(client)
+                db.flush()
+            sess = (
+                db.query(SessionModel)
+                .filter_by(client_id=client.id)
+                .order_by(SessionModel.id.desc())
+                .first()
+            )
+            if not sess:
+                sess = SessionModel(client_id=client.id)
+                db.add(sess)
+                db.flush()
+            return sess
+
+    def update_phase_if_ready(self, session_id: int, reply: str) -> None:
+        with _session_scope() as db:
+            sess = db.get(SessionModel, session_id)
+            if not sess:
+                return
+            # lógica simplificada: placeholder para futuras regras
+            db.add(sess)
+
+
+class MessageRepository:
+    """Persistência de mensagens de uma sessão."""
+
+    def __init__(self) -> None:
+        init_db()
+
+    def exists_provider_msg(self, provider_msg_id: str) -> bool:
+        if not provider_msg_id:
+            return False
+        with _session_scope() as db:
+            return (
+                db.query(MessageModel)
+                .filter(MessageModel.provider_msg_id == provider_msg_id)
+                .first()
+                is not None
+            )
+
+    def save_in_out(
+        self,
+        *,
+        session_id: int,
+        provider_msg_id: Optional[str],
+        user_msg: str,
+        reply: str,
+        topic: Optional[str],
+        intent: Optional[str],
+        entities: Dict[str, Any],
+        sources: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        with _session_scope() as db:
+            user_entry = MessageModel(
+                session_id=session_id,
+                provider_msg_id=provider_msg_id,
+                role="user",
+                text=user_msg,
+                topic=topic,
+                intent=intent,
+                entities_json=entities or None,
+            )
+            assist_entry = MessageModel(
+                session_id=session_id,
+                role="assistant",
+                text=reply,
+                topic=topic,
+                intent=intent,
+                sources_json=sources or None,
+            )
+            db.add_all([user_entry, assist_entry])
+
+    def fetch_history_texts(self, session_id: int, limit: int = 10) -> List[Dict[str, str]]:
+        """Retorna histórico recente da sessão."""
+        with _session_scope() as db:
+            rows = (
+                db.query(MessageModel)
+                .filter(MessageModel.session_id == session_id)
+                .order_by(MessageModel.id.desc())
+                .limit(limit)
+                .all()
+            )
+            rows = list(reversed(rows))
+            return [{"role": r.role, "text": r.text} for r in rows]

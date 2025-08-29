@@ -79,6 +79,12 @@ class AtendimentoService:
 
         session = self.sess_repo.get_or_create(client_phone)
 
+         # 4.5) Carregar histórico recente (memória curta) para coerência
+        try:
+            history = self.msg_repo.fetch_history_texts(session.id, limit=10)
+        except Exception:  # pragma: no cover - fallback
+            history = []
+
         intent, tema = self.classifier.classify(user_text)
         ents = self.extractor.extract(user_text)
 
@@ -96,7 +102,7 @@ class AtendimentoService:
                 web_evidence = []
 
         grounded_ctx: GroundedContext = self.guard.build_context(pdf_chunks, web_evidence)
-        prompt: str = self.guard.build_prompt(user_text, grounded_ctx)
+        prompt: str = self.guard.build_prompt(user_text, grounded_ctx, history=history)
         reply: str = self.llm.generate(prompt, temperature=self.conf.temperature)
 
         if coverage < self.conf.coverage_threshold and self.conf.append_low_coverage_note:

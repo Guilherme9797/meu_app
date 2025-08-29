@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import base64
 from typing import Optional, Dict, Any
+import numpy as np
 
 # Carrega .env sem sobrescrever variáveis já presentes
 try:
@@ -128,5 +129,15 @@ class LLM(OpenAIClient):
         except Exception:
             return ""
 
+class Embeddings:
+    def __init__(self, api_key: str | None = None, model: str = "text-embedding-3-small"):
+        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+        self.model = model
 
-__all__ = ["OpenAIClient", "LLM"]
+    def embed(self, text: str) -> np.ndarray:
+        res = self.client.embeddings.create(model=self.model, input=[text])
+        vec = np.array(res.data[0].embedding, dtype="float32")
+        return vec.reshape(1, -1)
+
+
+__all__ = ["OpenAIClient", "LLM", "Embeddings"]

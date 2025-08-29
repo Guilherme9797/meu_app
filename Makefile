@@ -23,6 +23,9 @@ ADMIN_API_KEY?=dev-secret
 DOMAIN?=localhost
 CURL?=curl -sS
 COMPOSE?=docker compose
+PDF_SRC_DIR?=data/pdfs
+RAG_INDEX_PATH?=index/faiss_index
+EMBED_MODEL?=text-embedding-3-small
 
 # Para db_admin
 DB_OUTDIR?=backups
@@ -40,10 +43,12 @@ help:
 	@echo "  install             - instala dependências no venv"
 	@echo "  run                 - roda o servidor Flask (server.py)"
 	@echo "  run-ngrok           - Flask + ngrok (configura webhook na Z-API)"
-	@echo "  health              - GET /health"
-	@echo "  metrics             - GET /metrics"
-	@echo "  update-index        - POST /update-index (X-API-Key)"
-	@echo "  rebuild-index       - POST /rebuild-index (X-API-Key)"
+@echo "  health              - GET /health"
+@echo "  metrics             - GET /metrics"
+@echo "  update-index        - POST /update-index (X-API-Key)"
+@echo "  rebuild-index       - POST /rebuild-index (X-API-Key)"
+@echo "  index               - (re)constrói o índice FAISS a partir de data/pdfs"
+@echo "  index-status        - mostra status do índice"
 	@echo "  webhook-config      - POST /zapi/configure-webhooks (X-API-Key)"
 	@echo "  certs-dev           - gera cert autoassinado p/ DOMAIN"
 	@echo "  certs-install       - instala fullchain/privkey em data/certs (vars: CERT, KEY)"
@@ -96,6 +101,13 @@ health:
 .PHONY: metrics
 metrics:
 	@$(CURL) http://localhost:$(PORT)/metrics
+
+.PHONY: index index-status
+index:
+python -m meu_app.services.pdf_indexer build --src $(PDF_SRC_DIR) --out $(RAG_INDEX_PATH) --model $(EMBED_MODEL)
+
+index-status:
+python -m meu_app.services.pdf_indexer status --out $(RAG_INDEX_PATH)
 
 # =========================
 # Admin endpoints (token)
