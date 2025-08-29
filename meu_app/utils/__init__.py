@@ -1,4 +1,4 @@
-from .openai_client import OpenAIClient
-from .paths import get_index_dir
+from .openai_client import OpenAIClient, LLM
 
-__all__ = ["OpenAIClient", "get_index_dir"]
+
+__all__ = ["OpenAIClient", "LLM", "get_index_dir"]

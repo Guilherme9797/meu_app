@@ -1,7 +1,81 @@
-# persistence/db.py
+from __future__ import annotations
 import os
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import (
+    create_engine, Column, Integer, String, DateTime, ForeignKey, Text, JSON, Index
+)
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
+
+# --------------------------------------------------------------------
+# Configuração
+# --------------------------------------------------------------------
+DB_PATH = os.getenv("APP_DB_PATH", "data/app.db")
+DB_URL = os.getenv("DB_URL", f"sqlite:///{DB_PATH}")
+
+engine = create_engine(
+    DB_URL,
+    connect_args={"check_same_thread": False} if DB_URL.startswith("sqlite") else {},
+    future=True,
+)
+SessionLocal = scoped_session(
+    sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
+)
+Base = declarative_base()
+
+# --------------------------------------------------------------------
+# Modelos novos (SQLAlchemy)
+# --------------------------------------------------------------------
+class Client(Base):
+    __tablename__ = "clients"
+
+    id = Column(Integer, primary_key=True)
+    phone = Column(String(32), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=True)
+    status = Column(String(32), default="active")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    sessions = relationship("Session", back_populates="client")
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id = Column(Integer, primary_key=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
+    phase = Column(String(32), default="ATENDIMENTO")
+    last_intent = Column(String(64), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    client = relationship("Client", back_populates="sessions")
+    messages = relationship("Message", back_populates="session", order_by="Message.id")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"), index=True, nullable=False)
+    provider_msg_id = Column(String(128), nullable=True, index=True)
+    role = Column(String(16), nullable=False)
+    text = Column(Text, nullable=False)
+    topic = Column(String(64), nullable=True)
+    intent = Column(String(64), nullable=True)
+    entities_json = Column(JSON, nullable=True)
+    sources_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("Session", back_populates="messages")
+
+
+Index("ix_messages_provider_unique", Message.provider_msg_id, unique=False)
+
+# --------------------------------------------------------------------
+# Schema legado (compatibilidade com repositórios existentes)
+# --------------------------------------------------------------------
 
 DB_PATH = os.getenv("APP_DB_PATH", "data/app.db")
 
@@ -84,16 +158,37 @@ CREATE TABLE IF NOT EXISTS payments_events (
 );
 """
 
-def init_db():
+# --------------------------------------------------------------------
+# Bootstrapping
+# --------------------------------------------------------------------
+def init_db() -> None:
+    """Cria tabelas caso não existam (uso simples)."""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with sqlite3.connect(DB_PATH) as conn:
         conn.executescript(SCHEMA)
+    Base.metadata.create_all(bind=engine)
+
 
 @contextmanager
 def get_conn():
+    """Compat: fornece conexão sqlite3 para repositórios legados."""
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # permite dict(row) nos repositórios
+    conn.row_factory = sqlite3.Row
     try:
         yield conn
     finally:
         conn.close()
+
+
+@contextmanager
+def get_session():
+    """Retorna sessão SQLAlchemy."""
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

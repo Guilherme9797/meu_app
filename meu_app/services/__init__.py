@@ -15,6 +15,7 @@ __all__ = [
     "PaymentOrchestrator",
     "PaymentProvider",
     "CheckoutResult",
+    "MediaProcessor",
 ]
 
 def __getattr__(name: str):
@@ -46,6 +47,11 @@ def __getattr__(name: str):
     if name == "PricingService":
         from .pricing import PricingService  # pode não existir no ambiente
         return PricingService
+    
+    if name == "MediaProcessor":
+        from .media_processor import MediaProcessor
+        return MediaProcessor
+
 
     # Pagamentos (opcionais)
     if name == "PaymentOrchestrator":
@@ -76,6 +82,7 @@ if TYPE_CHECKING:
     from .conversor import ConversorPropostas
     from .pricing import PricingService  # type: ignore
     from .payments.orchestrator import PaymentOrchestrator  # type: ignore
+    from .media_processor import MediaProcessor
     try:
         from .payments.base import PaymentProvider, CheckoutResult  # type: ignore
     except Exception:

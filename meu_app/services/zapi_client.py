@@ -1,7 +1,31 @@
 from __future__ import annotations
+
+import hashlib
+import hmac
 import os
-from typing import Optional, Dict, Any
+import re
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, Optional, Literal
+
 import requests
+
+
+MediaType = Literal["audio", "image", "document", "unknown"]
+
+
+@dataclass
+class NormalizedMessage:
+    """Representa a forma canônica que usaremos internamente."""
+
+    client_id: str
+    text: Optional[str]
+    msg_id: Optional[str]
+    timestamp: Optional[str]
+    media_type: Optional[MediaType] = None
+    media_url: Optional[str] = None
+    media_mime: Optional[str] = None
+    media_caption: Optional[str] = None
 
 
 class ZapiClient:
@@ -20,12 +44,14 @@ class ZapiClient:
         instance_id: Optional[str] = None,
         token: Optional[str] = None,
         client_token: Optional[str] = None,
+        webhook_secret: Optional[str] = None,
     ):
         # normaliza variáveis de ambiente (remove espaços/linhas)
         self.base_url = (base_url or os.getenv("ZAPI_BASE_URL", "https://api.z-api.io")).strip().rstrip("/")
         self.instance_id = (instance_id or os.getenv("ZAPI_INSTANCE_ID", "")).strip() or None
         self.token = (token or os.getenv("ZAPI_INSTANCE_TOKEN", "")).strip() or None
         self.client_token = (client_token or os.getenv("ZAPI_CLIENT_TOKEN", "")).strip() or None
+        self.webhook_secret = webhook_secret or os.getenv("ZAPI_WEBHOOK_SECRET")
 
         if not self.instance_id or not self.token:
             raise RuntimeError("Z-API: faltam ZAPI_INSTANCE_ID ou ZAPI_INSTANCE_TOKEN no ambiente.")
@@ -120,3 +146,165 @@ class ZapiClient:
         if not url:
             return {"error": "invalid_url", "detail": "URL vazia"}
         return self._request("PUT", "update-every-webhooks", {"value": url, "notifySentByMe": bool(notify_sent_by_me)})
+
+    # -------- utilitários para webhooks ---------
+
+    def verify_signature(self, raw_body: bytes, headers: Dict[str, str]) -> bool:
+        """Confere a assinatura HMAC enviada pela Z-API."""
+        if not self.webhook_secret:
+            return True
+        lowered = {k.lower(): v for k, v in headers.items()}
+        for name in ("x-hub-signature-256", "x-zapi-signature", "x-z-api-signature"):
+            provided = lowered.get(name)
+            if provided:
+                break
+        else:
+            return False
+        provided_hex = provided.replace("sha256=", "").strip()
+        mac = hmac.new(self.webhook_secret.encode("utf-8"), msg=raw_body, digestmod=hashlib.sha256).hexdigest()
+        return hmac.compare_digest(mac, provided_hex)
+
+    @staticmethod
+    def normalize_msisdn(phone: str, default_country: str = "55") -> str:
+        digits = re.sub(r"\D", "", phone or "")
+        if not digits:
+            raise ValueError("Telefone ausente no payload.")
+        if digits.startswith(default_country):
+            return f"+{digits}"
+        if len(digits) in (10, 11):
+            return f"+{default_country}{digits}"
+        if digits.startswith("0") and digits[1:].startswith(default_country):
+            return f"+{digits[1:]}"
+        return f"+{digits}"
+
+    @staticmethod
+    def _extract_text(payload: Dict[str, Any]) -> Optional[str]:
+        candidates = [
+            ("message",),
+            ("text",),
+            ("data", "message"),
+            ("data", "text"),
+            ("messages", 0, "text", "body"),
+            ("entry", 0, "changes", 0, "value", "messages", 0, "text", "body"),
+        ]
+        for path in candidates:
+            ref: Any = payload
+            try:
+                for key in path:
+                    ref = ref[key]
+                if isinstance(ref, str) and ref.strip():
+                    return ref.strip()
+            except Exception:
+                continue
+        return None
+
+    @staticmethod
+    def _extract_phone(payload: Dict[str, Any]) -> Optional[str]:
+        candidates = [
+            ("phone",),
+            ("from",),
+            ("data", "phone"),
+            ("data", "from"),
+            ("messages", 0, "from"),
+            ("entry", 0, "changes", 0, "value", "messages", 0, "from"),
+            ("contact", "wa_id"),
+        ]
+        for path in candidates:
+            ref: Any = payload
+            try:
+                for key in path:
+                    ref = ref[key]
+                if isinstance(ref, str) and ref.strip():
+                    return ref.strip()
+            except Exception:
+                continue
+        return None
+
+    @staticmethod
+    def _extract_msg_id(payload: Dict[str, Any]) -> Optional[str]:
+        for path in [
+            ("id",),
+            ("data", "id"),
+            ("messages", 0, "id"),
+            ("entry", 0, "changes", 0, "value", "messages", 0, "id"),
+        ]:
+            ref: Any = payload
+            try:
+                for key in path:
+                    ref = ref[key]
+                if isinstance(ref, str) and ref.strip():
+                    return ref.strip()
+            except Exception:
+                continue
+        return None
+
+    @staticmethod
+    def _extract_timestamp(payload: Dict[str, Any]) -> Optional[str]:
+        for path in [
+            ("timestamp",),
+            ("data", "timestamp"),
+            ("messages", 0, "timestamp"),
+            ("entry", 0, "changes", 0, "value", "messages", 0, "timestamp"),
+        ]:
+            ref: Any = payload
+            try:
+                for key in path:
+                    ref = ref[key]
+                if isinstance(ref, (int, float)):
+                    return datetime.utcfromtimestamp(int(ref)).isoformat() + "Z"
+                if isinstance(ref, str) and ref.strip():
+                    return ref.strip()
+            except Exception:
+                continue
+        return datetime.utcnow().isoformat() + "Z"
+
+    @staticmethod
+    def _extract_media(payload: Dict[str, Any]) -> tuple[Optional[MediaType], Optional[str], Optional[str], Optional[str]]:
+        """Tenta extrair (media_type, media_url, media_mime, media_caption)."""
+        for path in [("messages", 0, "image"), ("messages", 0, "audio"), ("messages", 0, "document")]:
+            ref: Any = payload
+            try:
+                for key in path:
+                    ref = ref[key]
+                if isinstance(ref, dict) and ref.get("url"):
+                    url = ref["url"]
+                    mime = ref.get("mime_type") or ref.get("mime")
+                    mtype: MediaType = "image" if "image" in path else "audio" if "audio" in path else "document"
+                    caption = ref.get("caption")
+                    return mtype, url, mime, caption
+            except Exception:
+                continue
+
+        flat_media_url = payload.get("media_url")
+        if flat_media_url:
+            flat_media_type = payload.get("media_type", "unknown")
+            mtype: MediaType = (
+                "audio" if flat_media_type == "audio" else "image" if flat_media_type == "image" else "document" if flat_media_type == "document" else "unknown"
+            )
+            return mtype, flat_media_url, payload.get("mime_type") or payload.get("mimetype"), payload.get("caption")
+        return None, None, None, None
+
+    def parse_incoming(self, payload: Dict[str, Any]) -> NormalizedMessage:
+        raw_phone = self._extract_phone(payload)
+        text = self._extract_text(payload)
+        media_type, media_url, media_mime, media_caption = self._extract_media(payload)
+
+        if not raw_phone:
+            raise ValueError("Telefone do remetente não encontrado no payload.")
+        if not (text or media_url):
+            raise ValueError("Conteúdo não encontrado (nem texto nem mídia).")
+
+        client_id = self.normalize_msisdn(raw_phone)
+        msg_id = self._extract_msg_id(payload)
+        ts = self._extract_timestamp(payload)
+
+        return NormalizedMessage(
+            client_id=client_id,
+            text=text,
+            msg_id=msg_id,
+            timestamp=ts,
+            media_type=media_type,
+            media_url=media_url,
+            media_mime=media_mime,
+            media_caption=media_caption,
+        )

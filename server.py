@@ -15,13 +15,14 @@ except Exception:
 # ===== imports do domínio (use o pacote "meu_app") =====
 from meu_app.models.cliente import Cliente
 from meu_app.models.historico import HistoricoConversaPersistente
-from meu_app.utils.openai_client import OpenAIClient
+from meu_app.utils.openai_client import OpenAIClient, LLM
 from meu_app.services.analisador import AnalisadorDeProblemas
 from meu_app.services.buscador_pdf import BuscadorPDF
 from meu_app.services.refinador import RefinadorResposta
 from meu_app.services.atendimento import Atendimento
 from meu_app.services.zapi_client import ZapiClient
 from meu_app.services.conversor import ConversorPropostas
+from meu_app.services.media_processor import MediaProcessor
 from meu_app.persistence.db import init_db, get_conn
 from meu_app.persistence.repositories import (
     ClienteRepository,
@@ -79,6 +80,7 @@ class _JSONHandler(logging.StreamHandler):
         self.flush()
 root = logging.getLogger()
 root.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Logger do werkzeug separado, para não conflitar no startup
 wlog = logging.getLogger("werkzeug")
@@ -144,6 +146,80 @@ def _hotfix_missing_autor_in_history(phone: str) -> int:
     return affected
 
 app = Flask(__name__)
+
+try:
+    zapi_client = ZapiClient()
+except RuntimeError:
+    zapi_client = ZapiClient(instance_id="dummy", token="dummy")
+
+llm = LLM()
+media_processor = MediaProcessor(llm=llm)
+
+
+@app.post("/webhook/zapi")
+def zapi_webhook():
+    raw_body = request.get_data()
+    headers = {
+        "x-hub-signature-256": request.headers.get("X-Hub-Signature-256", ""),
+        "x-zapi-signature": request.headers.get("X-Zapi-Signature", ""),
+        "x-z-api-signature": request.headers.get("X-Z-Api-Signature", ""),
+    }
+    if not zapi_client.verify_signature(raw_body, headers):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        return jsonify({"error": "Invalid JSON body"}), 400
+
+    try:
+        normalized = zapi_client.parse_incoming(payload)
+    except ValueError as e:
+        return jsonify({"status": "ignored", "reason": str(e)}), 200
+
+    computed_text = normalized.text
+    if (not computed_text) and normalized.media_type in ("audio", "image") and normalized.media_url:
+        try:
+            computed_text = media_processor.process_media_to_text(
+                media_url=normalized.media_url,
+                media_type=normalized.media_type,
+                media_mime=normalized.media_mime,
+                caption=normalized.media_caption,
+            )
+            logger.info(
+                "Texto derivado de %s obtido com sucesso (%d chars).",
+                normalized.media_type,
+                len(computed_text or ""),
+            )
+        except Exception as e:
+            logger.exception("Falha ao processar mídia: %s", e)
+            return jsonify(
+                {
+                    "status": "unsupported_media",
+                    "reason": "Falha ao converter mídia em texto.",
+                }
+            ), 200
+
+    if not computed_text:
+        return jsonify({"status": "ignored", "reason": "Sem texto processável."}), 200
+
+    logger.info(
+        "Msg | client_id=%s | msg_id=%s | tipo=%s | texto=%r",
+        normalized.client_id,
+        normalized.msg_id,
+        normalized.media_type or "text",
+        computed_text[:120],
+    )
+
+    return jsonify(
+        {
+            "status": "ok",
+            "client_id": normalized.client_id,
+            "msg_id": normalized.msg_id,
+            "media_type": normalized.media_type,
+            "has_text": bool(computed_text),
+        }
+    )
 
 def normalize_zapi_incoming(payload: dict) -> dict | None:
     if not isinstance(payload, dict):
@@ -485,6 +561,7 @@ def zapi_webhook_delivery():
 
 # ===== main =====
 if __name__ == "__main__":
+    init_db()
     port = int(os.getenv("PORT", "5000"))
 
     if os.getenv("NGROK_AUTHTOKEN") or os.getenv("NGROK_DOMAIN"):
