@@ -59,13 +59,20 @@ class GroundedContext:
 class GroundingGuard:
     """Combina trechos recuperados e monta prompts seguros."""
 
-    def coverage_score(self, chunks: List[Any], query: str) -> float:
-        """Score simplificado de cobertura para o RAG."""
+    def coverage_score(self, pdf_chunks: List[Any], user_text: str) -> float:
+        """
+        Cobertura = média dos scores com bônus de diversidade por documento.
+        - Se não houver chunks, 0.0
+        - Score clamped 0..1
+        - Diversidade: +0.05 por doc distinto (até +0.15)
+        """
 
-        if not chunks:
+        if not pdf_chunks:
             return 0.0
-        # Heurística simples: quanto mais chunks, maior a cobertura (até 1.0)
-        return min(1.0, len(chunks) / 6)
+        base = sum(max(0.0, min(1.0, getattr(c, "score", 0.0))) for c in pdf_chunks) / len(pdf_chunks)
+        docs = {getattr(c, "doc_id", None) for c in pdf_chunks if getattr(c, "doc_id", None)}
+        bonus = min(0.15, 0.05 * max(0, len(docs) - 1))
+        return float(max(0.0, min(1.0, base + bonus)))
 
     def build_context(self, pdf_chunks: List[Any], web_evidence: List[Any]) -> GroundedContext:
         """Agrupa as evidências em um contexto único."""

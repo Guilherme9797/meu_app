@@ -50,3 +50,6 @@ pip install -r requirements.txt
 
 ### Variáveis adicionais
 - `INDEX_DIR`: caminho para o índice FAISS (padrão `index/faiss_index`)
+- `RAG_MIN_CHUNK_SCORE`: descarta trechos abaixo desse score (padrão `0.3`)
+- `RAG_PER_DOC_CAP`: limite de trechos por documento (padrão `3`)
+- `RAG_MMR_LAMBDA`: pondera relevância/diversidade na seleção (padrão `0.6`)

@@ -148,17 +148,61 @@ class Retriever:
         ids, scores = zip(*ids_scores)
         return list(ids), list(scores)
 
-    def _build_chunks(self, ids: List[int], scores: List[float], qvec: np.ndarray, top_k: int) -> List[RetrievedChunk]:
-        items: List[Tuple[int, float, Dict[str, Any]]] = []
+    def _build_chunks(
+        self,
+        ids: List[int],
+        scores: List[float],
+        qvec: np.ndarray,
+        top_k: int,
+    ) -> List[RetrievedChunk]:
+        """
+        Monta objetos; filtra por score; aplica per-doc cap; reequilibra diversidade (MMR simples).
+        """
         for idx, raw_score in zip(ids, scores):
             meta = self._safe_manifest(idx)
             if not meta:
                 continue
-            items.append((idx, float(raw_score), meta))
-        items.sort(key=lambda t: t[1], reverse=True)
-        items = items[:top_k]
+            pool.append((idx, float(raw_score), meta))
+
+        pool.sort(key=lambda t: t[1], reverse=True)
+
+        MIN_SCORE = float(os.getenv("RAG_MIN_CHUNK_SCORE", "0"))
+        per_doc_cap = int(os.getenv("RAG_PER_DOC_CAP", "9999"))
+        doc_counts: Dict[str, int] = {}
+        filtered: List[Tuple[int, float, Dict[str, Any]]] = []
+        for idx, sc, meta in pool:
+            if sc < MIN_SCORE:
+                continue
+            did = str(meta.get("doc_id") or "")
+            c = doc_counts.get(did, 0)
+            if c >= per_doc_cap:
+                continue
+            doc_counts[did] = c + 1
+            filtered.append((idx, sc, meta))
+
+        if not filtered:
+            filtered = pool[:top_k]
+
+        try:
+            lambda_mmr = float(os.getenv("RAG_MMR_LAMBDA", "0.6"))
+        except Exception:
+            lambda_mmr = 0.6
+
+        selected: List[Tuple[int, float, Dict[str, Any]]] = []
+        for idx, sc, meta in filtered:
+            if len(selected) >= top_k:
+                break
+            if not selected:
+                selected.append((idx, sc, meta))
+                continue
+            doc_id = str(meta.get("doc_id") or "")
+            doc_penalty = any(doc_id == str(m[2].get("doc_id") or "") for m in selected)
+            composite = lambda_mmr * sc - (1 - lambda_mmr) * (0.25 if doc_penalty else 0.0)
+            selected.append((idx, composite, meta))
+            selected.sort(key=lambda t: t[1], reverse=True)
+            selected = selected[:top_k]
         out: List[RetrievedChunk] = []
-        for _, sc, meta in items:
+        for idx, sc, meta in selected[:top_k]:
             out.append(
                 RetrievedChunk(
                     text=meta.get("text") or meta.get("fulltext") or "",

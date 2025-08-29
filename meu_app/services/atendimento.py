@@ -1,6 +1,6 @@
 from __future__ import annotations
-
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
@@ -22,12 +22,15 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AtendimentoConfig:
     """Parâmetros de orquestração ajustáveis sem mexer no código."""
-    coverage_threshold: float = 0.55
+    coverage_threshold: float = 0.55   # suficiência mínima (0..1)
     max_pdf_chunks: int = 6
     max_web_results: int = 4
     use_web_fallback: bool = True
     temperature: float = 0.2
     append_low_coverage_note: bool = True
+    min_chunk_score: float = 0.25      # descarta chunks muito fracos
+    mmr_lambda: float = 0.6            # 0..1 (1 = só relevância; 0 = só diversidade)
+    per_doc_cap: int = 3               # limite de chunks por documento
 
 
 class AtendimentoService:
@@ -64,6 +67,11 @@ class AtendimentoService:
         self.extractor = extractor or Extractor()
         self.conf = conf or AtendimentoConfig()
 
+    # Propaga knobs do RAG via ENV (usados pelo Retriever)
+        os.environ.setdefault("RAG_MIN_CHUNK_SCORE", str(self.conf.min_chunk_score))
+        os.environ.setdefault("RAG_PER_DOC_CAP", str(self.conf.per_doc_cap))
+        os.environ.setdefault("RAG_MMR_LAMBDA", str(self.conf.mmr_lambda))
+    
     # ------------------ API pública ------------------
 
     def handle_incoming(
@@ -89,6 +97,19 @@ class AtendimentoService:
         ents = self.extractor.extract(user_text)
 
         pdf_chunks = self._retrieve_pdfs(user_text, tema, ents, k=self.conf.max_pdf_chunks)
+
+        if self.conf.min_chunk_score > 0:
+            pdf_chunks = [c for c in pdf_chunks if c.score >= self.conf.min_chunk_score]
+
+        if self.conf.per_doc_cap > 0:
+            doc_counts: Dict[str, int] = {}
+            filtered: List[RetrievedChunk] = []
+            for c in pdf_chunks:
+                doc_counts[c.doc_id] = doc_counts.get(c.doc_id, 0) + 1
+                if doc_counts[c.doc_id] <= self.conf.per_doc_cap:
+                    filtered.append(c)
+            pdf_chunks = filtered
+
         coverage = self.guard.coverage_score(pdf_chunks, user_text)
 
         web_evidence: List[WebEvidence] = []
