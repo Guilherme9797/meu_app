@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import os
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional, Literal
@@ -308,3 +309,31 @@ class ZapiClient:
             media_mime=media_mime,
             media_caption=media_caption,
         )
+
+    # -------- envio simplificado (API /messages) --------
+    def _base(self) -> tuple[str, str]:
+        base = os.getenv("ZAPI_BASE_URL", "").rstrip("/")
+        token = os.getenv("ZAPI_TOKEN", "")
+        if not base or not token:
+            raise RuntimeError("ZAPI_BASE_URL/ZAPI_TOKEN não configurados.")
+        return base, token
+
+    def send_message(self, phone: str, text: str) -> dict:
+        """Envia mensagem de texto ao cliente via Z-API."""
+        base, token = self._base()
+        url = f"{base}/messages"
+        payload = {"to": phone, "type": "text", "text": {"body": text}}
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        last_err = None
+        for attempt in range(3):
+            try:
+                r = requests.post(url, json=payload, headers=headers, timeout=15)
+                if 200 <= r.status_code < 300:
+                    if r.headers.get("content-type", "").startswith("application/json"):
+                        return r.json()
+                    return {"status": "ok"}
+                last_err = f"HTTP {r.status_code}: {r.text[:300]}"
+            except Exception as e:  # pragma: no cover - network failures
+                last_err = str(e)
+            time.sleep(1.2 * (attempt + 1))
+        raise RuntimeError(f"Falha ao enviar mensagem via Z-API: {last_err}")

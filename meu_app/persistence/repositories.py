@@ -498,6 +498,8 @@ class MessageRepository:
         intent: Optional[str],
         entities: Dict[str, Any],
         sources: Optional[List[Dict[str, Any]]] = None,
+        coverage: Optional[float] = None,
+        retrieval_scores: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
         with _session_scope() as db:
             user_entry = MessageModel(
@@ -516,6 +518,8 @@ class MessageRepository:
                 topic=topic,
                 intent=intent,
                 sources_json=sources or None,
+                coverage=coverage,
+                retrieval_scores_json=retrieval_scores or None,
             )
             db.add_all([user_entry, assist_entry])
 

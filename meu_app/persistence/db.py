@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
-    create_engine, Column, Integer, String, DateTime, ForeignKey, Text, JSON, Index
+    create_engine, Column, Integer, String, DateTime, ForeignKey, Text, JSON, Index, Float
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 
@@ -66,6 +66,8 @@ class Message(Base):
     intent = Column(String(64), nullable=True)
     entities_json = Column(JSON, nullable=True)
     sources_json = Column(JSON, nullable=True)
+    coverage = Column(Float, nullable=True)
+    retrieval_scores_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     session = relationship("Session", back_populates="messages")

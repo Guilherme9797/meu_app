@@ -132,6 +132,15 @@ class AtendimentoService:
                 "esta orientação é preliminar. Para maior precisão, envie o documento/decisão/contrato relacionado "
                 "ou detalhe datas, valores e comarca."
             )
+        retrieval_scores = [
+            {
+                "doc_id": c.doc_id,
+                "title": c.doc_title,
+                "span": c.span,
+                "score": float(c.score),
+            }
+            for c in pdf_chunks
+        ]
 
         try:
             self.msg_repo.save_in_out(
@@ -143,6 +152,8 @@ class AtendimentoService:
                 intent=intent,
                 entities=ents,
                 sources=grounded_ctx.sources_for_audit(),
+                coverage=coverage,
+                retrieval_scores=retrieval_scores,
             )
         except Exception as e:  # pragma: no cover - persistence best effort
             logger.exception("Falha ao persistir troca de mensagens: %s", e)
@@ -156,7 +167,24 @@ class AtendimentoService:
         
         # ------------------ Helpers internos ------------------
 
-        def _retrieve_pdfs(
+    def is_issue_resolved(self, user_text: str, reply_text: str) -> bool:
+        """Heurística simples para detectar confirmação de resolução."""
+        t = (user_text or "").lower()
+        r = (reply_text or "").lower()
+        triggers = [
+            "ok, entendi",
+            "entendi, obrigado",
+            "perfeito, obrigado",
+            "como contrato",
+            "como faço para contratar",
+            "pode fazer a proposta",
+            "quero avançar",
+            "vamos prosseguir",
+            "pode seguir com a proposta",
+        ]
+        return any(x in t for x in triggers) or any(x in r for x in triggers)
+    
+    def _retrieve_pdfs(
             self, query: str, tema: Optional[str], ents: Dict[str, Any], k: int
         ) -> List[RetrievedChunk]:
             try:

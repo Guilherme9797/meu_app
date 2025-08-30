@@ -139,11 +139,13 @@ def zapi_webhook_received():
         resposta = "Desculpe, ocorreu um erro ao processar sua mensagem."
 
     try:
-        zapi_client.send_text(phone, resposta)
+        zapi_client.send_message(phone, resposta)
+        sent = True
     except Exception as e:
+        sent = False
         app.logger.exception("Falha ao responder via Z-API: %s", e)
 
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "client_id": phone, "msg_id": info.get("msg_id"), "sent": sent})
 
 log = app.logger
 log.setLevel(logging.INFO)
