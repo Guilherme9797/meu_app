@@ -103,48 +103,42 @@ def _make_oai() -> OpenAIClient:
     return OpenAIClient(api_key=key, chat_model=model, temperature=temp)
 
 
-def _build_buscador() -> BuscadorPDF:
-    return BuscadorPDF(
-        openai_key=os.getenv("OPENAI_API_KEY"),
-        tavily_key=os.getenv("TAVILY_API_KEY"),
-        pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
-         index_dir=get_index_dir(),
-    )
+def _build_buscador() -> Retriever:
+    """Retorna um retriever simples; mantém compatibilidade básica."""
+    embedder = Embeddings()
+    retr = Retriever(index_path=get_index_dir(), embed_fn=embedder.embed)
 
-
-def _build_atendimento_for(phone: Optional[str], nome: str) -> Atendimento:
-    """
-    Reutiliza cliente existente pelo phone (se informado); senão cria novo cliente.
-    """
+    class _Compat:
+        def __init__(self, r: Retriever):
+            self.r = r
+        def buscar_contexto(self, texto: str) -> str:
+            chunks = self.r.retrieve(query=texto, tema=None, ents={}, k=3)
+            return "\n\n".join(c.text for c in chunks)
+    return _Compat(retr)
+def _build_atendimento_service() -> AtendimentoService:
+    """Instancia o pipeline completo de atendimento."""
     init_db()
-    cliente_repo = ClienteRepository()
-    contato_repo = ContatoRepository()
-
-    if phone:
-        ctt = contato_repo.get_by_phone(phone)
-        if ctt:
-            cliente_data = cliente_repo.obter(ctt["cliente_id"])
-            nome_final = (cliente_data["nome"] if cliente_data else nome) or f"Contato {phone}"
-            cliente = Cliente(nome_final)
-            cliente.id = ctt["cliente_id"]  # preserva ID persistido
-        else:
-            # novo cliente associado a este phone
-            cliente = Cliente(nome or f"Contato {phone}")
-            cliente_repo.criar(cliente.id, cliente.nome, _now_iso())
-            contato_repo.upsert(phone, cliente.id, nome=cliente.nome)
-    else:
-        # sem phone: cria um cliente novo (sessão efêmera)
-        cliente = Cliente(nome or "Cliente CLI")
-        cliente_repo.criar(cliente.id, cliente.nome, _now_iso())
-
-    oai = _make_oai()
-    analisador = AnalisadorDeProblemas(oai)
-    buscador = _build_buscador()
-    refinador = RefinadorResposta(oai)
-    historico = HistoricoConversaPersistente(cliente.id)
-    return Atendimento(cliente, analisador, buscador, refinador, historico=historico)
-
-
+    embedder = Embeddings()
+    retriever = Retriever(index_path=get_index_dir(), embed_fn=embedder.embed)
+    tavily = TavilyClient()
+    llm = LLM()
+    guard = GroundingGuard()
+    classifier = Classifier()
+    extractor = Extractor()
+    sess_repo = SessionRepository()
+    msg_repo = MessageRepository()
+    conf = AtendimentoConfig()
+    return AtendimentoService(
+        sess_repo=sess_repo,
+        msg_repo=msg_repo,
+        retriever=retriever,
+        tavily=tavily,
+        llm=llm,
+        guard=guard,
+        classifier=classifier,
+        extractor=extractor,
+        conf=conf,
+    )
 def _resolve_cliente_by_phone(phone: str) -> Optional[Dict[str, Any]]:
     """Retorna dict com cliente_id/nome a partir do telefone (ou None)."""
     cr = ClienteRepository()
@@ -207,23 +201,23 @@ def cmd_index_info(args):
 # -----------------------------------------------------------------------------
 def cmd_ask(args):
     _ensure_openai_key()
-    atendimento = _build_atendimento_for(args.phone, args.nome)
+    atendimento = _build_atendimento_service()
     pergunta = (args.pergunta or "").strip()
     if not pergunta:
         print("❌ Informe a pergunta (flag --pergunta).", file=sys.stderr)
         sys.exit(2)
-    print(f"👤 {atendimento.cliente.nome}: {pergunta}")
+    print(f"👤 {args.nome}: {pergunta}")
     t0 = time.perf_counter()
-    resposta = atendimento.receber_mensagem(pergunta)
+    resposta = atendimento.handle_incoming(args.phone or "anon", pergunta)
     dt_s = round(time.perf_counter() - t0, 2)
     print(f"\n🤖 Assistente ({dt_s}s):\n{resposta}\n")
 
 
 def cmd_chat(args):
     _ensure_openai_key()
-    atendimento = _build_atendimento_for(args.phone, args.nome)
+    atendimento = _build_atendimento_service()
     print("💬 Chat interativo — digite sua mensagem. Comandos: /sair, /fim")
-    print(f"Cliente: {atendimento.cliente.nome} | ID: {atendimento.cliente.id}")
+    print(f"Cliente: {args.nome} | Phone: {args.phone or 'anon'}")
     try:
         while True:
             msg = input("\n👤 Você: ").strip()
@@ -233,7 +227,7 @@ def cmd_chat(args):
                 print("👋 Encerrando chat.")
                 break
             t0 = time.perf_counter()
-            resposta = atendimento.receber_mensagem(msg)
+            resposta = atendimento.handle_incoming(args.phone or "anon", msg)
             dt_s = round(time.perf_counter() - t0, 2)
             print(f"\n🤖 Assistente ({dt_s}s):\n{resposta}")
     except (KeyboardInterrupt, EOFError):
