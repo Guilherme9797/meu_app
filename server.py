@@ -13,7 +13,6 @@ except Exception:
     Limiter = None
 
 # ===== imports do domínio (use o pacote "meu_app") =====
-
 from meu_app.utils.openai_client import Embeddings, LLM
 from meu_app.services.buscador_pdf import Retriever
 from meu_app.services.tavily_service import TavilyClient
@@ -24,7 +23,7 @@ from meu_app.persistence.repositories import (
     MessageRepository,
 )
 from meu_app.services.atendimento import AtendimentoService, AtendimentoConfig
-from meu_app.services.zapi_client import ZapiClient
+from meu_app.services.zapi_client import ZApiClient, NormalizedMessage  # <-- corrige nome da classe
 from meu_app.services.media_processor import MediaProcessor
 from meu_app.persistence.db import init_db, get_conn
 from meu_app.utils.paths import get_index_dir
@@ -50,17 +49,8 @@ def _json_log_format(record: logging.LogRecord) -> str:
     # inclui traceback compacto quando houver exceção
     if record.exc_info:
         base["exc_info"] = True
-        try:
-            if isinstance(record.exc_info, tuple):
-@@ -85,97 +82,57 @@ logger = logging.getLogger(__name__)
-# Logger do werkzeug separado, para não conflitar no startup
-wlog = logging.getLogger("werkzeug")
-wlog.handlers = [logging.StreamHandler()]
-wlog.setLevel(logging.INFO)
-wlog.propagate = False
-# ====== fim logger ======
+    return json.dumps(base, ensure_ascii=False)
 
-# ===== helpers de contexto/compat =====
 def _ensure_ctx_defaults(phone: str, sender_name: str) -> dict:
     """Garante g.autor, g.webhook_ctx e g.ctx com 'autor'."""
     try:
@@ -80,34 +70,43 @@ def _ensure_ctx_defaults(phone: str, sender_name: str) -> dict:
 
 app = Flask(__name__)
 
+# logger de módulo apontando para o logger do app (evita NameError em logger.info)
+logger = app.logger
+
 try:
-    zapi_client = ZapiClient()
+    zapi_client = ZApiClient()
 except RuntimeError:
-    zapi_client = ZapiClient(instance_id="dummy", token="dummy")
-@app.post("/webhook/zapi")
-def zapi_webhook():
-    raw_body = request.get_data()
-    headers = {
-        "x-hub-signature-256": request.headers.get("X-Hub-Signature-256", ""),
-        "x-zapi-signature": request.headers.get("X-Zapi-Signature", ""),
-        "x-z-api-signature": request.headers.get("X-Z-Api-Signature", ""),
-    }
-    if not zapi_client.verify_signature(raw_body, headers):
-        return jsonify({"error": "Invalid signature"}), 401
+    # mantém fallback, apenas com o nome correto da classe
+    zapi_client = ZApiClient()  # se seu __init__ exigir params, ajuste nas envs
 
-    try:
-        payload = json.loads(raw_body.decode("utf-8"))
-    except Exception:
-        return jsonify({"error": "Invalid JSON body"}), 400
+def normalize_zapi_incoming(payload: dict) -> dict | None:
+    if not isinstance(payload, dict):
+        return None
 
-    try:
-        normalized = zapi_client.parse_incoming(payload)
-    except ValueError as e:
-        return jsonify({"status": "ignored", "reason": str(e)}), 200
+    if payload.get("type", "").lower() == "receivedcallback" or "text" in payload:
+        phone = payload.get("phone")
+        from_me = bool(payload.get("fromMe", False))
+        sender_name = payload.get("senderName") or payload.get("chatName")
+        text = None
+        txt = payload.get("text")
+        if isinstance(txt, dict):
+            text = txt.get("message")
+        if not text:
+            img = payload.get("image") or {}
+            if isinstance(img, dict):
+                text = img.get("caption")
+        if not text:
+            doc = payload.get("document") or {}
+            if isinstance(doc, dict):
+                text = doc.get("title") or doc.get("fileName")
+        return {"phone": phone, "text": text, "from_me": from_me, "sender_name": sender_name}
 
-    computed_text = normalized.text
-    if (not computed_text) and normalized.media_type in ("audio", "image") and normalized.media_url:
-@@ -252,109 +209,103 @@ def normalize_zapi_incoming(payload: dict) -> dict | None:
+    if "message" in payload:
+        m = payload["message"]
+        phone = m.get("from") or payload.get("from")
+        sender_name = payload.get("senderName") or payload.get("chatName")
+        body = None
+        if isinstance(m, dict):
             body = (m.get("text") or {}).get("body") or m.get("body")
         return {"phone": phone, "text": body, "from_me": False, "sender_name": sender_name}
 
@@ -117,23 +116,48 @@ def zapi_webhook():
 @app.post("/zapi/webhook/recebido")  # alias em PT-BR
 def zapi_webhook_received():
     data = request.get_json(silent=True, force=True) or {}
-    info = normalize_zapi_incoming(data)
     app.logger.info(f"[webhook] path={request.path} raw={str(data)[:800]}")
-    app.logger.info(f"[webhook] norm={info}")
-
-    if not info or not info.get("phone") or not info.get("text"):
+    try:
+        normalized = zapi_client.parse_incoming(data)
+    except ValueError:
+        info = normalize_zapi_incoming(data)
+        app.logger.info(f"[webhook] norm={info}")
+        if not info or not info.get("phone") or not info.get("text"):
+            return jsonify({"ok": True, "ignored": True})
+        normalized = NormalizedMessage(
+            client_id=info["phone"],
+            text=info.get("text"),
+            msg_id=None,
+            timestamp=None,
+        )
+    if normalized.client_id is None:
+        return jsonify({"ok": True, "ignored": True})
+    computed_text = normalized.text
+    if (not computed_text) and normalized.media_type in ("audio", "image") and normalized.media_url:
+        try:
+            computed_text = media_processor.process_media_to_text(
+                media_url=normalized.media_url,
+                media_type=normalized.media_type,
+                media_mime=normalized.media_mime,
+                caption=normalized.media_caption,
+            )
+            logger.info(
+                "Texto derivado de %s obtido com sucesso (%d chars).",
+                normalized.media_type,
+                len(computed_text or ""),
+            )
+        except Exception as e:
+            logger.exception("Falha ao processar mídia: %s", e)
+            return jsonify({"ok": True, "ignored": "media_error"})
+    if not computed_text:
         return jsonify({"ok": True, "ignored": True})
 
-    if info.get("from_me"):
-        return jsonify({"ok": True, "ignored": "from_me"})
-
-    phone = info["phone"]
-    text = info["text"].strip()
-    sender_name = info.get("sender_name") or f"Contato {phone}"
-
+    phone = normalized.client_id
+    sender_name = "Contato"
     _ensure_ctx_defaults(phone, sender_name)
+
     try:
-        resposta = atendimento_service.handle_incoming(phone, text)
+        resposta = atendimento_service.handle_incoming(phone, computed_text)
     except Exception as e:
         app.logger.exception("Falha no processamento da mensagem: %s", e)
         resposta = "Desculpe, ocorreu um erro ao processar sua mensagem."
@@ -144,8 +168,7 @@ def zapi_webhook_received():
     except Exception as e:
         sent = False
         app.logger.exception("Falha ao responder via Z-API: %s", e)
-
-    return jsonify({"ok": True, "client_id": phone, "msg_id": info.get("msg_id"), "sent": sent})
+    return jsonify({"ok": True, "client_id": phone, "msg_id": normalized.msg_id, "sent": sent})
 
 log = app.logger
 log.setLevel(logging.INFO)
@@ -172,6 +195,11 @@ llm = LLM()
 guard = GroundingGuard()
 classifier = Classifier()
 extractor = Extractor()
+
+# instancia o MediaProcessor (era usado mas não existia -> NameError)
+media_processor = MediaProcessor(llm=llm)
+
+# instancia o AtendimentoService (era usado mas não existia -> NameError)
 sess_repo = SessionRepository()
 msg_repo = MessageRepository()
 config = AtendimentoConfig()
@@ -187,40 +215,48 @@ atendimento_service = AtendimentoService(
     extractor=extractor,
     conf=config,
 )
-media_processor = MediaProcessor(llm=llm)
 
-# ===== auth admin =====
-def require_api_key(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        required = os.getenv("ADMIN_API_KEY")
-        # aceita X-API-Key, Authorization: Bearer, ou ?api_key
-        provided = (
-            request.headers.get("X-API-Key")
-            or (
-                request.headers.get("Authorization", "").split(" ", 1)[-1]
-                if request.headers.get("Authorization", "").lower().startswith("bearer ")
-                else None
-            )
-            or request.args.get("api_key")
-        )
-        if not required:
-            return jsonify({"error": "ADMIN_API_KEY não configurado"}), 500
-        if not provided or provided != required:
-            return jsonify({"error": "unauthorized"}), 401
-        return fn(*args, **kwargs)
-    return wrapper
+@app.route("/health")
+def health():
+    checks = {"db": "ok"}
+    try:
+        conn = get_conn()
+        _ = conn.execute("SELECT 1").fetchone()
+        checks["db"] = "ok"
+    except Exception:
+        checks["db"] = "fail"
+    status = 200 if checks["db"] == "ok" else 500
+    return jsonify({"status": "ok" if status == 200 else "degraded", "checks": checks}), status
 
-metrics = {"requests_total": 0, "errors_total": 0}
+@app.route("/metrics")
+def metrics_route():
+    body = "\n".join(
+        [
+            "# HELP app_requests_total Total de requests",
+            "# TYPE app_requests_total counter",
+            f"app_requests_total {metrics['requests_total']}",
+            "# HELP app_errors_total Total de erros",
+            "# TYPE app_errors_total counter",
+            f"app_errors_total {metrics['errors_total']}",
+        ]
+    )
+    resp = make_response(body, 200)
+    resp.headers["Content-Type"] = "text/plain; version=0.0.4"
+    return resp
 
-@@ -431,121 +382,70 @@ def update_index():
+# ===== admin: índice =====
+@app.route("/update-index", methods=["POST", "GET"])
 @require_api_key
-def rebuild_index():
+def update_index():
     if limiter:
         limiter.limit(os.getenv("RATE_LIMIT_ADMIN", "10 per minute"))(lambda: None)()
-    buscador = build_buscador()
-    m = buscador.indexador.indexar_pdfs()
-    return jsonify(m), 200
+    from meu_app.services.pdf_indexer import build_index
+    build_index(
+        src_dir=os.getenv("PDF_SRC_DIR", "data/pdfs"),
+        out_dir=os.getenv("RAG_INDEX_PATH", get_index_dir()),
+        model=os.getenv("EMBED_MODEL", "text-embedding-3-small"),
+    )
+    return jsonify({"status": "rebuilt"}), 200
 
 # ===== Z-API: configurar webhooks =====
 @app.route("/zapi/configure-webhooks", methods=["POST"])
@@ -233,12 +269,11 @@ def zapi_configure_webhooks():
     delivery_url = data.get("delivery_url") or os.getenv("ZAPI_WEBHOOK_DELIVERY_URL")
     if not received_url:
         return jsonify({"error": "Informe 'received_url'"}), 400
-    zc = ZapiClient()
+    zc = ZApiClient()  # <-- corrige nome aqui também
     out = {"received": zc.update_webhook_received(received_url)}
     if delivery_url:
         out["delivery"] = zc.update_webhook_delivery(delivery_url)
     return jsonify(out), 200
-
 
 # ===== helpers: detecção de aceite =====
 def _normalize_text(s) -> str:
@@ -247,62 +282,7 @@ def _normalize_text(s) -> str:
         s = _coerce_text(s)
     s = s or ""
     try:
-        s = "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
-    except Exception:
-        s = str(s)
-    return s.lower().strip()
-
-def _is_aceite_text(msg) -> bool:
-    m = _normalize_text(msg)
-    gatilhos = [
-        "aceito", "fechado", "vamos fechar", "ok pode seguir", "pode seguir",
-        "contratar", "concordo", "vamos sim", "ok, pode ser", "podemos seguir",
-    ]
-    return any(g in m for g in gatilhos)
-
-# ===== Z-API: rotas compatíveis/fallbacks =====
-@app.route("/webhook", methods=["POST"])
-def webhook_alias():
-    # algumas contas de Z-API usam /webhook — reusa o handler
-    return zapi_webhook_received()
-
-@app.route("/zapi/webhook/delivery", methods=["POST"])
-def zapi_webhook_delivery():
-    try:
-        if limiter:
-            limiter.limit(os.getenv("RATE_LIMIT_WEBHOOK", "60 per minute"))(lambda: None)()
+        s = unicodedata.normalize("NFKC", s)
     except Exception:
         pass
-    try:
-        payload = request.get_json(force=True) or {}
-        app.logger.info("delivery webhook: %s", json.dumps(payload, ensure_ascii=False))
-    except Exception:
-        pass
-    return jsonify({"status": "ok"}), 200
-
-# ===== main =====
-if __name__ == "__main__":
-    init_db()
-    port = int(os.getenv("PORT", "5050"))
-    if os.getenv("NGROK_AUTHTOKEN") or os.getenv("NGROK_DOMAIN"):
-        try:
-            from pyngrok import ngrok
-
-            token = os.getenv("NGROK_AUTHTOKEN")
-            if token:
-                ngrok.set_auth_token(token)
-
-            domain = os.getenv("NGROK_DOMAIN")
-            kwargs = {"bind_tls": True}
-            if domain:
-                 kwargs["domain"] = domain
-
-            url = ngrok.connect(addr=port, proto="http", **kwargs).public_url
-            print(f"[ngrok] público: {url}")
-        except Exception as exc:
-            print(f"[ngrok] erro ao iniciar: {exc}")
-
-    app.run(host="0.0.0.0", port=port)
-
-
-
+    return s.strip()

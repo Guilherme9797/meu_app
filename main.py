@@ -11,6 +11,17 @@ import datetime as dt
 from typing import Optional, Dict, Any, List
 
 from meu_app.utils.paths import get_index_dir
+from meu_app.utils.openai_client import Embeddings, LLM
+from meu_app.services import (
+    Classifier,
+    Extractor,
+    Retriever,
+    GroundingGuard,
+    TavilyClient,
+    AtendimentoService,
+)
+from meu_app.services.atendimento import AtendimentoConfig
+from meu_app.persistence.repositories import SessionRepository, MessageRepository
 
 # -------------------------------------------------------------------------
 # Suporte para execução direta OU como módulo (-m meu_app.main)
@@ -31,10 +42,6 @@ if __package__ is None or __package__ == "":
     from meu_app.models import Cliente, HistoricoConversaPersistente
     from meu_app.utils import OpenAIClient
     from meu_app.services import (
-        AnalisadorDeProblemas,
-        BuscadorPDF,
-        RefinadorResposta,
-        Atendimento,
         ConversorPropostas,
     )
     try:
@@ -53,10 +60,6 @@ else:
     from .models import Cliente, HistoricoConversaPersistente
     from .utils import OpenAIClient
     from .services import (
-        AnalisadorDeProblemas,
-        BuscadorPDF,
-        RefinadorResposta,
-        Atendimento,
         ConversorPropostas,
     )
     try:
