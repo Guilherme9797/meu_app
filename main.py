@@ -186,8 +186,13 @@ def cmd_index_info(args):
         if os.path.exists(manifest_path):
             with open(manifest_path, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
-            info["manifest_count"] = len(manifest)
-            info["manifest_preview"] = dict(list(manifest.items())[:3])
+            if isinstance(manifest, dict):
+                info["manifest_count"] = manifest.get("count", len(manifest.get("files", [])))
+                info["manifest_preview"] = manifest.get("files", [])[:3]
+            else:
+                info["manifest_count"] = len(manifest)
+                info["manifest_preview"] = []
+
         else:
             info["manifest_count"] = 0
             info["manifest_preview"] = {}
