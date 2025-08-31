@@ -1,5 +1,5 @@
 from __future__ import annotations
-from __future__ import annotations
+import argparse
 import os, json, time, datetime as dt
 from typing import List, Dict, Any, Optional
 from pathlib import Path
@@ -56,8 +56,11 @@ class PDFIndexer:
                     if part and len(part) >= 40:
                         docs.append(Document(page_content=part, metadata=metas))
             except Exception:
+                 # Se houver falha ao processar uma página, seguimos com as demais
+                continue
+        doc.close()
+        return docs
 
-import argparse
 import json
 import os
 import re
