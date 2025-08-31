@@ -42,6 +42,11 @@ if __package__ is None or __package__ == "":
     from meu_app.models import Cliente, HistoricoConversaPersistente
     from meu_app.utils import OpenAIClient
     from meu_app.services import (
+        AnalisadorDeProblemas,
+        BuscadorPDF,
+        PDFIndexer,
+        RefinadorResposta,
+        Atendimento,
         ConversorPropostas,
     )
     try:
@@ -60,6 +65,11 @@ else:
     from .models import Cliente, HistoricoConversaPersistente
     from .utils import OpenAIClient
     from .services import (
+        AnalisadorDeProblemas,
+        BuscadorPDF,
+        PDFIndexer,
+        RefinadorResposta,
+        Atendimento,
         ConversorPropostas,
     )
     try:
@@ -115,6 +125,14 @@ def _build_buscador() -> Retriever:
             chunks = self.r.retrieve(query=texto, tema=None, ents={}, k=3)
             return "\n\n".join(c.text for c in chunks)
     return _Compat(retr)
+
+def _build_indexador() -> PDFIndexer:
+    return PDFIndexer(
+        pasta_pdfs=os.getenv("PDFS_DIR", "data/pdfs"),
+        pasta_index=os.getenv("INDEX_DIR", "index/faiss_index"),
+        openai_key=_ensure_openai_key(),
+    )
+
 def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
     init_db()
