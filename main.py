@@ -167,7 +167,7 @@ def cmd_index_update(args):
 
 def cmd_index_rebuild(args):
     buscador = _build_buscador()
-    metrics = buscador.indexador.indexar_pdfs()
+    metrics = buscador.atualizar_indice_verbose()
     _print_json(metrics)
 
 
