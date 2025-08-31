@@ -334,8 +334,7 @@ def health():
 
 @app.route("/metrics")
 def metrics_route():
-    body = (
-         body = "\n".join(
+    body = "\n".join(
         [
             "# HELP app_requests_total Total de requests",
             "# TYPE app_requests_total counter",

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import argparse
 import os, json, time, datetime as dt
 from typing import List, Dict, Any, Optional
 from pathlib import Path
@@ -153,3 +154,15 @@ class PDFIndexer:
 
     def buscar_resposta(self, pergunta: str, *, k: int = 6, max_distance: float = 0.4) -> str:
         return self.buscar_contexto(pergunta, k=k)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Indexador de PDFs")
+    parser.add_argument("--pasta-pdfs", default="data/pdfs")
+    parser.add_argument("--pasta-index", default="index/faiss_index")
+    parser.add_argument("--openai-key", dest="openai_key", default=None)
+    args = parser.parse_args()
+    indexer = PDFIndexer(
+        pasta_pdfs=args.pasta_pdfs, pasta_index=args.pasta_index, openai_key=args.openai_key
+    )
+    print(json.dumps(indexer.indexar_pdfs(), ensure_ascii=False, indent=2))
