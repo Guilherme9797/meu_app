@@ -178,15 +178,16 @@ def _round_up(x: float, step: int) -> float:
 # Comandos: Índice
 # -----------------------------------------------------------------------------
 def cmd_index_update(args):
-    buscador = _build_buscador()
-    metrics = buscador.atualizar_indice_verbose()
+    indexador = _build_indexador()
+    metrics = indexador.atualizar_indice_verbose()
     _print_json(metrics)
 
 
 def cmd_index_rebuild(args):
-    buscador = _build_buscador()
-    metrics = buscador.atualizar_indice_verbose()
+    indexador = _build_indexador()
+    metrics = indexador.indexar_pdfs()
     _print_json(metrics)
+
 
 
 def cmd_index_info(args):
@@ -209,11 +210,12 @@ def cmd_index_info(args):
                 info["manifest_preview"] = manifest.get("files", [])[:3]
             else:
                 info["manifest_count"] = len(manifest)
-                info["manifest_preview"] = []
+                info["manifest_preview"] = manifest[:3]
 
         else:
             info["manifest_count"] = 0
-            info["manifest_preview"] = {}
+            info["manifest_preview"] = []
+
     except Exception as e:
         info["manifest_error"] = str(e)
     _print_json(info)

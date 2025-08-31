@@ -273,7 +273,11 @@ def _status(out_dir: str) -> None:
         try:
             with open(man_path, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
-            print(f"Chunks: {manifest.get('count', 0)}")
+            if isinstance(manifest, dict):
+                count = manifest.get("count", len(manifest.get("files", [])))
+            else:
+                count = len(manifest)
+            print(f"Chunks: {count}")
         except Exception:
             pass
 
