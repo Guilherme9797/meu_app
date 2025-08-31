@@ -12,5 +12,3 @@ gunicorn>=22,<23
 numpy>=2,<3
 
 langchain-community>=0.2.0,<0.4
-SQLAlchemy>=2,<3
-alembic>=1.13,<2
