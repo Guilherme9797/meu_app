@@ -1,6 +1,10 @@
 from __future__ import annotations
 import argparse
-import os, json, time, datetime as dt
+import os
+import json
+import time
+import datetime as dt
+import sys
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
@@ -258,47 +262,49 @@ def build_index(src_dir: str, out_dir: str, model: str = "text-embedding-3-small
     logger.info("Index salvo em: %s", idx_path)
     logger.info("Manifest salvo em: %s (%d itens)", man_path, len(manifest))
 
-def status(out_dir: str) -> None:
+def _status(out_dir: str) -> None:
     idx_path = os.path.join(out_dir, "index.faiss")
+    pkl_path = os.path.join(out_dir, "index.pkl")
     man_path = os.path.join(out_dir, "manifest.json")
-    meta_path = os.path.join(out_dir, "meta.json")
-    ok_idx = os.path.exists(idx_path)
-    ok_man = os.path.exists(man_path)
-    print(f"index.faiss : {'OK' if ok_idx else 'MISSING'}")
-    print(f"manifest.json: {'OK' if ok_man else 'MISSING'}")
-    if ok_man:
-        with open(man_path, "r", encoding="utf-8") as f:
-            manifest = json.load(f)
-        print(f"Chunks: {len(manifest)}")
-        if manifest:
-            sample = manifest[0]
-            keys = ", ".join(sorted(sample.keys()))
-            print(f"Campos no manifest: {keys}")
-    if os.path.exists(meta_path):
-        with open(meta_path, "r", encoding="utf-8") as f:
-            meta = json.load(f)
-        print(f"Meta: {meta}")
+    print(f"index.faiss : {'OK' if os.path.exists(idx_path) else 'MISSING'}")
+    print(f"index.pkl   : {'OK' if os.path.exists(pkl_path) else 'MISSING'}")
+    print(f"manifest.json: {'OK' if os.path.exists(man_path) else 'MISSING'}")
+    if os.path.exists(man_path):
+        try:
+            with open(man_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+            print(f"Chunks: {manifest.get('count', 0)}")
+        except Exception:
+            pass
+
 
 def main(argv: List[str] | None = None) -> int:
     argv = argv or sys.argv[1:]
-    p = argparse.ArgumentParser(prog="pdf_indexer", description="Constrói índice FAISS a partir de PDFs.")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    if not argv:
+        argv = ["status"]
+
+    p = argparse.ArgumentParser(prog="pdf_indexer", description="Utilitário para indexar PDFs")
+    sub = p.add_subparsers(dest="cmd")
+
     b = sub.add_parser("build", help="(re)constrói o índice")
-    b.add_argument("--src", default=os.getenv("PDF_SRC_DIR", "data/pdfs"), help="Diretório com PDFs")
-    b.add_argument("--out", default=os.getenv("RAG_INDEX_PATH", "index/faiss_index"), help="Diretório do índice FAISS")
-    b.add_argument("--model", default=os.getenv("EMBED_MODEL", "text-embedding-3-small"), help="Modelo de embedding OpenAI")
-    b.add_argument("--chunk", type=int, default=int(os.getenv("CHUNK_CHARS", "1200")), help="Tamanho do chunk em caracteres")
-    b.add_argument("--overlap", type=int, default=int(os.getenv("CHUNK_OVERLAP", "150")), help="Sobreposição entre chunks")
+    b.add_argument("--src", default="data/pdfs", help="Diretório com PDFs")
+    b.add_argument("--out", default="index/faiss_index", help="Diretório do índice")
+
     s = sub.add_parser("status", help="mostra status do índice")
-    s.add_argument("--out", default=os.getenv("RAG_INDEX_PATH", "index/faiss_index"))
+    s.add_argument("--out", default="index/faiss_index", help="Diretório do índice")
+
     args = p.parse_args(argv)
+
     if args.cmd == "build":
-        build_index(src_dir=args.src, out_dir=args.out, model=args.model, chunk_chars=args.chunk, overlap=args.overlap)
+        idx = PDFIndexer(pasta_pdfs=args.src, pasta_index=args.out)
+        idx.indexar_pdfs()
         return 0
-    elif args.cmd == "status":
-        status(out_dir=args.out)
+    if args.cmd == "status":
+        _status(args.out)
         return 0
+    p.print_help()
     return 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
