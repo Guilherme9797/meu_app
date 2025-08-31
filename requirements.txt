@@ -4,6 +4,7 @@ langchain>=0.3.0,<0.4
 langchain-openai>=0.2.0,<0.3
 faiss-cpu>=1.12.0,<2
 PyMuPDF>=1.24.3,<2
+pypdf>=4,<5
 python-dotenv>=1.0.1,<2
 Flask>=3,<4
 requests>=2.32,<3
