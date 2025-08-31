@@ -3,65 +3,54 @@ from typing import TYPE_CHECKING
 
 # Exportamos só os nomes; o carregamento real é feito sob demanda em __getattr__
 __all__ = [
-   "Classifier",
-    "Extractor",
+    "AnalisadorDeProblemas",
+    "RefinadorResposta",
+    "PDFIndexer",
+    "BuscadorPDF",
     "Retriever",
-    "GroundingGuard",
-    "TavilyClient",
+    "TavilyService",
     "ZapiClient",
-    "AtendimentoService",
-    "MediaProcessor",
+    "Atendimento",
+    "ConversorPropostas",
+    "PricingService",
+    "PaymentOrchestrator",
+    "PaymentProvider",
+    "CheckoutResult",
 ]
+
 
 def __getattr__(name: str):
     # Núcleo
-    if name == "Classifier":
-        from .analisador import Classifier
-        return Classifier
-    if name == "Extractor":
-        from .analisador import Extractor
-        return Extractor
+    if name == "AnalisadorDeProblemas":
+        from .analisador import AnalisadorDeProblemas
+        return AnalisadorDeProblemas
+    if name == "RefinadorResposta":
+        from .refinador import RefinadorResposta
+        return RefinadorResposta
+    if name == "PDFIndexer":
+        from .pdf_indexer import PDFIndexer
+        return PDFIndexer
+    if name == "BuscadorPDF":
+        from .buscador_pdf import BuscadorPDF
+        return BuscadorPDF
     if name == "Retriever":
         from .buscador_pdf import Retriever
         return Retriever
-    if name == "GroundingGuard":
-        from .refinador import GroundingGuard
-        return GroundingGuard
-    if name == "TavilyClient":
-        from .tavily_service import TavilyClient
-        return TavilyClient
+    if name == "TavilyService":
+        from .tavily_service import TavilyService
+        return TavilyService
     if name == "ZapiClient":
         from .zapi_client import ZapiClient
         return ZapiClient
-    if name == "ZApiClient":
-        from .zapi_client import ZapiClient
-        return ZapiClient
-    if name == "AtendimentoService":
-        from .atendimento import AtendimentoService
-        return AtendimentoService
-    if name == "MediaProcessor":
-        from .media_processor import MediaProcessor
-        return MediaProcessor
-    if name == "AnalisadorDeProblemas":
-        from .analisador import Classifier
-        return Classifier
-    if name == "BuscadorPDF":
-        from .buscador_pdf import Retriever
-        return Retriever
-    if name == "RefinadorResposta":
-        from .refinador import GroundingGuard
-        return GroundingGuard
     if name == "Atendimento":
-        from .atendimento import AtendimentoService
-        return AtendimentoService
-    if name == "PDFIndexer":
-        from .pdf_indexer import main as PDFIndexer
-        return PDFIndexer
+        from .atendimento import Atendimento
+        return Atendimento
     if name == "ConversorPropostas":
-        class _Placeholder:
-            pass
-        return _Placeholder
-
+        from .conversor import ConversorPropostas
+        return ConversorPropostas
+    if name == "PricingService":
+        from .pricing import PricingService  # pode não existir no ambiente
+        return PricingService
 
     # Pagamentos (opcionais)
     if name == "PaymentOrchestrator":
@@ -82,11 +71,20 @@ def __dir__():
 
 # Ajuda para type checkers (mypy/pyright) sem forçar import em runtime
 if TYPE_CHECKING:
-    from .analisador import Classifier, Extractor
-    from .buscador_pdf import Retriever
-    from .refinador import GroundingGuard
-    from .tavily_service import TavilyClient
-    from .zapi_client import ZApiClient
-    from .atendimento import AtendimentoService
-    from .media_processor import MediaProcessor
+    from .analisador import AnalisadorDeProblemas
+    from .refinador import RefinadorResposta
+    from .pdf_indexer import PDFIndexer
+    from .buscador_pdf import BuscadorPDF
+    from .buscador_pdf import BuscadorPDF, Retriever
+    from .tavily_service import TavilyService
+    from .zapi_client import ZapiClient
+    from .atendimento import Atendimento
+    from .conversor import ConversorPropostas
+    from .pricing import PricingService  # type: ignore
+    from .payments.orchestrator import PaymentOrchestrator  # type: ignore
+    try:
+        from .payments.base import PaymentProvider, CheckoutResult  # type: ignore
+    except Exception:
+        PaymentProvider = None  # type: ignore
+        CheckoutResult = None   # type: ignore
     

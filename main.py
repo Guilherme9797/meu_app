@@ -126,7 +126,8 @@ def _build_buscador() -> Retriever:
             return "\n\n".join(c.text for c in chunks)
     return _Compat(retr)
 
-def _build_indexador() -> PDFIndexer:
+def _build_indexador() -> "PDFIndexer":
+    from meu_app.services.pdf_indexer import PDFIndexer
     return PDFIndexer(
         pasta_pdfs=os.getenv("PDFS_DIR", "data/pdfs"),
         pasta_index=os.getenv("INDEX_DIR", "index/faiss_index"),
