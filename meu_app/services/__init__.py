@@ -27,8 +27,11 @@ __all__ = [
 def __getattr__(name: str):
     # Núcleo
     if name == "AnalisadorDeProblemas":
-        from .analisador import AnalisadorDeProblemas
-        return AnalisadorDeProblemas
+        try:
+            from .analisador import AnalisadorDeProblemas
+            return AnalisadorDeProblemas
+        except Exception:
+            return None
     if name == "RefinadorResposta":
         from .refinador import RefinadorResposta
         return RefinadorResposta
