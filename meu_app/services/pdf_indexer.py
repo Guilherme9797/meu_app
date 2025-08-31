@@ -26,6 +26,9 @@ except Exception:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
+# Silencia avisos ruidosos do pypdf em PDFs corrompidos
+logging.getLogger("pypdf").setLevel(logging.ERROR)
+
 RE_PROC = re.compile(r"\b\d{7}\-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}\b")
 
 
@@ -197,9 +200,18 @@ class Embedder:
 
 
 def read_pdf_text(path: str) -> List[str]:
-    if PdfReader is None:
+    """Lê um PDF retornando o texto de cada página.
+
+    Usa ``strict=False`` para tolerar arquivos corrompidos e garante que
+    eventuais falhas em páginas individuais não interrompam o fluxo.
+    """
+    if PdfReader is None:  # pragma: no cover - dependência opcional
         raise RuntimeError("pypdf não está instalado.")
-    reader = PdfReader(path)
+    try:
+        reader = PdfReader(path, strict=False)
+    except Exception as e:  # pragma: no cover - falha ao abrir
+        logger.warning("Falha ao abrir PDF %s: %s", path, e)
+        return []
     pages: List[str] = []
     for p in reader.pages:
         try:
