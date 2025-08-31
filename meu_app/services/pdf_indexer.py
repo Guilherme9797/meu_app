@@ -184,8 +184,12 @@ class Embedder:
         self.client = OpenAI(api_key=key)
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        resp = self.client.embeddings.create(model=self.model, input=texts)
-        vecs = [d.embedding for d in resp.data]
+        batch = int(os.getenv("EMBED_BATCH_SIZE", "100"))
+        vecs: List[List[float]] = []
+        for i in range(0, len(texts), batch):
+            chunk = texts[i : i + batch]
+            resp = self.client.embeddings.create(model=self.model, input=chunk)
+            vecs.extend(d.embedding for d in resp.data)
         arr = np.asarray(vecs, dtype="float32")
         norms = np.linalg.norm(arr, axis=1, keepdims=True) + 1e-10
         arr = arr / norms
