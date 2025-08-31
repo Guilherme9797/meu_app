@@ -45,6 +45,16 @@ Instale as dependências:
 ```bash
 pip install -r requirements.txt
 # meu_app
+```
+
+### Indexação de PDFs
+
+Utilize o utilitário de linha de comando para construir ou inspecionar o índice de documentos:
+
+```bash
+python -m meu_app.services.pdf_indexer build   # (re)constrói o índice
+python -m meu_app.services.pdf_indexer status  # mostra informações do índice
+```
 
 ```
 
