@@ -44,6 +44,44 @@ def __getattr__(name: str):
     if name == "TavilyService":
         from .tavily_service import TavilyService
         return TavilyService
+    if name == "Classifier":
+        try:
+            from .classifier import Classifier  # type: ignore
+            return Classifier
+        except Exception:
+            return None
+    if name == "Extractor":
+        try:
+            from .extractor import Extractor  # type: ignore
+            return Extractor
+        except Exception:
+            return None
+    if name == "GroundingGuard":
+        try:
+            from .guard import GroundingGuard  # type: ignore
+            return GroundingGuard
+        except Exception:
+            return None
+    if name == "TavilyClient":
+        try:
+            from .tavily_service import TavilyClient  # type: ignore
+            return TavilyClient
+        except Exception:
+            try:
+                from .tavily_service import TavilyService
+                return TavilyService
+            except Exception:
+                return None
+    if name == "AtendimentoService":
+        try:
+            from .atendimento_service import AtendimentoService  # type: ignore
+            return AtendimentoService
+        except Exception:
+            try:
+                from .atendimento import Atendimento
+                return Atendimento
+            except Exception:
+                return None
     if name == "ZapiClient":
         from .zapi_client import ZapiClient
         return ZapiClient
@@ -79,7 +117,6 @@ if TYPE_CHECKING:
     from .analisador import AnalisadorDeProblemas
     from .refinador import RefinadorResposta
     from .pdf_indexer import PDFIndexer
-    from .buscador_pdf import BuscadorPDF
     from .buscador_pdf import BuscadorPDF, Retriever
     from .tavily_service import TavilyService
     from .zapi_client import ZapiClient
@@ -88,8 +125,30 @@ if TYPE_CHECKING:
     from .pricing import PricingService  # type: ignore
     from .payments.orchestrator import PaymentOrchestrator  # type: ignore
     try:
+        from .classifier import Classifier  # type: ignore
+    except Exception:
+        Classifier = None  # type: ignore
+    try:
+        from .extractor import Extractor  # type: ignore
+    except Exception:
+        Extractor = None  # type: ignore
+    try:
+        from .guard import GroundingGuard  # type: ignore
+    except Exception:
+        GroundingGuard = None  # type: ignore
+    try:
+        from .tavily_service import TavilyClient  # type: ignore
+    except Exception:
+        TavilyClient = None  # type: ignore
+    try:
+        from .atendimento_service import AtendimentoService  # type: ignore
+    except Exception:
+        try:
+            from .atendimento import Atendimento as AtendimentoService  # type: ignore
+        except Exception:
+            AtendimentoService = None  # type: ignore
+    try:
         from .payments.base import PaymentProvider, CheckoutResult  # type: ignore
     except Exception:
         PaymentProvider = None  # type: ignore
         CheckoutResult = None   # type: ignore
-    
