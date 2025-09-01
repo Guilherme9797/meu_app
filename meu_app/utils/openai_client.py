@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import logging
 import base64
 from typing import Optional, Dict, Any, List
 import numpy as np
@@ -12,6 +13,9 @@ except Exception:
     pass
 
 from openai import OpenAI
+
+APOLOGY_MESSAGE = "Desculpe, ocorreu um erro ao gerar a resposta."
+
 
 __all__ = ["OpenAIClient", "Embeddings", "LLM"]
 
@@ -78,9 +82,16 @@ class OpenAIClient:
         if extra:
             params.update(extra)
 
-        resp = self.client.chat.completions.create(**params)
-        choice = resp.choices[0]
-        return (choice.message.content or "").strip()
+        for attempt in range(2):
+            try:
+                resp = self.client.chat.completions.create(**params)
+                choice = resp.choices[0]
+                return (choice.message.content or "").strip()
+            except Exception:
+                logging.getLogger("openai_client").exception(
+                    "OpenAI chat attempt %d failed", attempt + 1
+                )
+        return APOLOGY_MESSAGE
 
 
 class Embeddings:
