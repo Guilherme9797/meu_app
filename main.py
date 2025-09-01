@@ -329,7 +329,6 @@ def cmd_configure_webhooks(args):
         out["delivery"] = zc.update_webhook_delivery(args.delivery_url or os.getenv("ZAPI_WEBHOOK_DELIVERY_URL"))
     _print_json(out)
 
-
 # -----------------------------------------------------------------------------
 # Comandos: Conversão (propostas)
 # -----------------------------------------------------------------------------

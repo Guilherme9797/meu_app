@@ -22,11 +22,13 @@ class RefinadorResposta:
         texto = (resposta_bruta or "").strip()
         if not texto or texto.startswith("["):
             return "Desculpe, ainda não encontrei informações suficientes para responder a isso."
+
         system = "Você é um redator jurídico para clientes leigos."
         user = (
             "Reescreva o texto a seguir de forma clara, objetiva e organizada (use parágrafos curtos e, se fizer sentido, bullets).\n"
             "Mantenha eventuais seções de \"Fontes\" ao final, sem alterações nos links.\n\n"
             "TEXTO ORIGINAL:\n"
+            f"{resposta_bruta}"
             f"{texto}"
         )
         return self.client.chat(system=system, user=user)
