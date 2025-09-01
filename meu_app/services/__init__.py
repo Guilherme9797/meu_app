@@ -74,7 +74,8 @@ def __getattr__(name: str):
                     pass
 
                 def extract(self, *args, **kwargs):  # pragma: no cover - sem lógica real
-                    return {}
+                    """Retorna tuple (intent, tema) vazio para compatibilidade."""
+                    return None, None
 
             return _NoOpExtractor
     if name == "GroundingGuard":
