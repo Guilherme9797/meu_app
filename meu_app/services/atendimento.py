@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 import os
 from dataclasses import dataclass
@@ -22,19 +23,19 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AtendimentoConfig:
     """Parâmetros de orquestração ajustáveis sem mexer no código."""
-    coverage_threshold: float = 0.55   # suficiência mínima (0..1)
+
+    coverage_threshold: float = 0.55  # suficiência mínima (0..1)
     max_pdf_chunks: int = 6
     max_web_results: int = 4
     use_web_fallback: bool = True
     temperature: float = 0.2
     append_low_coverage_note: bool = True
-    min_chunk_score: float = 0.25      # descarta chunks muito fracos
-    mmr_lambda: float = 0.6            # 0..1 (1 = só relevância; 0 = só diversidade)
-    per_doc_cap: int = 3               # limite de chunks por documento
+    min_chunk_score: float = 0.25  # descarta chunks muito fracos
+    mmr_lambda: float = 0.6  # 0..1 (1 = só relevância; 0 = só diversidade)
+    per_doc_cap: int = 3  # limite de chunks por documento
 
 
 class AtendimentoService:
-
     """
     Orquestra o pipeline do atendimento jurídico:
       1) Classificar intenção/tema e extrair entidades
@@ -44,7 +45,6 @@ class AtendimentoService:
       5) Persistência (sessão, mensagens, fontes apenas para auditoria)
 
     """
-
     def __init__(
         self,
         sess_repo: SessionRepository,
@@ -67,14 +67,55 @@ class AtendimentoService:
         self.extractor = extractor or Extractor()
         self.conf = conf or AtendimentoConfig()
 
-    # Propaga knobs do RAG via ENV (usados pelo Retriever)
+        # Propaga knobs do RAG via ENV (usados pelo Retriever)
         os.environ.setdefault("RAG_MIN_CHUNK_SCORE", str(self.conf.min_chunk_score))
         os.environ.setdefault("RAG_PER_DOC_CAP", str(self.conf.per_doc_cap))
         os.environ.setdefault("RAG_MMR_LAMBDA", str(self.conf.mmr_lambda))
-    
-    # ------------------ API pública ------------------
 
-    def handle_incoming(
+    # ------------------ API pública ------------------
+    def handle_incoming(self, phone: str, text: str):
+        """
+        Adaptador para manter compatibilidade com o main.py.
+        Tenta chamar o handler que existir na instância (handle_message, handle, chat,
+        process, run, __call__, receber_mensagem). Aceita assinaturas (phone, text)
+        ou (text).
+        """
+        phone = phone or "anon"
+        text = (text or "").strip()
+
+        candidates = (
+            "handle_message",
+            "handle",
+            "chat",
+            "process",
+            "run",
+            "__call__",
+            "receber_mensagem",
+        )
+        last_err = None
+
+        for name in candidates:
+            fn = getattr(self, name, None)
+            if callable(fn):
+                # Tenta (phone, text)
+                try:
+                    out = fn(phone, text)
+                    return out if isinstance(out, str) else str(out)
+                except TypeError as e:
+                    last_err = e
+                    # Tenta apenas (text)
+                    try:
+                        out = fn(text)  # alguns handlers não usam 'phone'
+                        return out if isinstance(out, str) else str(out)
+                    except TypeError as e2:
+                        last_err = e2
+                        continue
+
+        raise AttributeError(
+            f"{self.__class__.__name__} não possui handler compatível (testados: {', '.join(candidates)})."
+        ) from last_err
+
+    def receber_mensagem(
         self,
         client_phone: str,
         user_text: str,
@@ -87,7 +128,7 @@ class AtendimentoService:
 
         session = self.sess_repo.get_or_create(client_phone)
 
-         # 4.5) Carregar histórico recente (memória curta) para coerência
+        # 4.5) Carregar histórico recente (memória curta) para coerência
         try:
             history = self.msg_repo.fetch_history_texts(session.id, limit=10)
         except Exception:  # pragma: no cover - fallback
@@ -157,15 +198,15 @@ class AtendimentoService:
             )
         except Exception as e:  # pragma: no cover - persistence best effort
             logger.exception("Falha ao persistir troca de mensagens: %s", e)
-    
+
         try:
             self.sess_repo.update_phase_if_ready(session.id, reply)
         except Exception as e:  # pragma: no cover - best effort
             logger.exception("Falha ao avaliar mudança de fase: %s", e)
 
         return reply
-        
-        # ------------------ Helpers internos ------------------
+
+    # ------------------ Helpers internos ------------------
 
     def is_issue_resolved(self, user_text: str, reply_text: str) -> bool:
         """Heurística simples para detectar confirmação de resolução."""
@@ -183,15 +224,16 @@ class AtendimentoService:
             "pode seguir com a proposta",
         ]
         return any(x in t for x in triggers) or any(x in r for x in triggers)
-    
+
     def _retrieve_pdfs(
-            self, query: str, tema: Optional[str], ents: Dict[str, Any], k: int
-        ) -> List[RetrievedChunk]:
-            try:
-                return self.retriever.retrieve(query=query, tema=tema, ents=ents, k=k)
-            except Exception as e:  # pragma: no cover - log and fallback
-                logger.exception("Falha no retriever: %s", e)
-                return []
+        self, query: str, tema: Optional[str], ents: Dict[str, Any], k: int
+    ) -> List[RetrievedChunk]:
+        try:
+            return self.retriever.retrieve(query=query, tema=tema, ents=ents, k=k)
+        except Exception as e:  # pragma: no cover - log and fallback
+            logger.exception("Falha no retriever: %s", e)
+            return []
+
 
 # Compatibilidade: manter nome antigo
 Atendimento = AtendimentoService
