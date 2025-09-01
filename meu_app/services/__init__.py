@@ -10,6 +10,7 @@ __all__ = [
     "TavilyService",
     "ZapiClient",
     "Atendimento",
+    "AtendimentoService",
     "ConversorPropostas",
     "PricingService",
     "Classifier",
@@ -117,6 +118,9 @@ def __getattr__(name: str):
     if name == "Atendimento":
         from .atendimento import Atendimento
         return Atendimento
+    if name == "AtendimentoService":
+        from .atendimento_service import AtendimentoService
+        return AtendimentoService
     if name == "ConversorPropostas":
         from .conversor import ConversorPropostas
         return ConversorPropostas
@@ -156,6 +160,7 @@ if TYPE_CHECKING:
     from .tavily_service import TavilyService
     from .zapi_client import ZapiClient
     from .atendimento import Atendimento
+    from .atendimento_service import AtendimentoService
     from .conversor import ConversorPropostas
     from .pricing import PricingService  # type: ignore
     from .classifier import Classifier, guess_tema
