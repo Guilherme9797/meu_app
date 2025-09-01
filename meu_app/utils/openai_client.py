@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import base64
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import numpy as np
 
 # Carrega .env sem sobrescrever variáveis já presentes
@@ -12,6 +12,8 @@ except Exception:
     pass
 
 from openai import OpenAI
+
+__all__ = ["OpenAIClient", "Embeddings", "LLM"]
 
 
 class OpenAIClient:
@@ -67,13 +69,74 @@ class OpenAIClient:
     def chat(self, system: str, user: str, *, extra: Optional[Dict[str, Any]] = None) -> str:
         params: Dict[str, Any] = {
             "model": self.chat_model,
+            "temperature": self.temperature,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
-        if self.temperature != 1.0:
-            params["temperature"] = self.temperature
+        if extra:
+            params.update(extra)
+
+        resp = self.client.chat.completions.create(**params)
+        choice = resp.choices[0]
+        return (choice.message.content or "").strip()
+
+
+class Embeddings:
+    """Wrapper simples para embeddings com OpenAI 1.x."""
+
+    def __init__(self, api_key: Optional[str] = None, *, model: Optional[str] = None) -> None:
+        key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
+        if not key:
+            raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
+        os.environ.setdefault("OPENAI_API_KEY", key)
+
+        self.client = OpenAI(api_key=key)
+        self.model = model or os.getenv("OPENAI_EMBEDDINGS_MODEL", "text-embedding-3-small")
+
+    def embed(self, texts: List[str]) -> List[List[float]]:
+        resp = self.client.embeddings.create(model=self.model, input=texts)
+        return [item.embedding for item in resp.data]
+
+
+class LLM:
+    """Wrapper simples para chat com OpenAI 1.x usando lista de mensagens."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        *,
+        model: Optional[str] = None,
+        temperature: float = 0.2,
+    ) -> None:
+        key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
+        if not key:
+            raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
+        os.environ.setdefault("OPENAI_API_KEY", key)
+
+        model = (
+            model
+            or os.getenv("OPENAI_MODEL")
+            or os.getenv("OPENAI_CHAT_MODEL")
+            or "gpt-4o-mini"
+        )
+
+        self.client = OpenAI(api_key=key)
+        self.model = model
+        self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
+
+    def chat(
+        self,
+        messages: List[Dict[str, str]],
+        *,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        params: Dict[str, Any] = {
+            "model": self.model,
+            "temperature": self.temperature,
+            "messages": messages,
+        }
         if extra:
             params.update(extra)
 
