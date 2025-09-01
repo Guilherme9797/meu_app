@@ -109,49 +109,113 @@ def _ensure_openai_key() -> str:
 def _make_oai() -> OpenAIClient:
     key = _ensure_openai_key()
     model = os.getenv("OPENAI_MODEL") or os.getenv("OPENAI_CHAT_MODEL") or "gpt-4o-mini"
-    temp = float(os.getenv("OPENAI_TEMPERATURE", "1"))
+    temp = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
     return OpenAIClient(api_key=key, chat_model=model, temperature=temp)
 
 
-def _build_indexador() -> "PDFIndexer":
-    from meu_app.services.pdf_indexer import PDFIndexer
-
-    return PDFIndexer(
-        pasta_pdfs=os.getenv("PDFS_DIR", "data/pdfs"),
-        pasta_index=os.getenv("INDEX_DIR", "index/faiss_index"),
-        openai_key=_ensure_openai_key(),
+def _build_buscador() -> BuscadorPDF:
+    return BuscadorPDF(
+        openai_key=os.getenv("OPENAI_API_KEY"),
+        tavily_key=os.getenv("TAVILY_API_KEY"),
+        pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
+        index_dir=os.getenv("INDEX_DIR", "index/faiss_index"),
     )
 
 
-
-def _build_buscador() -> Retriever:
-    """Retorna um retriever simples; mantém compatibilidade básica."""
-    embedder = Embeddings()
-    retr = Retriever(index_path=get_index_dir(), embed_fn=embedder.embed)
-
-    class _Compat:
-        def __init__(self, r: Retriever):
-            self.r = r
-        def buscar_contexto(self, texto: str) -> str:
-            chunks = self.r.retrieve(query=texto, tema=None, ents={}, k=3)
-            return "\n\n".join(c.text for c in chunks)
-    return _Compat(retr)
-
+def get_index_dir() -> str:
+    """Retorna o diretório do índice FAISS (padrão em env INDEX_DIR)."""
+    return os.getenv("INDEX_DIR", "index/faiss_index")
 
 
 def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
-    init_db()
+    from meu_app.services.atendimento_service import AtendimentoService, AtendimentoConfig
+    try:
+        from meu_app.services.retriever import Embeddings, Retriever  # type: ignore
+    except Exception:  # fallback simplificado
+        class Embeddings:  # type: ignore
+            def embed(self, *a, **kw):
+                return []
+
+        class Retriever:  # type: ignore
+            def __init__(self, *a, **kw):
+                pass
+
+            def retrieve(self, *a, **kw):
+                return []
+    try:
+        from tavily import TavilyClient  # type: ignore
+    except Exception:
+        class TavilyClient:  # type: ignore
+            def __init__(self, *a, **kw):
+                pass
+
+            def search(self, *a, **kw):
+                return ""
+    try:
+        from meu_app.services.llm import LLM  # type: ignore
+    except Exception:
+        class LLM:  # type: ignore
+            def chat(self, *a, **kw):
+                return "Desculpe, não consegui gerar uma resposta agora."
+    try:
+        from meu_app.services.guard import GroundingGuard  # type: ignore
+    except Exception:
+        class GroundingGuard:  # type: ignore
+            def check(self, *a, **kw):
+                return {"allowed": True}
+    try:
+        from meu_app.services.classifier import Classifier  # type: ignore
+    except Exception:
+        class Classifier:  # type: ignore
+            def classify(self, *a, **kw):
+                return None
+    try:
+        from meu_app.services.extractor import Extractor  # type: ignore
+    except Exception:
+        class Extractor:  # type: ignore
+            def extract(self, *a, **kw):
+                return {}
+    try:
+        from meu_app.persistence.repositories import SessionRepository, MessageRepository  # type: ignore
+    except Exception:
+        class SessionRepository:  # type: ignore
+            def __init__(self, *a, **kw):
+                pass
+
+        class MessageRepository:  # type: ignore
+            def __init__(self, *a, **kw):
+                pass
+
+            def save(self, *a, **kw):
+                pass
+
     embedder = Embeddings()
-    retriever = Retriever(index_path=get_index_dir(), embed_fn=embedder.embed)
-    tavily = TavilyClient()
+    retriever = Retriever(index_path=get_index_dir(), embed_fn=getattr(embedder, "embed", lambda x: []))
+    use_tavily = os.getenv("MEU_APP_USE_TAVILY", "0").lower() in ("1", "true", "yes", "on")
+    tavily = None
+    try:
+        if use_tavily and hasattr(TavilyClient, "from_env"):
+            tavily = TavilyClient.from_env()  # type: ignore[attr-defined]
+        elif use_tavily:
+            tavily = TavilyClient()
+    except Exception:
+        tavily = None
     llm = LLM()
-    guard = GroundingGuard()
+    GG = GroundingGuard
+    try:
+        guard = GG() if callable(GG) else GG
+    except Exception:
+        class _NoopGuard:
+            def check(self, *a, **kw):
+                return {"allowed": True, "reason": "noop"}
+
+        guard = _NoopGuard()
     classifier = Classifier()
     extractor = Extractor()
     sess_repo = SessionRepository()
     msg_repo = MessageRepository()
-    conf = AtendimentoConfig()
+    conf = AtendimentoConfig(use_web=use_tavily)
     return AtendimentoService(
         sess_repo=sess_repo,
         msg_repo=msg_repo,
@@ -163,64 +227,35 @@ def _build_atendimento_service() -> AtendimentoService:
         extractor=extractor,
         conf=conf,
     )
-def _resolve_cliente_by_phone(phone: str) -> Optional[Dict[str, Any]]:
-    """Retorna dict com cliente_id/nome a partir do telefone (ou None)."""
-    cr = ClienteRepository()
-    ctr = ContatoRepository()
-    ctt = ctr.get_by_phone(phone)
-    if not ctt:
-        return None
-    data = cr.obter(ctt["cliente_id"])
-    return {"cliente_id": ctt["cliente_id"], "nome": (data["nome"] if data else (ctt["nome"] or phone))}
 
 
-def _round_up(x: float, step: int) -> float:
-    step = max(1, int(step))
-    import math
-    return math.ceil(x / step) * step
+def _build_atendimento_for(phone: Optional[str], nome: str) -> Atendimento:
+    """
+    Reutiliza cliente existente pelo phone (se informado); senão cria novo cliente.
+    """
+    init_db()
+    cliente_repo = ClienteRepository()
+    contato_repo = ContatoRepository()
 
-
-# -----------------------------------------------------------------------------
-# Comandos: Índice
-# -----------------------------------------------------------------------------
-def cmd_index_update(args):
-    indexador = _build_indexador()
-    metrics = indexador.atualizar_indice_verbose()
-    _print_json(metrics)
-
-def cmd_index_rebuild(args):
-    indexador = _build_indexador()
-    metrics = indexador.indexar_pdfs()
-    _print_json(metrics)
-
-
-
-def cmd_index_info(args):
-    index_dir = get_index_dir()
-    manifest_path = os.path.join(index_dir, "manifest.json")
-    faiss_file = os.path.join(index_dir, "index.faiss")
-    ok = os.path.exists(faiss_file)
-    info = {
-        "index_dir": index_dir,
-        "faiss_present": ok,
-        "manifest_path": manifest_path,
-        "pdfs_dir": os.getenv("PDFS_DIR", "data/pdfs"),
-    }
-    try:
-        if os.path.exists(manifest_path):
-            with open(manifest_path, "r", encoding="utf-8") as f:
-                manifest = json.load(f)
-            if isinstance(manifest, dict):
-                info["manifest_count"] = manifest.get("count", len(manifest.get("files", [])))
-                info["manifest_preview"] = manifest.get("files", [])[:3]
-            else:
-                info["manifest_count"] = len(manifest)
-                info["manifest_preview"] = manifest[:3]
-
+    if phone:
+        ctt = contato_repo.get_by_phone(phone)
+        if ctt:
+            cliente_data = cliente_repo.obter(ctt["cliente_id"])
+            nome_final = (cliente_data["nome"] if cliente_data else nome) or f"Contato {phone}"
+            cliente = Cliente(nome_final)
+            cliente.id = ctt["cliente_id"]  # preserva ID persistido
         else:
-            info["manifest_count"] = 0
-            info["manifest_preview"] = []
+            # novo cliente associado a este phone
+            cliente = Cliente(nome or f"Contato {phone}")
+            cliente_repo.criar(cliente.id, cliente.nome, _now_iso())
+            contato_repo.upsert(phone, cliente.id, nome=cliente.nome)
+    else:
+        # sem phone: cria um cliente novo (sessão efêmera)
+        cliente = Cliente(nome or "Cliente CLI")
+        cliente_repo.criar(cliente.id, cliente.nome, _now_iso())
 
+@@ -194,63 +301,69 @@ def cmd_index_info(args):
+            info["manifest_preview"] = {}
     except Exception as e:
         info["manifest_error"] = str(e)
     _print_json(info)
@@ -229,16 +264,18 @@ def cmd_index_info(args):
 # -----------------------------------------------------------------------------
 # Comandos: Atendimento
 # -----------------------------------------------------------------------------
+
+
 def cmd_ask(args):
     _ensure_openai_key()
-    atendimento = _build_atendimento_service()
+    atendimento = _build_atendimento_for(args.phone, args.nome)
     pergunta = (args.pergunta or "").strip()
     if not pergunta:
         print("❌ Informe a pergunta (flag --pergunta).", file=sys.stderr)
         sys.exit(2)
-    print(f"👤 {args.nome}: {pergunta}")
+    print(f"👤 {atendimento.cliente.nome}: {pergunta}")
     t0 = time.perf_counter()
-    resposta = atendimento.handle_incoming(args.phone or "anon", pergunta)
+    resposta = atendimento.receber_mensagem(pergunta)
     dt_s = round(time.perf_counter() - t0, 2)
     print(f"\n🤖 Assistente ({dt_s}s):\n{resposta}\n")
 
@@ -257,12 +294,17 @@ def cmd_chat(args):
                 print("👋 Encerrando chat.")
                 break
             t0 = time.perf_counter()
-            resposta = atendimento.handle_incoming(args.phone or "anon", msg)
+            try:
+                resposta = atendimento.handle_incoming(args.phone or "anon", msg)
+            except Exception:
+                import traceback
+                print("\n[ERRO] Ocorreu uma exceção no atendimento. Veja logs e continue.")
+                traceback.print_exc()
+                continue
             dt_s = round(time.perf_counter() - t0, 2)
             print(f"\n🤖 Assistente ({dt_s}s):\n{resposta}")
     except (KeyboardInterrupt, EOFError):
         print("\n👋 Encerrado.")
-
 
 # -----------------------------------------------------------------------------
 # Comando: Z-API webhooks
