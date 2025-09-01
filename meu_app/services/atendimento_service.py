@@ -103,8 +103,20 @@ class AtendimentoService:
         if context:
             prompt = f"{user_text}\n\nContexto:\n{context}"
 
+        # Tenta suportar ambas assinaturas de chat:
+        # 1) chat(system: str, user: str)
+        # 2) chat(messages: List[Dict[str, str]])
         try:
-            answer = self.llm.chat(self.conf.system_prompt, prompt)
+            try:
+                # Assinatura (system, user)
+                answer = self.llm.chat(self.conf.system_prompt, prompt)
+            except TypeError:
+                # Assinatura (messages=[...])
+                messages = [
+                    {"role": "system", "content": self.conf.system_prompt},
+                    {"role": "user", "content": prompt},
+                ]
+                answer = self.llm.chat(messages)
         except Exception:
             answer = "Desculpe, não consegui gerar uma resposta agora."
 

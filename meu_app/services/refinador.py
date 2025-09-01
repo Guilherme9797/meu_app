@@ -11,13 +11,23 @@ class RefinadorResposta:
         self.client = openai_client
 
     def refinar(self, resposta_bruta: str) -> str:
-        """Reescreve a resposta mantendo eventuais seções de fontes."""
+        """Refina um texto bruto.
+
+        Quando não há conteúdo útil (ex.: buscas vazias ou mensagens de erro
+        indicando que o Tavily não está configurado), retornamos uma mensagem de
+        fallback sem chamar a API da OpenAI. Isso evita respostas genéricas como
+        "Desculpe, não consegui gerar uma resposta agora.".
+        """
+
+        texto = (resposta_bruta or "").strip()
+        if not texto or texto.startswith("["):
+            return "Desculpe, ainda não encontrei informações suficientes para responder a isso."
         system = "Você é um redator jurídico para clientes leigos."
         user = (
             "Reescreva o texto a seguir de forma clara, objetiva e organizada (use parágrafos curtos e, se fizer sentido, bullets).\n"
             "Mantenha eventuais seções de \"Fontes\" ao final, sem alterações nos links.\n\n"
             "TEXTO ORIGINAL:\n"
-            f"{resposta_bruta}"
+            f"{texto}"
         )
         return self.client.chat(system=system, user=user)
 
