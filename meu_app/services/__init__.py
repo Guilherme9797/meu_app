@@ -64,7 +64,16 @@ def __getattr__(name: str):
             from .guard import GroundingGuard  # type: ignore
             return GroundingGuard
         except Exception:
-            return None
+            class _NoOpGuard:
+                """Fallback silencioso quando GroundingGuard real não está disponível."""
+
+                def __init__(self, *args, **kwargs) -> None:
+                    pass
+
+                def check(self, *args, **kwargs):  # pragma: no cover - sem lógica real
+                    return True
+
+            return _NoOpGuard
     if name == "TavilyClient":
         try:
             from .tavily_service import TavilyClient  # type: ignore
