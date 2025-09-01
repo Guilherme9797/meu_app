@@ -254,13 +254,6 @@ def _build_atendimento_for(phone: Optional[str], nome: str) -> Atendimento:
         cliente = Cliente(nome or "Cliente CLI")
         cliente_repo.criar(cliente.id, cliente.nome, _now_iso())
 
-@@ -194,63 +301,69 @@ def cmd_index_info(args):
-            info["manifest_preview"] = {}
-    except Exception as e:
-        info["manifest_error"] = str(e)
-    _print_json(info)
-
-
 # -----------------------------------------------------------------------------
 # Comandos: Atendimento
 # -----------------------------------------------------------------------------
