@@ -52,13 +52,31 @@ def __getattr__(name: str):
             from .classifier import Classifier  # type: ignore
             return Classifier
         except Exception:
-            return None
+            class _NoOpClassifier:
+                """Fallback silencioso quando o Classifier real não está disponível."""
+
+                def __init__(self, *args, **kwargs) -> None:
+                    pass
+
+                def classify(self, *args, **kwargs):  # pragma: no cover - sem lógica real
+                    return {}
+
+            return _NoOpClassifier
     if name == "Extractor":
         try:
             from .extractor import Extractor  # type: ignore
             return Extractor
         except Exception:
-            return None
+            class _NoOpExtractor:
+                """Fallback silencioso quando o Extractor real não está disponível."""
+
+                def __init__(self, *args, **kwargs) -> None:
+                    pass
+
+                def extract(self, *args, **kwargs):  # pragma: no cover - sem lógica real
+                    return {}
+
+            return _NoOpExtractor
     if name == "GroundingGuard":
         try:
             from .guard import GroundingGuard  # type: ignore
