@@ -126,6 +126,32 @@ def get_index_dir() -> str:
     """Retorna o diretório do índice FAISS (padrão em env INDEX_DIR)."""
     return os.getenv("INDEX_DIR", "index/faiss_index")
 
+def _dispatch(service, phone, text):
+    """Tenta diversas convenções de handler para despachar a mensagem."""
+    for name in (
+        "handle_incoming",
+        "receber_mensagem",
+        "handle_message",
+        "responder",
+        "handle",
+        "chat",
+        "process",
+        "run",
+        "__call__",
+    ):
+        fn = getattr(service, name, None)
+        if callable(fn):
+            try:
+                return fn(phone, text)
+            except TypeError:
+                try:
+                    return fn(text)
+                except TypeError:
+                    continue
+    raise AttributeError(
+        f"Handler compatível não encontrado em {service.__class__.__name__}."
+    )
+
 
 def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
@@ -288,7 +314,7 @@ def cmd_chat(args):
                 break
             t0 = time.perf_counter()
             try:
-                resposta = atendimento.handle_incoming(args.phone or "anon", msg)
+                resposta = _dispatch(atendimento, args.phone or "anon", msg)
             except Exception:
                 import traceback
                 print("\n[ERRO] Ocorreu uma exceção no atendimento. Veja logs e continue.")
