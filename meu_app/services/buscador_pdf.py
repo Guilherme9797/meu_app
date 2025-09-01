@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 # --- Suporte para rodar como script (python buscador_pdf.py) OU como módulo (-m meu_app.services.buscador_pdf) ---
 if __package__ is None or __package__ == "":
@@ -78,29 +76,13 @@ class Retriever:
     # ------------------------------------------------------------------
     # API pública
     # ------------------------------------------------------------------
-    def retrieve(
-        self,
-        query: str,
-        tema: Optional[str],
-        ents: Dict[str, Any],
-        k: int = 6,
-    ) -> List[RetrievedChunk]:
-        if not self.faiss_index or not self.manifest:
-            logger.warning("Índice/manifest não carregados. Retornando vazio.")
+    def _safe_retrieve(self, user_text: str, k: int = 5) -> List[str]:
+        """Busca no índice e garante uma lista de chunks."""
+        try:
+            raw = self.indexador.buscar_contexto(user_text, k=k) or ""
+            return [c for c in raw.split("\n\n") if c.strip()]
+        except Exception:
             return []
-
-        candidate_ids = self._prefilter_candidates(tema=tema, ents=ents)
-        qvec = self._safe_embed(query)
-        if qvec is None:
-            return []
-
-        ids, scores = self._search_restrict(
-            qvec, candidate_ids=candidate_ids, top_k=max(k * 5, k)
-        )
-        if not ids:
-            return []
-        chunks = self._build_chunks(ids, scores, qvec, top_k=k)
-        return chunks
 
     # ------------------------------------------------------------------
     # Internos
@@ -325,8 +307,20 @@ class BuscadorPDF:
             self._retriever._load_index()
     
     def buscar_contexto(self, consulta: str, k: int = 5) -> str:
-        chunks = self._retriever.retrieve(query=consulta, tema=None, ents={}, k=k)
-        return "\n\n".join(c.text for c in chunks)
+        chunks = self._safe_retrieve(consulta, k=k)
+        contexto = "\n\n".join(chunks)
+        if not chunks and self.tavily:
+            tv = self.tavily.buscar(consulta)
+            if isinstance(tv, dict):
+                texto = tv.get("texto") or ""
+                fontes = tv.get("fontes") or []
+                if texto:
+                    contexto = (contexto + ("\n\n" if contexto and texto else "") + texto).strip()
+                if fontes:
+                    contexto += "\n\nFontes (Tavily):\n" + "\n".join(
+                        f"- {f.get('titulo') or 'Fonte'}: {f.get('url')}" for f in fontes if f.get("url")
+                    )
+        return contexto
     
     def buscar_resposta(self, pergunta: str) -> str:  # compat
         return self.buscar_contexto(pergunta, k=6)
