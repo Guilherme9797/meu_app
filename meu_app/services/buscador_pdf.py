@@ -1,5 +1,31 @@
 from __future__ import annotations
 
+from __future__ import annotations
+
+from typing import Optional, Dict, Any
+
+# --- Suporte para rodar como script (python buscador_pdf.py) OU como módulo (-m meu_app.services.buscador_pdf) ---
+if __package__ is None or __package__ == "":
+    # Execução direta: ajustar sys.path para permitir "from meu_app.services..."
+    import os, sys
+    _here = os.path.abspath(__file__)
+    _services_dir = os.path.dirname(_here)                          # .../meu_app/services
+    _project_root = os.path.dirname(os.path.dirname(_services_dir)) # diretório que CONTÉM "meu_app"
+    if _project_root not in sys.path:
+        sys.path.insert(0, _project_root)
+
+    from meu_app.services.pdf_indexer import PDFIndexer
+    try:
+        from meu_app.services.tavily_service import TavilyService  # pode não estar instalado/configurado
+    except Exception:
+        TavilyService = None  # type: ignore
+else:
+    # Execução como pacote (recomendado): imports relativos
+    from .pdf_indexer import PDFIndexer
+    try:
+        from .tavily_service import TavilyService
+    except Exception:
+        TavilyService = None  # type: ignore
 """Retrieval simples baseado em FAISS para os PDFs indexados."""
 
 import json
@@ -270,9 +296,9 @@ class Retriever:
 
 __all__ = ["Retriever", "RetrievedChunk", "BuscadorPDF"]
 
-
 class BuscadorPDF:
     """Compatibilidade mínima mantendo a API antiga."""
+
     def __init__(
         self,
         openai_key: str,
@@ -297,7 +323,7 @@ class BuscadorPDF:
             except Exception:
                 pass
             self._retriever._load_index()
-
+    
     def buscar_contexto(self, consulta: str, k: int = 5) -> str:
         chunks = self._retriever.retrieve(query=consulta, tema=None, ents={}, k=k)
         return "\n\n".join(c.text for c in chunks)
@@ -314,4 +340,3 @@ class BuscadorPDF:
         metrics = self._indexer.indexar_pdfs()
         self._retriever._load_index()
         return metrics
-    

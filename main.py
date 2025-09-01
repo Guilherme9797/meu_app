@@ -113,6 +113,17 @@ def _make_oai() -> OpenAIClient:
     return OpenAIClient(api_key=key, chat_model=model, temperature=temp)
 
 
+def _build_indexador() -> "PDFIndexer":
+    from meu_app.services.pdf_indexer import PDFIndexer
+
+    return PDFIndexer(
+        pasta_pdfs=os.getenv("PDFS_DIR", "data/pdfs"),
+        pasta_index=os.getenv("INDEX_DIR", "index/faiss_index"),
+        openai_key=_ensure_openai_key(),
+    )
+
+
+
 def _build_buscador() -> Retriever:
     """Retorna um retriever simples; mantém compatibilidade básica."""
     embedder = Embeddings()
@@ -126,13 +137,7 @@ def _build_buscador() -> Retriever:
             return "\n\n".join(c.text for c in chunks)
     return _Compat(retr)
 
-def _build_indexador() -> "PDFIndexer":
-    from meu_app.services.pdf_indexer import PDFIndexer
-    return PDFIndexer(
-        pasta_pdfs=os.getenv("PDFS_DIR", "data/pdfs"),
-        pasta_index=os.getenv("INDEX_DIR", "index/faiss_index"),
-        openai_key=_ensure_openai_key(),
-    )
+
 
 def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
@@ -182,7 +187,6 @@ def cmd_index_update(args):
     indexador = _build_indexador()
     metrics = indexador.atualizar_indice_verbose()
     _print_json(metrics)
-
 
 def cmd_index_rebuild(args):
     indexador = _build_indexador()
