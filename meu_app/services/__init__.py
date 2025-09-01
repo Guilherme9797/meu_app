@@ -7,17 +7,15 @@ __all__ = [
     "RefinadorResposta",
     "PDFIndexer",
     "BuscadorPDF",
-    "Retriever",
     "TavilyService",
     "ZapiClient",
     "Atendimento",
-    "Classifier",
-    "Extractor",
-    "GroundingGuard",
-    "TavilyClient",
-    "AtendimentoService",
     "ConversorPropostas",
     "PricingService",
+    "Classifier",
+    "guess_tema",
+    "Extractor",
+    "extract_process_numbers",
     "PaymentOrchestrator",
     "PaymentProvider",
     "CheckoutResult",
@@ -125,6 +123,12 @@ def __getattr__(name: str):
     if name == "PricingService":
         from .pricing import PricingService  # pode não existir no ambiente
         return PricingService
+    if name in {"Classifier", "guess_tema"}:
+        from .classifier import Classifier, guess_tema
+        return {"Classifier": Classifier, "guess_tema": guess_tema}[name]
+    if name in {"Extractor", "extract_process_numbers"}:
+        from .extractor import Extractor, extract_process_numbers
+        return {"Extractor": Extractor, "extract_process_numbers": extract_process_numbers}[name]
 
     # Pagamentos (opcionais)
     if name == "PaymentOrchestrator":
@@ -154,6 +158,8 @@ if TYPE_CHECKING:
     from .atendimento import Atendimento
     from .conversor import ConversorPropostas
     from .pricing import PricingService  # type: ignore
+    from .classifier import Classifier, guess_tema
+    from .extractor import Extractor, extract_process_numbers
     from .payments.orchestrator import PaymentOrchestrator  # type: ignore
     try:
         from .classifier import Classifier  # type: ignore
