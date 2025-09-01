@@ -1,53 +1,71 @@
 from __future__ import annotations
 
-from typing import List, Dict
+import unicodedata
+from typing import Dict
+
+# Phrases that indicate the user has confirmed the issue is resolved.
+_RESOLUTION_PHRASES = [
+    "obrigado",  # thanks
+    "obrigada",
+    "valeu",
+    "resolveu",
+    "resolvido",
+    "resolvida",
+    "esta resolvido",
+    "pode encerrar",
+    "pode fechar",
+    "sem mais duvidas",
+    "nao tenho mais duvidas",
+    "era isso",
+    "so isso",
+    "tudo certo",
+    "tudo bem agora",
+    "tudo resolvido",
+    "deu certo",
+]
 
 
-def handle_incoming(
-    session_id: str,
-    user_message: str,
-    *,
-    msg_repo,
-    LLM,
-    system_prompt: str,
-) -> str:
-    """Process an incoming user message and return the assistant response.
+def _normalize(text: str) -> str:
+    """Return a lowercase ascii representation of *text*."""
+    text = text or ""
+    # remove accents/diacritics and normalise casing
+    return (
+        unicodedata.normalize("NFKD", text)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+        .lower()
+    )
 
-    Parameters
-    ----------
-    session_id:
-        Identifier for the conversation session. Used to retrieve history and
-        persist messages.
-    user_message:
-        Latest message sent by the user.
-    msg_repo:
-        Repository responsible for persisting and retrieving messages. It must
-        implement ``listar_ultimas`` and ``save``.
-    LLM:
-        Large language model client with a ``chat`` method that accepts a list
-        of messages.
-    system_prompt:
-        The system instruction passed as the first message to the LLM.
+
+def is_resolution_confirmation(text: str) -> bool:
+    """Return ``True`` if ``text`` confirms the issue is resolved.
+
+    The check is accent-insensitive and searches for any of the phrases in
+    ``_RESOLUTION_PHRASES``.
     """
+    norm = _normalize(text)
+    return any(phrase in norm for phrase in _RESOLUTION_PHRASES)
 
-    # Save the new user message so that history retrieval includes it.
-    msg_repo.save(session_id, "user", user_message)
 
-    # Retrieve the last N messages for context.
-    history = msg_repo.listar_ultimas(session_id, n=20)
+# In-memory repository for session flags.
+# Keys are session identifiers (e.g., phone numbers) and values are dictionaries
+# with arbitrary session metadata.
+sess_repo: Dict[str, Dict[str, bool]] = {}
 
-    # Build the message list: system message first, followed by history.
-    messages: List[Dict[str, str]] = [
-        {"role": "system", "content": system_prompt}
-    ]
 
-    for item in history:
-        messages.append({"role": item["role"], "content": item["content"]})
+def handle_incoming(session_id: str, message: str, *, repo: Dict[str, Dict[str, bool]] | None = None) -> str:
+    """Handle an incoming ``message`` for ``session_id``.
 
-    # Generate the assistant's response using the LLM.
-    response = LLM.chat(messages)
+    When the message matches ``is_resolution_confirmation`` the session is marked
+    as resolved in ``repo`` and a closing response is returned.
+    """
+    if repo is None:
+        repo = sess_repo
 
-    # Persist the assistant response.
-    msg_repo.save(session_id, "assistant", response)
+    if is_resolution_confirmation(message):
+        session = repo.setdefault(session_id, {})
+        session["resolved"] = True
+        return "Que bom que pudemos ajudar. Caso precise, estamos à disposição!"
 
-    return response
+    # Fallback behaviour for non-resolution messages: simply echo them.
+    return f"Recebido: {message}"
