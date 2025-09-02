@@ -12,6 +12,10 @@ import logging
 from typing import Optional, Dict, Any, List
 import math
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
+
 logging.basicConfig(
     level=os.getenv("LOGLEVEL", "INFO"),
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",

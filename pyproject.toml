@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "meu_app"
-version = "0.0.1"
-
-[tool.setuptools.packages.find]
-include = ["meu_app"]
+version = "0.1.0"
+description = "Assistente jurídico com RAG (PDF + web)"
+requires-python = ">=3.10"
+[tool.setuptools]
+packages = ["meu_app"]
