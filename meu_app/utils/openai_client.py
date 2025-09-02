@@ -22,6 +22,7 @@ APOLOGY_MESSAGE = "Desculpe, ocorreu um erro ao gerar a resposta."
 
 __all__ = ["OpenAIClient", "Embeddings", "LLM"]
 
+
 class OpenAIClient:
     """Wrapper leve para a API de chat do OpenAI SDK v1."""
 
@@ -34,7 +35,9 @@ class OpenAIClient:
     ) -> None:
         key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
         if not key:
-            raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
+            raise RuntimeError(
+                "OPENAI_API_KEY não definido — configure no .env ou passe api_key"
+            )
         os.environ.setdefault("OPENAI_API_KEY", key)
 
         model = (
@@ -50,6 +53,7 @@ class OpenAIClient:
         self.client = OpenAI(api_key=key)
         self.chat_model = model
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
+    
     
     def chat(self, system: str, user: str, *, extra: Optional[Dict[str, Any]] = None) -> str:
         """Envia prompt com mensagens de sistema e usuário."""
@@ -77,6 +81,9 @@ class Embeddings:
         key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
         if not key:
             raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
+            raise RuntimeError(
+                "OPENAI_API_KEY não definido — configure no .env ou passe api_key"
+            )
         os.environ.setdefault("OPENAI_API_KEY", key)
 
         if OpenAI is None:  # pragma: no cover
@@ -85,6 +92,8 @@ class Embeddings:
         self.client = OpenAI(api_key=key)
         self.model = model or os.getenv("OPENAI_EMBEDDINGS_MODEL", "text-embedding-3-small")
     
+
+
     def embed(self, texts: Union[str, List[str]]) -> Union[np.ndarray, List[np.ndarray]]:
         """Gera embeddings para uma string ou lista de strings."""
         inputs = [texts] if isinstance(texts, str) else list(texts)
@@ -94,8 +103,10 @@ class Embeddings:
             return vecs[0].reshape(1, -1)
         return vecs
 
+
 class LLM(OpenAIClient):
     """Cliente de LLM com utilidades extras (transcrição/OCR)."""
+    
     def generate(
         self,
         prompt: Union[str, List[Dict[str, str]]],
@@ -113,12 +124,15 @@ class LLM(OpenAIClient):
             prompt_for_echo = prompt.strip()
         else:
             messages = prompt
-            prompt_for_echo = " ".join(m.get("content", "") for m in prompt if m.get("role") == "user").strip()
+            prompt_for_echo = " ".join(
+                m.get("content", "") for m in prompt if m.get("role") == "user"
+            ).strip()
+
 
         params: Dict[str, Any] = {
-             "model": self.chat_model,
+            "model": self.chat_model,
             "messages": messages,
-            "max_tokens": max_tokens,
+            
         }
 
         temp = self.temperature if temperature is None else temperature
@@ -126,12 +140,54 @@ class LLM(OpenAIClient):
             params["temperature"] = temp
 
         resp = self.client.chat.completions.create(**params)
+        def _call_with_token_key(token_key: str):
+            p = dict(params)
+            p[token_key] = max_tokens
+            return self.client.chat.completions.create(**p)
+
+        try:
+            resp = _call_with_token_key("max_tokens")
+        except Exception as e:
+            msg = str(e).lower()
+            if "max_tokens" in msg and "max_completion_tokens" in msg:
+                resp = _call_with_token_key("max_completion_tokens")
+            else:
+                raise
+            
         text = (resp.choices[0].message.content or "").strip()
 
-        if text.strip() == prompt_for_echo:
-            logging.getLogger("openai_client").warning(
-                "LLM retornou exatamente o prompt. Verifique configuração ou parâmetros."
-            )
+        if text.strip() == prompt_for_echo and isinstance(prompt, str):
+            try:
+                params_retry: Dict[str, Any] = {
+                    "model": self.chat_model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Você é um advogado brasileiro. Responda de forma prática, sem ecoar.",
+                        },
+                        {"role": "user", "content": prompt_for_echo},
+                    ],
+                }
+                if temp != 1.0:
+                    params_retry["temperature"] = temp
+                try:
+                    resp2 = self.client.chat.completions.create(
+                        **{**params_retry, "max_tokens": max_tokens}
+                    )
+                except Exception as e2:
+                    msg2 = str(e2).lower()
+                    if "max_tokens" in msg2 and "max_completion_tokens" in msg2:
+                        resp2 = self.client.chat.completions.create(
+                            **{**params_retry, "max_completion_tokens": max_tokens}
+                        )
+                    else:
+                        raise
+                text = (resp2.choices[0].message.content or "").strip()
+            except Exception:
+                logging.getLogger("openai_client").exception(
+                    "Retry anti-eco falhou."
+                )
+
         return text
 
     def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
@@ -176,4 +232,7 @@ class LLM(OpenAIClient):
             )
             return (getattr(resp, "output_text", "") or "").strip()
         except Exception:  # pragma: no cover - depende de serviço externo
+            
             return ""
+        
+        
