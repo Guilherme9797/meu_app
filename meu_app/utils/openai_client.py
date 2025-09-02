@@ -68,9 +68,42 @@ class OpenAIClient:
         temp = extra.pop("temperature", self.temperature)
         if temp != 1.0:
             params["temperature"] = temp
+        
+        if "max_tokens" in extra:
+            params["max_tokens"] = extra.pop("max_tokens")
+        if "max_completion_tokens" in extra:
+            params["max_completion_tokens"] = extra.pop("max_completion_tokens")
+
         if extra:
             params.update(extra)
-        resp = self.client.chat.completions.create(**params)
+        def _call() -> Any:
+            try:
+                return self.client.chat.completions.create(**params)
+            except Exception as e:  # pragma: no cover - depende de modelo externo
+                msg = str(e).lower()
+                if (
+                    "temperature" in params
+                    and "temperature" in msg
+                    and ("unsupported" in msg or "only the default" in msg)
+                ):
+                    params.pop("temperature", None)
+                    return self.client.chat.completions.create(**params)
+                raise
+
+        try:
+            resp = _call()
+        except Exception as e:  # pragma: no cover - depende de modelo externo
+            msg = str(e).lower()
+            if (
+                "max_tokens" in msg
+                and "max_completion_tokens" in msg
+                and "max_tokens" in params
+            ):
+                mt = params.pop("max_tokens")
+                params["max_completion_tokens"] = mt
+                resp = _call()
+            else:
+                raise
         return (resp.choices[0].message.content or "").strip()
 
 
@@ -81,9 +114,6 @@ class Embeddings:
         key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
         if not key:
             raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
-            raise RuntimeError(
-                "OPENAI_API_KEY não definido — configure no .env ou passe api_key"
-            )
         os.environ.setdefault("OPENAI_API_KEY", key)
 
         if OpenAI is None:  # pragma: no cover
@@ -139,11 +169,21 @@ class LLM(OpenAIClient):
         if temp != 1.0:
             params["temperature"] = temp
 
-        resp = self.client.chat.completions.create(**params)
         def _call_with_token_key(token_key: str):
             p = dict(params)
             p[token_key] = max_tokens
-            return self.client.chat.completions.create(**p)
+            try:
+                return self.client.chat.completions.create(**p)
+            except Exception as e:  # pragma: no cover - depende de modelo externo
+                msg = str(e).lower()
+                if (
+                    "temperature" in p
+                    and "temperature" in msg
+                    and ("unsupported" in msg or "only the default" in msg)
+                ):
+                    p.pop("temperature", None)
+                    return self.client.chat.completions.create(**p)
+                raise
 
         try:
             resp = _call_with_token_key("max_tokens")
@@ -170,16 +210,27 @@ class LLM(OpenAIClient):
                 }
                 if temp != 1.0:
                     params_retry["temperature"] = temp
+                def _call_retry(token_key: str):
+                    p = dict(params_retry)
+                    p[token_key] = max_tokens
+                    try:
+                        return self.client.chat.completions.create(**p)
+                    except Exception as e2:  # pragma: no cover
+                        msg2 = str(e2).lower()
+                        if (
+                            "temperature" in p
+                            and "temperature" in msg2
+                            and ("unsupported" in msg2 or "only the default" in msg2)
+                        ):
+                            p.pop("temperature", None)
+                            return self.client.chat.completions.create(**p)
+                        raise
                 try:
-                    resp2 = self.client.chat.completions.create(
-                        **{**params_retry, "max_tokens": max_tokens}
-                    )
+                     resp2 = _call_retry("max_tokens")
                 except Exception as e2:
                     msg2 = str(e2).lower()
                     if "max_tokens" in msg2 and "max_completion_tokens" in msg2:
-                        resp2 = self.client.chat.completions.create(
-                            **{**params_retry, "max_completion_tokens": max_tokens}
-                        )
+                        resp2 = _call_retry("max_completion_tokens")
                     else:
                         raise
                 text = (resp2.choices[0].message.content or "").strip()
@@ -234,5 +285,4 @@ class LLM(OpenAIClient):
         except Exception:  # pragma: no cover - depende de serviço externo
             
             return ""
-        
         
