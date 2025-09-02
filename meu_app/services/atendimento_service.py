@@ -121,13 +121,14 @@ class AtendimentoService:
             res = self.tavily.search(query)
             if not res:
                 return ""
-            if isinstance(res, str) and "tavily" in res.lower() and "não configurado" in res.lower():
-                logging.info("Tavily não configurado; ignorando web.")
-                return ""
-            if isinstance(res, dict) and (res.get("error") or res.get("ok") is False):
-                logging.warning("Erro Tavily: %r", res)
-                return ""
-            return str(res)
+            items = res.get("results", []) if isinstance(res, dict) else []
+            top = []
+            for it in items[:3]:
+                title = it.get("title") or ""
+                content = (it.get("content") or "")[:500]
+                url = it.get("url") or ""
+                top.append(f"- {title}\n  {content}\n  Fonte: {url}")
+            return "\n".join(top) or str(res)
         except Exception:
             logging.exception("Falha na busca web.")
             return ""
@@ -295,16 +296,13 @@ def _build_atendimento_service() -> AtendimentoService:
 
     embedder = Embeddings()
     retriever = Retriever(index_path=get_index_dir(), embed_fn=getattr(embedder, "embed", None))
-
-    use_tavily = os.getenv("MEU_APP_USE_TAVILY", "0").lower() in ("1", "true", "yes", "on")
     tavily = None
-    if use_tavily and TavilyClient:
+    api_key = os.getenv("TAVILY_API_KEY")
+    if api_key and TavilyClient:
         try:
-            if hasattr(TavilyClient, "from_env"):
-                tavily = TavilyClient.from_env()
-            else:
-                tavily = TavilyClient()
-        except Exception:
+            tavily = TavilyClient(api_key=api_key)
+        except Exception as e:
+            logging.exception("Falha ao instanciar TavilyClient: %s", e)
             tavily = None
 
     llm = LLMStub()
@@ -318,7 +316,7 @@ def _build_atendimento_service() -> AtendimentoService:
     extractor = Extractor()
     sess_repo = SessionRepository()
     msg_repo = MessageRepository()
-    conf = AtendimentoConfig(use_web=use_tavily)
+    conf = AtendimentoConfig(use_web=tavily is not None)
 
     return AtendimentoService(
         sess_repo=sess_repo,

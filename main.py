@@ -8,6 +8,7 @@ import json
 import time
 import argparse
 import datetime as dt
+import logging
 from typing import Optional, Dict, Any, List
 
 from meu_app.utils.paths import get_index_dir
@@ -171,13 +172,9 @@ def _build_atendimento_service() -> AtendimentoService:
                 return []
     try:
         from tavily import TavilyClient  # type: ignore
-    except Exception:
-        class TavilyClient:  # type: ignore
-            def __init__(self, *a, **kw):
-                pass
-
-            def search(self, *a, **kw):
-                return ""
+    except Exception:  # pragma: no cover - opcional
+        TavilyClient = None  # type: ignore
+    
      # Usa o cliente real de LLM baseado em OpenAI, com fallback leve em ambientes
     # onde o módulo ou as credenciais não estejam disponíveis. O AtendimentoService
     # espera métodos como ``generate``/``chat``/``complete``.
@@ -232,15 +229,14 @@ def _build_atendimento_service() -> AtendimentoService:
 
     embedder = Embeddings()
     retriever = Retriever(index_path=get_index_dir(), embed_fn=getattr(embedder, "embed", lambda x: []))
-    use_tavily = os.getenv("MEU_APP_USE_TAVILY", "0").lower() in ("1", "true", "yes", "on")
     tavily = None
-    try:
-        if use_tavily and hasattr(TavilyClient, "from_env"):
-            tavily = TavilyClient.from_env()  # type: ignore[attr-defined]
-        elif use_tavily:
-            tavily = TavilyClient()
-    except Exception:
-        tavily = None
+    api_key = os.getenv("TAVILY_API_KEY")
+    if api_key and TavilyClient:
+        try:
+            tavily = TavilyClient(api_key=api_key)
+        except Exception as e:
+            logging.exception("Falha ao instanciar TavilyClient: %s", e)
+            tavily = None
     llm = _StubLLM()
     if OpenAILLM is not None:
         try:
@@ -260,7 +256,7 @@ def _build_atendimento_service() -> AtendimentoService:
     extractor = Extractor()
     sess_repo = SessionRepository()
     msg_repo = MessageRepository()
-    conf = AtendimentoConfig(use_web=use_tavily)
+    conf = AtendimentoConfig(use_web=tavily is not None)
     return AtendimentoService(
         sess_repo=sess_repo,
         msg_repo=msg_repo,
