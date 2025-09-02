@@ -10,6 +10,12 @@ import argparse
 import datetime as dt
 import logging
 from typing import Optional, Dict, Any, List
+import math
+
+logging.basicConfig(
+    level=os.getenv("LOGLEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 from meu_app.utils.paths import get_index_dir
 from meu_app.utils.openai_client import Embeddings, LLM
@@ -19,9 +25,9 @@ from meu_app.services import (
     Retriever,
     GroundingGuard,
     TavilyClient,
-    AtendimentoService,
+   
 )
-from meu_app.services.atendimento import AtendimentoConfig
+
 from meu_app.persistence.repositories import SessionRepository, MessageRepository
 
 # -------------------------------------------------------------------------
@@ -98,6 +104,10 @@ def _fmt_brl(valor: float) -> str:
     except Exception:
         return f"R$ {valor:.2f}"
 
+def _round_up(x: float, step: int) -> float:
+    """Arredonda ``x`` para cima no múltiplo de ``step`` mais próximo."""
+    step = max(1, int(step))
+    return math.ceil(x / step) * step
 
 def _ensure_openai_key() -> str:
     key = os.getenv("OPENAI_API_KEY")
@@ -156,7 +166,7 @@ def _dispatch(service, phone, text):
 
 def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
-    from meu_app.services.atendimento_service import AtendimentoService, AtendimentoConfig
+    from meu_app.services.atendimento import AtendimentoService, AtendimentoConfig
     try:
         from meu_app.services.retriever import Embeddings, Retriever  # type: ignore
     except Exception:  # fallback simplificado
@@ -261,7 +271,7 @@ def _build_atendimento_service() -> AtendimentoService:
     extractor = Extractor()
     sess_repo = SessionRepository()
     msg_repo = MessageRepository()
-    conf = AtendimentoConfig(use_web=tavily is not None)
+    conf = AtendimentoConfig(use_web=tavily is not None, append_low_coverage_note=False)
     return AtendimentoService(
         sess_repo=sess_repo,
         msg_repo=msg_repo,
@@ -299,6 +309,23 @@ def _build_atendimento_for(phone: Optional[str], nome: str) -> Atendimento:
         # sem phone: cria um cliente novo (sessão efêmera)
         cliente = Cliente(nome or "Cliente CLI")
         cliente_repo.criar(cliente.id, cliente.nome, _now_iso())
+
+def _resolve_cliente_by_phone(phone: str) -> Optional[Dict[str, Any]]:
+    """Busca informações do cliente associado ao ``phone``.
+
+    Retorna um dicionário com dados do contato e do cliente ou ``None``
+    se o número não estiver cadastrado.
+    """
+    init_db()
+    contato_repo = ContatoRepository()
+    cliente_repo = ClienteRepository()
+    contato = contato_repo.get_by_phone(phone)
+    if not contato:
+        return None
+    cliente = cliente_repo.obter(contato["cliente_id"])
+    info: Dict[str, Any] = dict(contato)
+    info["cliente"] = cliente
+    return info
 
 # -----------------------------------------------------------------------------
 # Comandos: Atendimento
