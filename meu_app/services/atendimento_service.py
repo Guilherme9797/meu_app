@@ -228,7 +228,7 @@ class AtendimentoService:
                 "• Fundamentos possíveis ...\n"
                 "• Checklist de documentos ..."
             )
-            
+
         return raw
 
 
@@ -260,8 +260,21 @@ def _build_atendimento_service() -> AtendimentoService:
         def retrieve(self, query: str, k: int = 4) -> List[Any]:
             return []
 
-    class LLM:
-        def complete(self, prompt: str) -> str:
+    # Tenta usar o cliente oficial baseado em OpenAI; se indisponível, usa um
+    # stub que mantém a interface esperada pelo serviço.
+    try:
+        from meu_app.utils.openai_client import LLM as OpenAILLM  # type: ignore
+    except Exception:
+        OpenAILLM = None  # type: ignore
+
+    class LLMStub:
+        def generate(self, *a, **kw):
+            return ""
+
+        def chat(self, *a, **kw):
+            return ""
+
+        def complete(self, *a, **kw):
             return ""
 
     class GroundingGuard:
@@ -294,7 +307,12 @@ def _build_atendimento_service() -> AtendimentoService:
         except Exception:
             tavily = None
 
-    llm = LLM()
+    llm = LLMStub()
+    if OpenAILLM is not None:
+        try:
+            llm = OpenAILLM()
+        except Exception:
+            llm = LLMStub()
     guard = GroundingGuard()
     classifier = Classifier()
     extractor = Extractor()
@@ -312,4 +330,6 @@ def _build_atendimento_service() -> AtendimentoService:
         classifier=classifier,
         extractor=extractor,
         conf=conf,
+    
     )
+

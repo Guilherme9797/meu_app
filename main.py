@@ -178,12 +178,26 @@ def _build_atendimento_service() -> AtendimentoService:
 
             def search(self, *a, **kw):
                 return ""
+     # Usa o cliente real de LLM baseado em OpenAI, com fallback leve em ambientes
+    # onde o módulo ou as credenciais não estejam disponíveis. O AtendimentoService
+    # espera métodos como ``generate``/``chat``/``complete``.
     try:
-        from meu_app.services.llm import LLM  # type: ignore
+        from meu_app.utils.openai_client import LLM as OpenAILLM  # type: ignore
     except Exception:
         class LLM:  # type: ignore
             def chat(self, *a, **kw):
                 return "Desculpe, não consegui gerar uma resposta agora."
+        OpenAILLM = None  # type: ignore
+
+    class _StubLLM:  # type: ignore
+        def generate(self, *a, **kw):
+            return "Desculpe, não consegui gerar uma resposta agora."
+
+        def chat(self, *a, **kw):
+            return "Desculpe, não consegui gerar uma resposta agora."
+
+        def complete(self, *a, **kw):
+            return "Desculpe, não consegui gerar uma resposta agora."
     try:
         from meu_app.services.guard import GroundingGuard  # type: ignore
     except Exception:
@@ -227,7 +241,12 @@ def _build_atendimento_service() -> AtendimentoService:
             tavily = TavilyClient()
     except Exception:
         tavily = None
-    llm = LLM()
+    llm = _StubLLM()
+    if OpenAILLM is not None:
+        try:
+            llm = OpenAILLM()
+        except Exception:
+            llm = _StubLLM()
     GG = GroundingGuard
     try:
         guard = GG() if callable(GG) else GG
