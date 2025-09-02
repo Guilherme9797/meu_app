@@ -135,6 +135,11 @@ class AtendimentoService:
     # ------------------------------------------------------------------
     # Rotina principal (simplificada)
     # ------------------------------------------------------------------
+    
+    def handle_message(self, phone: str, text: str) -> str:
+        """Compatibilidade com despachantes que passam phone/text."""
+        return self.responder(text)
+    
     def responder(self, user_text: str) -> str:
         """Gera resposta usando PDFs e, se necessário, busca web."""
         intent, tema = self._safe_classify(user_text)
@@ -162,19 +167,68 @@ class AtendimentoService:
                 "Sem materiais auxiliares. Ainda assim, dê instruções práticas (o que fazer, por quê, como) "
                 "e um checklist de documentos."
             )
+        messages = [
+            {"role": "system", "content": self.conf.system_prompt},
+            {"role": "user", "content": prompt},
+        ]
 
         # LLM/Guard (simplificado)
         try:
-            if hasattr(self.llm, "complete"):
-                raw = self.llm.complete(prompt)
+            if hasattr(self.llm, "generate"):
+                raw = self.llm.generate(messages, temperature=0.2, max_tokens=900)
+            elif hasattr(self.llm, "chat"):
+                raw = self.llm.chat(
+                    system=self.conf.system_prompt,
+                    user=prompt,
+                    extra={"temperature": 0.2, "max_tokens": 900},
+                )
+            elif hasattr(self.llm, "complete"):
+                raw = self.llm.complete(
+                    f"[SYSTEM]: {self.conf.system_prompt}\n[USER]: {prompt}"
+                )
             elif callable(self.llm):
                 raw = self.llm(prompt)
             else:
-                raw = prompt
+                raw = ""
         except Exception:
             logging.exception("Falha no LLM.")
-            raw = prompt
+            raw = ""
 
+        def _too_similar(a: str, b: str) -> bool:
+            a = (a or "").strip()
+            b = (b or "").strip()
+            if not a or not b:
+                return False
+            return a == b or a.startswith(b) or b.startswith(a)
+
+        if not raw or _too_similar(raw, prompt) or _too_similar(raw, user_text):
+            try:
+                if hasattr(self.llm, "generate"):
+                    raw = self.llm.generate(
+                        [
+                            {
+                                "role": "system",
+                                "content": "Você é um advogado brasileiro. Responda sem ecoar a pergunta.",
+                            },
+                            {"role": "user", "content": user_text},
+                        ],
+                        temperature=0.2,
+                        max_tokens=700,
+                    )
+                else:
+                    raw = ""
+            except Exception:
+                logging.exception("Retry do LLM falhou.")
+                raw = ""
+
+        if not raw:
+            raw = (
+                "Orientação preliminar (sem fonte):\n"
+                "• Passos práticos ...\n"
+                "• Fundamentos possíveis ...\n"
+                "• Checklist de documentos ..."
+            )
+            
         return raw
 
 
