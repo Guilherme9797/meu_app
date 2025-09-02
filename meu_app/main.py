@@ -332,6 +332,62 @@ def _resolve_cliente_by_phone(phone: str) -> Optional[Dict[str, Any]]:
     return info
 
 # -----------------------------------------------------------------------------
+# Comandos: Índice (FAISS + PDFs)
+# -----------------------------------------------------------------------------
+
+def cmd_index_info(args):
+    import glob
+    idx_dir = get_index_dir()
+    pdf_dir = os.getenv("PDFS_DIR", "data/pdfs")
+    exists = os.path.isdir(idx_dir)
+    files = glob.glob(os.path.join(idx_dir, "**", "*"), recursive=True) if exists else []
+    out = {
+        "pdf_dir": pdf_dir,
+        "index_dir": idx_dir,
+        "index_exists": exists,
+        "index_file_count": len(files),
+    }
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+
+
+def cmd_index_rebuild(args):
+    """Recria o índice do zero (apaga e indexa novamente)."""
+    try:
+        from meu_app.services.pdf_indexer import PDFIndexer
+        pdf_dir = os.getenv("PDFS_DIR", "data/pdfs")
+        index_dir = get_index_dir()
+        ix = PDFIndexer(
+            pasta_pdfs=pdf_dir,
+            pasta_index=index_dir,
+            openai_key=os.getenv("OPENAI_API_KEY"),
+        )
+        ix.indexar_pdfs()
+        print("✅ Índice recriado com sucesso.")
+    except Exception as e:
+        logging.exception("Falha ao recriar índice")
+        print(f"❌ Erro ao recriar índice: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_index_update(args):
+    """Atualiza o índice incrementalmente (ou faz rebuild se necessário)."""
+    try:
+        from meu_app.services.pdf_indexer import PDFIndexer
+        pdf_dir = os.getenv("PDFS_DIR", "data/pdfs")
+        index_dir = get_index_dir()
+        ix = PDFIndexer(
+            pasta_pdfs=pdf_dir,
+            pasta_index=index_dir,
+            openai_key=os.getenv("OPENAI_API_KEY"),
+        )
+        ix.atualizar_indice_verbose()
+        print("✅ Índice atualizado com sucesso.")
+    except Exception as e:
+        logging.exception("Falha ao atualizar índice")
+        print(f"❌ Erro ao atualizar índice: {e}", file=sys.stderr)
+        return 1
+
+# -----------------------------------------------------------------------------
 # Comandos: Atendimento
 # -----------------------------------------------------------------------------
 
