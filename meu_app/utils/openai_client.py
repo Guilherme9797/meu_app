@@ -1,38 +1,29 @@
 from __future__ import annotations
-import os
-import logging
 import base64
-from typing import Optional, Dict, Any, List
+import logging
+import os
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
 # Carrega .env sem sobrescrever variáveis já presentes
-try:
+try:  # pragma: no cover - utilitário
     from dotenv import load_dotenv, find_dotenv
     load_dotenv(find_dotenv(usecwd=True), override=False)
-except Exception:
+except Exception:  # pragma: no cover - opcional
     pass
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except Exception:  # pragma: no cover - ambiente sem SDK
+    OpenAI = None
 
 APOLOGY_MESSAGE = "Desculpe, ocorreu um erro ao gerar a resposta."
 
-
 __all__ = ["OpenAIClient", "Embeddings", "LLM"]
 
-
 class OpenAIClient:
-    
-  
-    """Wrapper simples para chat com OpenAI 1.x.
-
-    
-    Usa:
-      - api_key passada no ``__init__`` ou ``OPENAI_API_KEY`` do ambiente.
-    Modelo:
-      - prioridade: parâmetro ``chat_model``
-      - depois: ``OPENAI_MODEL`` ou ``OPENAI_CHAT_MODEL``
-      - fallback: ``gpt-5-mini``
-    """
+    """Wrapper leve para a API de chat do OpenAI SDK v1."""
 
     def __init__(
         self,
@@ -44,10 +35,8 @@ class OpenAIClient:
         key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
         if not key:
             raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
-        # garante para libs que leem só do ambiente
         os.environ.setdefault("OPENAI_API_KEY", key)
 
-        # aceita OPENAI_MODEL OU OPENAI_CHAT_MODEL
         model = (
             chat_model
             or os.getenv("OPENAI_MODEL")
@@ -55,47 +44,34 @@ class OpenAIClient:
             or "gpt-4o-mini"
         )
 
+        if OpenAI is None:  # pragma: no cover - ausência do SDK
+            raise RuntimeError("SDK OpenAI não disponível. Instale 'openai' >= 1.0.")
+
         self.client = OpenAI(api_key=key)
         self.chat_model = model
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
-
-        # log leve (só prefixo da key)
-        try:
-            import logging
-            logging.getLogger("openai_client").info(
-                "OpenAI key prefix: %s | model: %s",
-                (key[:6] + "***"),
-                self.chat_model,
-            )
-        except Exception:
-            pass
-
+    
     def chat(self, system: str, user: str, *, extra: Optional[Dict[str, Any]] = None) -> str:
+        """Envia prompt com mensagens de sistema e usuário."""
         params: Dict[str, Any] = {
             "model": self.chat_model,
-            "temperature": self.temperature,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
+        extra = dict(extra or {})
+        temp = extra.pop("temperature", self.temperature)
+        if temp != 1.0:
+            params["temperature"] = temp
         if extra:
             params.update(extra)
-
-        for attempt in range(2):
-            try:
-                resp = self.client.chat.completions.create(**params)
-                choice = resp.choices[0]
-                return (choice.message.content or "").strip()
-            except Exception:
-                logging.getLogger("openai_client").exception(
-                    "OpenAI chat attempt %d failed", attempt + 1
-                )
-        return APOLOGY_MESSAGE
+        resp = self.client.chat.completions.create(**params)
+        return (resp.choices[0].message.content or "").strip()
 
 
 class Embeddings:
-    """Wrapper simples para embeddings com OpenAI 1.x."""
+    """Utilitário de embeddings usando o SDK 1.x."""
 
     def __init__(self, api_key: Optional[str] = None, *, model: Optional[str] = None) -> None:
         key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
@@ -103,63 +79,62 @@ class Embeddings:
             raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
         os.environ.setdefault("OPENAI_API_KEY", key)
 
+        if OpenAI is None:  # pragma: no cover
+            raise RuntimeError("SDK OpenAI não disponível. Instale 'openai' >= 1.0.")
+
         self.client = OpenAI(api_key=key)
         self.model = model or os.getenv("OPENAI_EMBEDDINGS_MODEL", "text-embedding-3-small")
+    
+    def embed(self, texts: Union[str, List[str]]) -> Union[np.ndarray, List[np.ndarray]]:
+        """Gera embeddings para uma string ou lista de strings."""
+        inputs = [texts] if isinstance(texts, str) else list(texts)
+        resp = self.client.embeddings.create(model=self.model, input=inputs)
+        vecs = [np.array(item.embedding, dtype="float32") for item in resp.data]
+        if isinstance(texts, str):
+            return vecs[0].reshape(1, -1)
+        return vecs
 
-    def embed(self, texts: List[str]) -> List[List[float]]:
-        resp = self.client.embeddings.create(model=self.model, input=texts)
-        return [item.embedding for item in resp.data]
-
-
-class LLM:
-    """Wrapper simples para chat com OpenAI 1.x usando lista de mensagens."""
-
-    def __init__(
+class LLM(OpenAIClient):
+    """Cliente de LLM com utilidades extras (transcrição/OCR)."""
+    def generate(
         self,
-        api_key: Optional[str] = None,
+        prompt: Union[str, List[Dict[str, str]]],
         *,
-        model: Optional[str] = None,
-        temperature: float = 0.2,
-    ) -> None:
-        key = (api_key or os.getenv("OPENAI_API_KEY") or "").strip()
-        if not key:
-            raise RuntimeError("OPENAI_API_KEY não definido — configure no .env ou passe api_key")
-        os.environ.setdefault("OPENAI_API_KEY", key)
-
-        model = (
-            model
-            or os.getenv("OPENAI_MODEL")
-            or os.getenv("OPENAI_CHAT_MODEL")
-            or "gpt-4o-mini"
-        )
-
-        self.client = OpenAI(api_key=key)
-        self.model = model
-        self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
-
-    def chat(
-        self,
-        messages: List[Dict[str, str]],
-        *,
-        extra: Optional[Dict[str, Any]] = None,
+        temperature: Optional[float] = None,
+        system: Optional[str] = None,
+        max_tokens: int = 600,
     ) -> str:
+        """Gera resposta a partir de um prompt simples ou lista de mensagens."""
+        if isinstance(prompt, str):
+            messages: List[Dict[str, str]] = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+            prompt_for_echo = prompt.strip()
+        else:
+            messages = prompt
+            prompt_for_echo = " ".join(m.get("content", "") for m in prompt if m.get("role") == "user").strip()
+
         params: Dict[str, Any] = {
-            "model": self.model,
-            "temperature": self.temperature,
+             "model": self.chat_model,
             "messages": messages,
+            "max_tokens": max_tokens,
         }
-        if extra:
-            params.update(extra)
+
+        temp = self.temperature if temperature is None else temperature
+        if temp != 1.0:
+            params["temperature"] = temp
 
         resp = self.client.chat.completions.create(**params)
-        choice = resp.choices[0]
-        return (choice.message.content or "").strip()
-    
-class LLM(OpenAIClient):
-    """Cliente de LLM com utilidades de transcrição e OCR."""
+        text = (resp.choices[0].message.content or "").strip()
+
+        if text.strip() == prompt_for_echo:
+            logging.getLogger("openai_client").warning(
+                "LLM retornou exatamente o prompt. Verifique configuração ou parâmetros."
+            )
+        return text
 
     def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
-        """Envia bytes de áudio para transcrição via API."""
         model = os.getenv("OPENAI_TRANSCRIBE_MODEL", "gpt-4o-transcribe")
         try:
             resp = self.client.audio.transcriptions.create(
@@ -167,7 +142,7 @@ class LLM(OpenAIClient):
                 file=("audio", audio_bytes, mime_type),
             )
             return (getattr(resp, "text", "") or "").strip()
-        except Exception:
+        except Exception:  # pragma: no cover - depende de serviço externo
             return ""
 
     def ocr_image(
@@ -197,21 +172,8 @@ class LLM(OpenAIClient):
                         ],
                     }
                 ],
-                temperature=self.temperature,
+                temperature=temp if (temp := self.temperature) != 1.0 else None,
             )
             return (getattr(resp, "output_text", "") or "").strip()
-        except Exception:
+        except Exception:  # pragma: no cover - depende de serviço externo
             return ""
-
-class Embeddings:
-    def __init__(self, api_key: str | None = None, model: str = "text-embedding-3-small"):
-        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
-        self.model = model
-
-    def embed(self, text: str) -> np.ndarray:
-        res = self.client.embeddings.create(model=self.model, input=[text])
-        vec = np.array(res.data[0].embedding, dtype="float32")
-        return vec.reshape(1, -1)
-
-
-__all__ = ["OpenAIClient", "LLM", "Embeddings"]
