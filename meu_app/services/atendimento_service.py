@@ -115,6 +115,11 @@ class AtendimentoService:
         return min(1.0, len(chunks) / float(self.conf.retriever_k))
 
     def _safe_web_search(self, query: str) -> str:
+        logging.info(
+            "WEB FALLBACK: use_web=%s, tavily=%s",
+            self.conf.use_web,
+            bool(getattr(self, "tavily", None)),
+        )
         try:
             if not self.conf.use_web or not getattr(self, "tavily", None):
                 return ""
@@ -148,7 +153,13 @@ class AtendimentoService:
         chunks = self._safe_retrieve(user_text, tema, ents)
         pdf_ctx = "\n\n".join(getattr(c, "text", str(c)) for c in chunks) if chunks else ""
         coverage = self._score_pdf_coverage(chunks)
-
+        logging.info(
+            "RAG: chunks=%d, coverage=%.2f, use_web=%s, tavily=%s",
+            len(chunks),
+            coverage,
+            self.conf.use_web,
+            bool(getattr(self, "tavily", None)),
+        )
         web_ctx = ""
         if coverage < self.conf.coverage_threshold:
             web_ctx = self._safe_web_search(user_text)
@@ -311,6 +322,11 @@ def _build_atendimento_service() -> AtendimentoService:
             llm = OpenAILLM()
         except Exception:
             llm = LLMStub()
+    logging.getLogger(__name__).info("LLM selecionado: %s", type(llm).__name__)
+    if type(llm).__name__ in {"_StubLLM", "LLMStub"}:
+        raise RuntimeError(
+            "LLM real não inicializado. Verifique OPENAI_API_KEY/OPENAI_MODEL e o pacote 'openai'."
+        )
     guard = GroundingGuard()
     classifier = Classifier()
     extractor = Extractor()

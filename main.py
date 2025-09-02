@@ -243,6 +243,11 @@ def _build_atendimento_service() -> AtendimentoService:
             llm = OpenAILLM()
         except Exception:
             llm = _StubLLM()
+    logging.getLogger(__name__).info("LLM selecionado: %s", type(llm).__name__)
+    if type(llm).__name__ in {"_StubLLM", "LLMStub"}:
+        raise RuntimeError(
+            "LLM real não inicializado. Verifique OPENAI_API_KEY/OPENAI_MODEL e o pacote 'openai'."
+        )
     GG = GroundingGuard
     try:
         guard = GG() if callable(GG) else GG
