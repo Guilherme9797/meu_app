@@ -384,6 +384,148 @@ class AtendimentoService:
         linhas.append(f"Proposta (faixa/condições): {t['proposta']}")
         linhas.append(f"Próximos passos: {t['proximos_passos']}")
         return "\n".join(linhas)
+    
+    # ------------------------------------------------------------------
+    # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
+    # ------------------------------------------------------------------
+
+    def _caseframe_extract(self, text: str) -> dict:
+        """Extrai um quadro estruturado do caso (fatos, objetivo, tags...)."""
+        prompt = (
+            "Leia a pergunta do cliente e devolva um JSON com campos:\n"
+            "{facts: string curto, goal: string curto, parties: [string], "
+            "values: [string], deadlines: [string], tags: [string]}\n"
+            "Se não souber um campo, deixe vazio. Não invente.\n"
+            f"Pergunta: {text}"
+        )
+        try:
+            if hasattr(self.llm, "generate"):
+                out = self.llm.generate(
+                    [{"role": "user", "content": prompt}],
+                    max_completion_tokens=400,
+                )
+            else:
+                out = ""
+        except Exception:
+            logging.exception("Frame extract falhou.")
+            out = ""
+        import json as _json
+        default = {
+            "facts": "",
+            "goal": "",
+            "parties": [],
+            "values": [],
+            "deadlines": [],
+            "tags": [],
+        }
+        try:
+            data = _json.loads(out) if isinstance(out, str) else default
+            if not isinstance(data, dict):
+                data = default
+        except Exception:
+            data = default
+        return data
+
+    def _expand_queries(self, user_text: str, frame: dict) -> List[str]:
+        tags = frame.get("tags") or []
+        facts = (frame.get("facts") or "")[:180]
+        goal = (frame.get("goal") or "")[:120]
+        q: List[str] = [user_text]
+        if facts:
+            q.append(facts)
+        if goal:
+            q.append(goal)
+        for t in tags[:5]:
+            q.append(f"{t} {user_text}")
+        q.append(f"disputa: {facts or user_text}")
+        return [s for s in q if s and len(s) > 3]
+
+    def _retrieve_multi(self, queries: List[str], k: int = 6) -> List[Any]:
+        """Executa múltiplas recuperações e combina resultados (RRF + MMR)."""
+        from collections import defaultdict
+
+        ranked = defaultdict(float)
+        pools = []
+        for q in queries[:6]:
+            try:
+                results = list(self.retriever.retrieve(q, k=k))
+            except Exception:
+                results = []
+            pools.append(results)
+            for i, ch in enumerate(results):
+                ranked[id(ch)] += 1.0 / (i + 1.0)
+
+        all_items = {id(c): c for pool in pools for c in pool}
+        candidates = sorted(
+            all_items.values(), key=lambda c: ranked.get(id(c), 0), reverse=True
+        )
+
+        def _sim(a: str, b: str) -> float:
+            a, b = (a or "")[:400], (b or "")[:400]
+            if not a or not b:
+                return 0.0
+            inter = len(set(a.split()) & set(b.split()))
+            return inter / float(1 + min(len(a.split()), len(b.split())))
+
+        picked: List[Any] = []
+        for c in candidates:
+            txt = getattr(c, "text", str(c)) or ""
+            if not picked:
+                picked.append(c)
+                continue
+            if all(_sim(txt, getattr(p, "text", str(p))) < 0.6 for p in picked):
+                picked.append(c)
+            if len(picked) >= k:
+                break
+        return picked
+
+    def _build_source_pack(self, chunks: List[Any]) -> str:
+        """Cria pacote numerado S1..Sn com micro-resumos e trechos."""
+        pack = []
+        for i, c in enumerate(chunks, 1):
+            txt = (getattr(c, "text", str(c)) or "").strip()
+            snippet = txt[:450]
+            resume = snippet.split(". ")[0][:200]
+            pack.append(f"[S{i}] {resume}.\nTrecho: {snippet}")
+        return "\n\n".join(pack)
+
+    def _answer_from_sources(self, user_text: str, source_pack: str) -> str:
+        system = self.conf.system_prompt
+        user = (
+            f"PERGUNTA: {user_text}\n\n"
+            "USE E CITE obrigatoriamente os S# do SOURCE PACK. Se algo não estiver nos S#, peça o documento/dado específico em 1 linha.\n"
+            "Formato fixo: (1) Diagnóstico; (2) O que fazer agora (passo a passo prático); (3) Fundamentos (referencie S#); (4) Checklist; (5) Riscos/prazos; (6) Como atuaremos; (7) Proposta (faixa/condições); (8) Próximos passos.\n\n"
+            f"SOURCE PACK:\n{source_pack}"
+        )
+        try:
+            if hasattr(self.llm, "generate"):
+                return self.llm.generate(
+                    [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    max_completion_tokens=900,
+                )
+            elif hasattr(self.llm, "chat"):
+                return self.llm.chat(
+                    system=system,
+                    user=user,
+                    extra={"max_completion_tokens": 900},
+                )
+            return ""
+        except Exception:
+            logging.exception("Falha no gerador com fontes.")
+            return ""
+
+    def _guard_check(self, text: str) -> bool:
+        try:
+            if hasattr(self.guard, "check"):
+                g = self.guard.check(text)
+                if isinstance(g, dict):
+                    return bool(g.get("allowed", True))
+        except Exception:
+            logging.exception("Falha no Guard.")
+        return True
 
     # ------------------------------------------------------------------
     # Recuperação e web
@@ -445,112 +587,41 @@ class AtendimentoService:
         return self.responder(text)
     
     def responder(self, user_text: str) -> str:
-        """Gera resposta usando PDFs e, se necessário, busca web."""
+        """Orquestra a resposta usando CaseFrame, RAG multi e guard."""
         if self._is_greeting(user_text):
             return "Olá! Como posso ajudar?"
-        intent, tema = self._safe_classify(user_text)
-        ents: List[str] = []
-        chunks = self._safe_retrieve(user_text, tema, ents)
-        # tenta sobrescrever o tema quando vier "geral"
-        tema_override = None
-        if not tema or tema == "geral":
-            tema_override = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
-        tema_for_fallback = tema_override or tema or "geral"
-        logging.info(
-            "TEMA: classif=%s | override=%s | usado_no_fallback=%s", tema, tema_override, tema_for_fallback
-        )
-        pdf_ctx = "\n\n".join(getattr(c, "text", str(c)) for c in chunks) if chunks else ""
+        if not self._guard_check(user_text):
+            return "No momento não posso atender a esse pedido."
+
+        frame = self._caseframe_extract(user_text)
+        queries = self._expand_queries(user_text, frame)
+        chunks = self._retrieve_multi(queries, k=self.conf.retriever_k)
         coverage = self._score_pdf_coverage(chunks)
         logging.info(
-            "RAG: chunks=%d, coverage=%.2f, use_web=%s, tavily=%s",
-            len(chunks),
-            coverage,
-            self.conf.use_web,
-            bool(getattr(self, "tavily", None)),
+             "RAG multi: q=%d chunks=%d coverage=%.2f", len(queries), len(chunks), coverage
         )
-        for i, c in enumerate(chunks[:3]):
-            src = getattr(c, "source", None) or getattr(c, "metadata", {}).get("source")
-            logging.info("RAG chunk %d fonte=%s", i + 1, src)
         web_ctx = ""
         if coverage < self.conf.coverage_threshold and not self._is_low_signal_query(user_text):
             web_ctx = self._safe_web_search(user_text)
+            if web_ctx:
+                chunks = chunks + [type("WebChunk", (object,), {"text": web_ctx})()]
+
+        if chunks:
+            src_pack = self._build_source_pack(chunks)
+            answer = self._answer_from_sources(user_text, src_pack)
         else:
-            logging.info("WEB SKIPPED: consulta de baixo sinal ou cobertura PDF suficiente.")
-
-        parts = [p for p in (pdf_ctx, web_ctx) if p]
-        context = ("\n\n".join(parts))[: self.conf.max_context_chars]
-        if context:
-            prompt = (
-                f"PERGUNTA: {user_text}\n\n"
-                "INSTRUÇÕES:\n"
-                "- Responda como advogado brasileiro especialista.\n"
-                "- Siga o formato: (1) Diagnóstico; (2) O que fazer agora; "
-                "(3) Fundamentos; (4) Checklist; (5) Riscos e prazos; "
-                "(6) Como atuaremos; (7) Proposta (faixa/condições); (8) Próximos passos.\n"
-                "- Não repita a pergunta. Não diga que são orientações iniciais.\n"
-                "- Use apenas o CONTEXTO abaixo, sem citar nomes de PDFs/URLs.\n\n"
-                f"CONTEXTO:\n{context}"
+            answer = ""
+        if not answer:
+            tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
+            answer = self._build_fallback_answer(user_text, tema_fb)
+        if not self._guard_check(answer) or ("S" in answer and "[S" not in answer):
+            logging.warning(
+                "Saída reprovada no guard ou sem citações S# — usando fallback seguro."
             )
-        else:
-            prompt = (
-                f"PERGUNTA: {user_text}\n\n"
-                "INSTRUÇÕES:\n"
-                "- Mesmo sem contexto, responda de forma objetiva e juridicamente segura.\n"
-                "- Siga o formato: (1) Diagnóstico; (2) O que fazer agora; (3) Fundamentos; "
-                "(4) Checklist; (5) Riscos e prazos; (6) Como atuaremos; "
-                "(7) Proposta (faixa/condições); (8) Próximos passos.\n"
-                "- Não diga que são orientações iniciais.\n"
-            )
-        messages = [
-            {"role": "system", "content": self.conf.system_prompt},
-            {"role": "user", "content": prompt},
-        ]
+            tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
+            answer = self._build_fallback_answer(user_text, tema_fb)
 
-        # LLM/Guard (simplificado)
-        try:
-            if hasattr(self.llm, "generate"):
-                raw = self.llm.generate(messages, temperature=0.2, max_tokens=900)
-            elif hasattr(self.llm, "chat"):
-                raw = self.llm.chat(
-                    system=self.conf.system_prompt,
-                    user=prompt,
-                    extra={"temperature": 0.2, "max_tokens": 900},
-                )
-            elif hasattr(self.llm, "complete"):
-                raw = self.llm.complete(
-                    f"[SYSTEM]: {self.conf.system_prompt}\n[USER]: {prompt}"
-                )
-            elif callable(self.llm):
-                raw = self.llm(prompt)
-            else:
-                raw = ""
-        except Exception:
-            logging.exception("Falha no LLM.")
-            raw = ""
-
-        def _reprompt(u: str) -> str:
-            if hasattr(self.llm, "generate"):
-                try:
-                    return self.llm.generate(
-                        [
-                            {
-                                "role": "system",
-                                 "content": "Você é um advogado brasileiro. Responda objetivamente em 4-6 linhas.",
-                            },
-                            {"role": "user", "content": user_text},
-                        ],
-                        temperature=0.2,
-                        max_tokens=700,
-                    )
-                except Exception:
-                    logging.exception("Retry do LLM falhou.")
-            return ""
-        raw = sane_reply(user_text, raw, _reprompt)
-        if raw is None:
-            logging.warning("LLM vazio/eco — usando fallback temático.")
-            raw = self._build_fallback_answer(user_text, tema_for_fallback)
-        return raw
-
+        return answer
 
 # ------------------------------------------------------------------------------
 # Builder auxiliar
@@ -598,8 +669,9 @@ def _build_atendimento_service() -> AtendimentoService:
             return ""
 
     class GroundingGuard:
-        def verify(self, text: str) -> bool:
-            return True
+        def check(self, text: str):
+            return {"allowed": True}
+
 
     class Classifier:
         pass
