@@ -335,6 +335,17 @@ class AtendimentoService:
         if not chunks:
             return 0.0
         return min(1.0, len(chunks) / float(self.conf.retriever_k))
+    
+    def _chunk_text(self, c: Any) -> str:
+        if isinstance(c, dict):
+            return c.get("text") or c.get("chunk") or ""
+        return getattr(c, "text", "") or str(c)
+
+    def _chunk_source(self, c: Any) -> Optional[str]:
+        if isinstance(c, dict):
+            return c.get("source") or c.get("metadata", {}).get("source")
+        return getattr(c, "source", None) or getattr(c, "metadata", {}).get("source")
+
 
     def _safe_web_search(self, query: str) -> str:
         logging.info(
