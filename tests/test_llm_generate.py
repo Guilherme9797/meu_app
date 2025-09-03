@@ -73,3 +73,14 @@ def test_generate_temperature_fallback(monkeypatch):
     calls = client.client.calls
     assert calls[0]["temperature"] == 0.2
     assert "temperature" not in calls[1]
+
+
+def test_generate_temperature_cache(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyTempUnsupported)
+    client = oc.LLM(api_key="x", chat_model="gpt")
+    client.generate("hi", temperature=0.2)
+    client.generate("hi")
+    calls = client.client.calls
+    assert calls[0]["temperature"] == 0.2
+    assert "temperature" not in calls[1]
+    assert "temperature" not in calls[2]

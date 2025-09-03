@@ -57,6 +57,7 @@ class OpenAIClient:
         self.client = OpenAI(api_key=key)
         self.chat_model = model
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
+        self._supports_temperature = True
     
     def _token_key(self) -> str:
         """Retorna o nome do parâmetro de limite de tokens suportado."""
@@ -70,18 +71,21 @@ class OpenAIClient:
         try:
             return self.client.chat.completions.create(**params)
         except BadRequestError as e:
-            logging.error("OpenAI 400: %s", getattr(e, "message", str(e)))
-            msg = str(e).lower()
+            msg = getattr(e, "message", str(e))
+            lower = msg.lower()
             if (
                 "temperature" in params
-                and "temperature" in msg
-                and ("unsupported" in msg or "only the default" in msg)
+                and "temperature" in lower
+                and ("unsupported" in lower or "only the default" in lower)
             ):
+                self._supports_temperature = False
                 params.pop("temperature", None)
+                logging.warning("Modelo sem suporte a temperature; repetindo sem o parâmetro.")
                 return self._chat_create(params)
+            logging.error("OpenAI 400: %s", msg)
             if (
                 "max_tokens" in params
-                and ("max_tokens" in msg or "unsupported parameter" in msg)
+                and ("max_tokens" in lower or "unsupported parameter" in lower)
             ):
                 max_tokens = params.pop("max_tokens", None)
                 r = self.client.responses.create(
@@ -116,13 +120,16 @@ class OpenAIClient:
                 return self._chat_create(params)
             raise
         except Exception as e:  # pragma: no cover - depende de modelo externo
-            msg = str(e).lower()
+            msg = str(e)
+            lower = msg.lower()
             if (
                 "temperature" in params
-                and "temperature" in msg
-                and ("unsupported" in msg or "only the default" in msg)
+                and "temperature" in lower
+                and ("unsupported" in lower or "only the default" in lower)
             ):
+                self._supports_temperature = False
                 params.pop("temperature", None)
+                logging.warning("Modelo sem suporte a temperature; repetindo sem o parâmetro.")
                 return self._chat_create(params)
             raise
 
@@ -137,7 +144,7 @@ class OpenAIClient:
         }
         extra = dict(extra or {})
         temp = extra.pop("temperature", self.temperature)
-        if temp != 1.0:
+        if temp != 1.0 and self._supports_temperature:
             params["temperature"] = temp
         token_key = self._token_key()
         max_tokens = extra.pop("max_tokens", None)
@@ -225,7 +232,7 @@ class LLM(OpenAIClient):
         }
 
         temp = self.temperature if temperature is None else temperature
-        if temp != 1.0:
+        if temp != 1.0 and self._supports_temperature:
             params["temperature"] = temp
 
         token_key = self._token_key()
@@ -262,7 +269,7 @@ class LLM(OpenAIClient):
                         {"role": "user", "content": prompt_for_echo},
                     ],
                 }
-                if temp != 1.0:
+                if temp != 1.0 and self._supports_temperature:
                     params_retry["temperature"] = temp
                 def _call_retry(tok: str):
                     p = dict(params_retry)
@@ -312,6 +319,7 @@ class LLM(OpenAIClient):
             prompt += f"\nLegenda: {caption}"
         b64 = base64.b64encode(image_bytes).decode("ascii")
         try:
+            temp = self.temperature
             resp = self.client.responses.create(
                 model=model,
                 input=[
@@ -326,7 +334,7 @@ class LLM(OpenAIClient):
                         ],
                     }
                 ],
-                temperature=temp if (temp := self.temperature) != 1.0 else None,
+                temperature=temp if (self._supports_temperature and temp != 1.0) else None,
             )
             return (getattr(resp, "output_text", "") or "").strip()
         except Exception:  # pragma: no cover - depende de serviço externo

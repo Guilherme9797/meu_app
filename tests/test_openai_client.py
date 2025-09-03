@@ -98,6 +98,17 @@ def test_chat_temperature_fallback(monkeypatch):
     assert "temperature" not in calls[1]
 
 
+def test_chat_temperature_cache(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyTempUnsupported)
+    client = OpenAIClient(api_key="x", chat_model="gpt")
+    client.chat("sys", "usr", extra={"temperature": 0.2})
+    client.chat("sys", "usr")
+    calls = client.client.calls
+    assert calls[0]["temperature"] == 0.2
+    assert "temperature" not in calls[1]
+    assert "temperature" not in calls[2]
+
+
 def test_chat_model_fallback(monkeypatch):
     monkeypatch.setattr(oc, "OpenAI", DummyBadModel)
     monkeypatch.setattr(oc, "BadRequestError", type("BadRequestError", (Exception,), {}))
@@ -106,4 +117,4 @@ def test_chat_model_fallback(monkeypatch):
     assert resp == "ok"
     calls = client.client.calls
     assert calls[0]["model"] == "bad-model"
-    assert calls[1]["model"] == "gpt-4o-mini"
+    assert calls[1]["model"] == "gpt-5-mini"
