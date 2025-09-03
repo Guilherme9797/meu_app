@@ -48,6 +48,20 @@ class DummyTempUnsupported:
             message = type("msg", (), {"content": "ok"})
         return type("Resp", (), {"choices": [Choice()]})()
 
+class DummyBadModel:
+    def __init__(self, *args, **kwargs):
+        self.chat = self
+        self.completions = self
+        self.calls = []
+
+    def create(self, **params):
+        self.calls.append(params)
+        if len(self.calls) == 1:
+            raise oc.BadRequestError("bad request")
+        class Choice:
+            message = type("msg", (), {"content": "ok"})
+        return type("Resp", (), {"choices": [Choice()]})()
+
 
 def test_default_temperature_omitted(monkeypatch):
     monkeypatch.setattr(oc, "OpenAI", DummyOpenAI)
@@ -82,3 +96,14 @@ def test_chat_temperature_fallback(monkeypatch):
     calls = client.client.calls
     assert calls[0]["temperature"] == 0.2
     assert "temperature" not in calls[1]
+
+
+def test_chat_model_fallback(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyBadModel)
+    monkeypatch.setattr(oc, "BadRequestError", type("BadRequestError", (Exception,), {}))
+    client = OpenAIClient(api_key="x", chat_model="bad-model")
+    resp = client.chat("sys", "usr")
+    assert resp == "ok"
+    calls = client.client.calls
+    assert calls[0]["model"] == "bad-model"
+    assert calls[1]["model"] == "gpt-5-mini"

@@ -29,7 +29,18 @@ class AtendimentoConfig:
     coverage_threshold: float = 0.30  # só cai para web se PDFs cobrirem pouco
     use_web: bool = True
 
-
+def sane_reply(user_text: str, llm_reply: str, reprompt_fn):
+    """Retorna resposta válida ou None após um re-prompt simples."""
+    ut = (user_text or "").strip().lower()
+    lr = (llm_reply or "").strip()
+    if not lr or lr.lower() in {ut, "ok", "certo"}:
+        llm_reply2 = reprompt_fn(
+            f"Responda objetivamente em 4-6 linhas, com passos práticos. Pergunta: {user_text}"
+        )
+        if llm_reply2 and llm_reply2.strip().lower() != ut:
+            return llm_reply2
+        return None
+    return lr
 
 class AtendimentoService:
     """Serviço de atendimento com recuperação de PDFs e busca web opcional."""
@@ -451,34 +462,25 @@ class AtendimentoService:
             logging.exception("Falha no LLM.")
             raw = ""
 
-        def _too_similar(a: str, b: str) -> bool:
-            a = (a or "").strip()
-            b = (b or "").strip()
-            if not a or not b:
-                return False
-            return a == b or a.startswith(b) or b.startswith(a)
-
-        if not raw or _too_similar(raw, prompt) or _too_similar(raw, user_text):
-            try:
-                if hasattr(self.llm, "generate"):
-                    raw = self.llm.generate(
+        def _reprompt(u: str) -> str:
+            if hasattr(self.llm, "generate"):
+                try:
+                    return self.llm.generate(
                         [
                             {
                                 "role": "system",
-                                "content": "Você é um advogado brasileiro. Responda sem ecoar a pergunta.",
+                                 "content": "Você é um advogado brasileiro. Responda objetivamente em 4-6 linhas.",
                             },
                             {"role": "user", "content": user_text},
                         ],
                         temperature=0.2,
                         max_tokens=700,
                     )
-                else:
-                    raw = ""
-            except Exception:
-                logging.exception("Retry do LLM falhou.")
-                raw = ""
-
-        if not raw:
+                except Exception:
+                    logging.exception("Retry do LLM falhou.")
+            return ""
+        raw = sane_reply(user_text, raw, _reprompt)
+        if raw is None:
             logging.warning("LLM vazio/eco — usando fallback temático.")
             raw = self._build_fallback_answer(user_text, tema)
         return raw

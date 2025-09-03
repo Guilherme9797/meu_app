@@ -14,9 +14,13 @@ except Exception:  # pragma: no cover - opcional
     pass
 
 try:
-    from openai import OpenAI
+    from openai import OpenAI, BadRequestError
+
 except Exception:  # pragma: no cover - ambiente sem SDK
     OpenAI = None
+    class BadRequestError(Exception):  # pragma: no cover - stub para testes
+        pass
+
 
 APOLOGY_MESSAGE = "Desculpe, ocorreu um erro ao gerar a resposta."
 
@@ -54,7 +58,28 @@ class OpenAIClient:
         self.chat_model = model
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
     
-    
+    def _chat_create(self, params: Dict[str, Any]) -> Any:
+        """Executa a chamada ao chat com fallbacks leves."""
+        try:
+            return self.client.chat.completions.create(**params)
+        except BadRequestError as e:
+            logging.error("OpenAI 400: %s", getattr(e, "message", str(e)))
+            alt_model = "gpt-4o-mini"
+            if params.get("model") != alt_model:
+                params["model"] = alt_model
+                return self._chat_create(params)
+            raise
+        except Exception as e:  # pragma: no cover - depende de modelo externo
+            msg = str(e).lower()
+            if (
+                "temperature" in params
+                and "temperature" in msg
+                and ("unsupported" in msg or "only the default" in msg)
+            ):
+                params.pop("temperature", None)
+                return self._chat_create(params)
+            raise
+
     def chat(self, system: str, user: str, *, extra: Optional[Dict[str, Any]] = None) -> str:
         """Envia prompt com mensagens de sistema e usuário."""
         params: Dict[str, Any] = {
@@ -76,22 +101,8 @@ class OpenAIClient:
 
         if extra:
             params.update(extra)
-        def _call() -> Any:
-            try:
-                return self.client.chat.completions.create(**params)
-            except Exception as e:  # pragma: no cover - depende de modelo externo
-                msg = str(e).lower()
-                if (
-                    "temperature" in params
-                    and "temperature" in msg
-                    and ("unsupported" in msg or "only the default" in msg)
-                ):
-                    params.pop("temperature", None)
-                    return self.client.chat.completions.create(**params)
-                raise
-
         try:
-            resp = _call()
+            resp = self._chat_create(params)
         except Exception as e:  # pragma: no cover - depende de modelo externo
             msg = str(e).lower()
             if (
@@ -101,7 +112,7 @@ class OpenAIClient:
             ):
                 mt = params.pop("max_tokens")
                 params["max_completion_tokens"] = mt
-                resp = _call()
+                resp = self._chat_create(params)
             else:
                 raise
         return (resp.choices[0].message.content or "").strip()
@@ -172,19 +183,7 @@ class LLM(OpenAIClient):
         def _call_with_token_key(token_key: str):
             p = dict(params)
             p[token_key] = max_tokens
-            try:
-                return self.client.chat.completions.create(**p)
-            except Exception as e:  # pragma: no cover - depende de modelo externo
-                msg = str(e).lower()
-                if (
-                    "temperature" in p
-                    and "temperature" in msg
-                    and ("unsupported" in msg or "only the default" in msg)
-                ):
-                    p.pop("temperature", None)
-                    return self.client.chat.completions.create(**p)
-                raise
-
+            return self._chat_create(p)
         try:
             resp = _call_with_token_key("max_tokens")
         except Exception as e:
@@ -213,20 +212,9 @@ class LLM(OpenAIClient):
                 def _call_retry(token_key: str):
                     p = dict(params_retry)
                     p[token_key] = max_tokens
-                    try:
-                        return self.client.chat.completions.create(**p)
-                    except Exception as e2:  # pragma: no cover
-                        msg2 = str(e2).lower()
-                        if (
-                            "temperature" in p
-                            and "temperature" in msg2
-                            and ("unsupported" in msg2 or "only the default" in msg2)
-                        ):
-                            p.pop("temperature", None)
-                            return self.client.chat.completions.create(**p)
-                        raise
+                    return self._chat_create(p)
                 try:
-                     resp2 = _call_retry("max_tokens")
+                    resp2 = _call_retry("max_tokens")
                 except Exception as e2:
                     msg2 = str(e2).lower()
                     if "max_tokens" in msg2 and "max_completion_tokens" in msg2:
