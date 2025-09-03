@@ -8,11 +8,27 @@ from typing import Any, List, Optional, Tuple
 @dataclass
 class AtendimentoConfig:
     """Configurações do AtendimentoService."""
-    system_prompt: str = "Você é um assistente jurídico..."
-    retriever_k: int = 4
+    system_prompt: str = (
+        "Você é um advogado brasileiro especialista. "
+        "Responda de forma prática, assertiva e orientada à ação. "
+        "Use APENAS o CONTEXTO fornecido (trechos dos PDFs ou web), "
+        "sem citar nomes de PDFs ou URLs. "
+        "NÃO diga que são 'orientações iniciais' ou peça contratação prévia. "
+        "Estruture SEMPRE em: "
+        "(1) Diagnóstico resumido; "
+        "(2) O que fazer agora [passo a passo objetivo]; "
+        "(3) Fundamentos legais aplicáveis; "
+        "(4) Checklist de documentos; "
+        "(5) Riscos e prazos; "
+        "(6) Como atuaremos no caso; "
+        "(7) Proposta inicial de honorários (faixa) e condições; "
+        "(8) Próximos passos."
+    )
+    retriever_k: int = 6
     max_context_chars: int = 4500
-    coverage_threshold: float = 0.40   # abaixo disso, tenta web
-    use_web: bool = True               # habilita web no builder
+    coverage_threshold: float = 0.30  # só cai para web se PDFs cobrirem pouco
+    use_web: bool = True
+
 
 
 class AtendimentoService:
@@ -97,6 +113,212 @@ class AtendimentoService:
         if not tema:
             tema = self._infer_default_tema(text)
         return intent, tema
+    
+    # -------------------------------
+    # Fallback temático determinístico
+    # -------------------------------
+    def _normalize_tema(self, tema: Optional[str]) -> str:
+        t = (tema or "").strip().lower()
+        if not t:
+            return "geral"
+        aliases = {
+            "imobiliario": {"imobiliário", "locacao", "locação", "locaticio", "locatício", "despejo", "aluguel"},
+            "familia": {"família", "familia", "divorcio", "divórcio", "guarda", "alimentos"},
+            "consumidor": {"consumerista", "cdc", "compra", "produto", "serviço"},
+            "trabalhista": {"trabalho", "empregado", "empregador", "clt", "justa causa"},
+            "penal": {"criminal", "crime", "habeas corpus", "prisão"},
+            "tributario": {"tributário", "fisco", "imposto", "refis"},
+            "previdenciario": {"previdenciário", "inss", "beneficio", "aposentadoria"},
+            "administrativo": {"licitação", "concurso", "ato administrativo", "ms", "mandado de segurança"},
+            "empresarial": {"societário", "falência", "recuperação", "contratos empresariais"},
+            "civel": {"civil", "responsabilidade civil", "indenização"},
+            "processual_civil": {"processo civil", "cpc", "tutela", "execução", "cumprimento de sentença"},
+        }
+        for key, vals in aliases.items():
+            if t == key or t in vals:
+                return key
+        # tenta “cair” para grupos amplos
+        if "civil" in t:
+            return "civel"
+        return "geral"
+
+    def _fallback_template_by_tema(self, tema_norm: str) -> dict:
+        """
+        Retorna blocos padrão por tema. Evite citar artigos/leis específicos aqui
+        para não 'inventar' fundamento sem PDF/web. Use fundamentos genéricos seguros.
+        """
+        base = {
+            "fundamentos": (
+                "princípios aplicáveis (boa-fé, contraditório e ampla defesa, "
+                "devido processo legal) e a legislação pertinente ao caso."
+            ),
+            "checklist": [
+                "Documentos básicos (RG/CPF/Comprovante de endereço)",
+                "Contrato/ato principal relacionado ao caso",
+                "Comprovantes (pagamentos, mensagens, notificações, e-mails)",
+                "Provas materiais (fotos, laudos, termos, boletins, etc.)",
+            ],
+            "riscos_prazos": (
+                "Há prazos processuais e prescricionais relevantes. Quanto antes agirmos, "
+                "maiores as chances de preservar direitos e evitar medidas desfavoráveis."
+            ),
+            "como_atuaremos": (
+                "Análise documental pontual, definição de estratégia, preparação de peças e "
+                "protocolos necessários; acompanhamento processual e comunicação contínua."
+            ),
+            "proposta": (
+                "Honorários em faixa conforme complexidade e urgência, com opções de parcelamento. "
+                "Emitimos contrato e recibos; trabalhamos com transparência de etapas e custos."
+            ),
+            "proximos_passos": (
+                "Envie os documentos citados em PDF, confirmamos prazos críticos, alinhamos estratégia "
+                "por escrito e encaminhamos contrato eletrônico para assinatura."
+            ),
+        }
+
+        temas = {
+            "imobiliario": {
+                "o_que_fazer": [
+                    "Separar notificação/carta recebida (preferencialmente com AR)",
+                    "Reunir recibos/comprovantes de pagamento e extratos",
+                    "Localizar contrato e eventuais aditivos",
+                    "Preservar conversas com locador/administradora",
+                ],
+                "fundamentos": (
+                    "boa-fé objetiva, adimplemento e regras da Lei do Inquilinato aplicáveis ao caso."
+                ),
+                "checklist_extra": ["Contrato de locação", "Comprovantes de aluguel/encargos", "Notificação (AR)"],
+            },
+            "familia": {
+                "o_que_fazer": [
+                    "Organizar certidões (casamento, nascimento, etc.)",
+                    "Levantar realidade financeira (renda, despesas, dependentes)",
+                    "Mapear fatos relevantes (guarda, convivência, violência, etc.)",
+                ],
+                "fundamentos": "melhor interesse do menor e normas de direito de família aplicáveis.",
+                "checklist_extra": ["Certidões (casamento, nascimento)", "Comprovantes de renda/despesas"],
+            },
+            "consumidor": {
+                "o_que_fazer": [
+                    "Guardar notas fiscais, contratos e comunicações com a empresa",
+                    "Registrar protocolo de atendimento",
+                    "Reunir evidências do defeito/descumprimento (fotos, vídeos, laudos)",
+                ],
+                "fundamentos": "princípios do CDC (equilíbrio, informação, responsabilidade).",
+                "checklist_extra": ["Nota/Contrato", "Protocolos", "Evidências do vício/defeito"],
+            },
+            "trabalhista": {
+                "o_que_fazer": [
+                    "Coletar holerites, CTPS e mensagens com RH/gestão",
+                    "Anotar jornadas e eventuais horas extras",
+                    "Reunir provas de assédio/irregularidades (se houver)",
+                ],
+                "fundamentos": "normas da CLT e entendimento jurisprudencial aplicável.",
+                "checklist_extra": ["CTPS", "Holerites", "Comprovantes de jornada/comunicações"],
+            },
+            "penal": {
+                "o_que_fazer": [
+                    "Reunir boletins de ocorrência, decisões e despachos",
+                    "Mapear risco de medidas cautelares e prazos",
+                    "Identificar provas já produzidas e testemunhas-chave",
+                ],
+                "fundamentos": "devido processo, presunção de inocência e jurisprudência correlata.",
+                "checklist_extra": ["BO/Autos", "Decisões", "Rol de testemunhas"],
+            },
+            "tributario": {
+                "o_que_fazer": [
+                    "Separar autos de infração, notificações e DARFs/GUIAs",
+                    "Levantar histórico de apurações e pagamentos",
+                    "Verificar programas de transação/refis vigentes",
+                ],
+                "fundamentos": "legalidade, capacidade contributiva e normas tributárias pertinentes.",
+                "checklist_extra": ["Autos/Notificações", "Apurações/Comprovantes", "Provas contábeis"],
+            },
+            "previdenciario": {
+                "o_que_fazer": [
+                    "Coletar CNIS, PPP, laudos e exames (se aplicável)",
+                    "Organizar histórico contributivo e vínculos",
+                    "Verificar indeferimentos/recursos anteriores",
+                ],
+                "fundamentos": "normas previdenciárias aplicáveis e precedentes administrativos/judiciais.",
+                "checklist_extra": ["CNIS", "PPP/Laudos", "Comprovantes de contribuições"],
+            },
+            "administrativo": {
+                "o_que_fazer": [
+                    "Reunir edital/ato administrativo e publicações",
+                    "Guardar protocolos/impugnações já feitas",
+                    "Mapear prazos de recurso/impugnação",
+                ],
+                "fundamentos": "legalidade, impessoalidade e controle de atos administrativos.",
+                "checklist_extra": ["Edital/Ato", "Protocolos", "Comprovantes de prazos"],
+            },
+            "empresarial": {
+                "o_que_fazer": [
+                    "Separar contratos sociais/atos societários",
+                    "Organizar contratos com clientes/fornecedores",
+                    "Levantar passivos e contingências",
+                ],
+                "fundamentos": "normas societárias/empresariais e pacta sunt servanda.",
+                "checklist_extra": ["Contrato social/alterações", "Contratos relevantes", "Demonstrações financeiras"],
+            },
+            "civel": {
+                "o_que_fazer": [
+                    "Reunir contrato/ato-base e provas do fato",
+                    "Quantificar danos/valores envolvidos",
+                    "Listar testemunhas e comunicações relevantes",
+                ],
+                "fundamentos": "responsabilidade civil e princípios contratuais.",
+                "checklist_extra": ["Contrato/Provas", "Cálculo de danos", "Mensagens/e-mails"],
+            },
+            "processual_civil": {
+                "o_que_fazer": [
+                    "Identificar fase do processo (inicial, tutela, execução)",
+                    "Checar prazos em curso (dias úteis)",
+                    "Separar cópias das peças e decisões",
+                ],
+                "fundamentos": "regras do CPC aplicáveis à fase e ao pedido.",
+                "checklist_extra": ["Peças/Decisões", "Comprovantes de intimação", "Cálculos/Planilhas"],
+            },
+            "geral": {
+                "o_que_fazer": [
+                    "Organizar fatos em ordem cronológica",
+                    "Reunir o documento/ato principal e evidências",
+                    "Identificar prazos e valores envolvidos",
+                ],
+                "fundamentos": base["fundamentos"],
+                "checklist_extra": [],
+            },
+        }
+
+        t = temas.get(tema_norm, temas["geral"])
+        return {
+            "o_que_fazer": t["o_que_fazer"],
+            "fundamentos": t["fundamentos"],
+            "checklist": base["checklist"] + t.get("checklist_extra", []),
+            "riscos_prazos": base["riscos_prazos"],
+            "como_atuaremos": base["como_atuaremos"],
+            "proposta": base["proposta"],
+            "proximos_passos": base["proximos_passos"],
+        }
+
+    def _build_fallback_answer(self, user_text: str, tema: Optional[str]) -> str:
+        tema_norm = self._normalize_tema(tema)
+        t = self._fallback_template_by_tema(tema_norm)
+        # Montagem padronizada (SEM "orientação preliminar...")
+        linhas = []
+        linhas.append(f"Diagnóstico: com base no relato, trata-se de tema {tema_norm.replace('_', ' ')}.")
+        linhas.append("O que fazer agora:")
+        for i, passo in enumerate(t["o_que_fazer"], 1):
+            linhas.append(f"{i}) {passo}")
+        linhas.append(f"Fundamentos: {t['fundamentos']}")
+        linhas.append("Checklist de documentos:")
+        for doc in t["checklist"]:
+            linhas.append(f"- {doc}")
+        linhas.append(f"Riscos e prazos: {t['riscos_prazos']}")
+        linhas.append(f"Como atuaremos: {t['como_atuaremos']}")
+        linhas.append(f"Proposta (faixa/condições): {t['proposta']}")
+        linhas.append(f"Próximos passos: {t['proximos_passos']}")
+        return "\n".join(linhas)
 
     # ------------------------------------------------------------------
     # Recuperação e web
@@ -160,6 +382,9 @@ class AtendimentoService:
             self.conf.use_web,
             bool(getattr(self, "tavily", None)),
         )
+        for i, c in enumerate(chunks[:3]):
+            src = getattr(c, "source", None) or getattr(c, "metadata", {}).get("source")
+            logging.info("RAG chunk %d fonte=%s", i + 1, src)
         web_ctx = ""
         if coverage < self.conf.coverage_threshold:
             web_ctx = self._safe_web_search(user_text)
@@ -168,16 +393,25 @@ class AtendimentoService:
         context = ("\n\n".join(parts))[: self.conf.max_context_chars]
         if context:
             prompt = (
-                f"{user_text}\n\n"
-                "Responda de forma orientada à ação (o que fazer, por quê, como). "
-                "Use APENAS o CONTEXTO abaixo, sem citar nomes de documentos ou URLs.\n\n"
+                f"PERGUNTA: {user_text}\n\n"
+                "INSTRUÇÕES:\n"
+                "- Responda como advogado brasileiro especialista.\n"
+                "- Siga o formato: (1) Diagnóstico; (2) O que fazer agora; "
+                "(3) Fundamentos; (4) Checklist; (5) Riscos e prazos; "
+                "(6) Como atuaremos; (7) Proposta (faixa/condições); (8) Próximos passos.\n"
+                "- Não repita a pergunta. Não diga que são orientações iniciais.\n"
+                "- Use apenas o CONTEXTO abaixo, sem citar nomes de PDFs/URLs.\n\n"
                 f"CONTEXTO:\n{context}"
             )
         else:
             prompt = (
-                f"{user_text}\n\n"
-                "Sem materiais auxiliares. Ainda assim, dê instruções práticas (o que fazer, por quê, como) "
-                "e um checklist de documentos."
+                f"PERGUNTA: {user_text}\n\n"
+                "INSTRUÇÕES:\n"
+                "- Mesmo sem contexto, responda de forma objetiva e juridicamente segura.\n"
+                "- Siga o formato: (1) Diagnóstico; (2) O que fazer agora; (3) Fundamentos; "
+                "(4) Checklist; (5) Riscos e prazos; (6) Como atuaremos; "
+                "(7) Proposta (faixa/condições); (8) Próximos passos.\n"
+                "- Não diga que são orientações iniciais.\n"
             )
         messages = [
             {"role": "system", "content": self.conf.system_prompt},
@@ -234,13 +468,8 @@ class AtendimentoService:
                 raw = ""
 
         if not raw:
-            raw = (
-                "Orientação preliminar (sem fonte):\n"
-                "• Passos práticos ...\n"
-                "• Fundamentos possíveis ...\n"
-                "• Checklist de documentos ..."
-            )
-
+            logging.warning("LLM vazio/eco — usando fallback temático.")
+            raw = self._build_fallback_answer(user_text, tema)
         return raw
 
 
