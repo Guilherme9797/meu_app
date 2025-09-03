@@ -59,3 +59,16 @@ class Classifier:
 
     def guess_tema(self, texto: str) -> Optional[str]:
         return guess_tema(texto)
+
+    def classify(self, texto: str):
+        """Compatibility helper returning ``(intent, tema)``.
+
+        Older callers expect a ``classify`` method returning both
+        intent and topic.  The lightweight classifier only guesses the
+        topic, so we return ``None`` for intent and the detected topic
+        (or ``None``) for the second element.  This keeps backward
+        compatibility without introducing heavier dependencies.
+        """
+
+        tema = guess_tema(texto)
+        return None, tema

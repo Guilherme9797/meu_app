@@ -170,14 +170,11 @@ def _dispatch(service, phone, text):
 
 def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
-    from meu_app.services.atendimento import AtendimentoService, AtendimentoConfig
+    from meu_app.services.atendimento_service import AtendimentoService, AtendimentoConfig
     try:
-        from meu_app.services.retriever import Embeddings, Retriever  # type: ignore
+        from meu_app.services.buscador_pdf import Retriever  # type: ignore
     except Exception:  # fallback simplificado
-        class Embeddings:  # type: ignore
-            def embed(self, *a, **kw):
-                return []
-
+        
         class Retriever:  # type: ignore
             def __init__(self, *a, **kw):
                 pass
@@ -241,7 +238,14 @@ def _build_atendimento_service() -> AtendimentoService:
             def save(self, *a, **kw):
                 pass
 
-    embedder = Embeddings()
+    try:
+        embedder = Embeddings()
+    except Exception:
+        class _NoEmbeddings:
+            def embed(self, *a, **kw):
+                return []
+
+        embedder = _NoEmbeddings()
     retriever = Retriever(index_path=get_index_dir(), embed_fn=getattr(embedder, "embed", lambda x: []))
     tavily = None
     api_key = os.getenv("TAVILY_API_KEY")
@@ -275,9 +279,7 @@ def _build_atendimento_service() -> AtendimentoService:
     extractor = Extractor()
     sess_repo = SessionRepository()
     msg_repo = MessageRepository()
-    conf = AtendimentoConfig(
-        use_web_fallback=tavily is not None, append_low_coverage_note=False
-    )
+    conf = AtendimentoConfig(use_web=tavily is not None)
     return AtendimentoService(
         sess_repo=sess_repo,
         msg_repo=msg_repo,

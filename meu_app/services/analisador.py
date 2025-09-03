@@ -5,6 +5,29 @@ from typing import Dict, Tuple, List, Optional
 from ..utils.openai_client import LLM
 
 # ------------------------
+# Analisador de problemas
+# ------------------------
+
+class AnalisadorDeProblemas:
+    """Gera uma descrição resumida do problema a partir do histórico."""
+
+    def __init__(self, llm: LLM) -> None:
+        self.llm = llm
+
+    def identificar_problema(self, historico: List[Dict[str, str]]) -> str:
+        linhas = []
+        for msg in historico:
+            autor = msg.get("autor") or ""
+            texto = msg.get("mensagem") or ""
+            linhas.append(f"{autor}: {texto}")
+        user = "\n".join(linhas)
+        system = (
+            "Você é um assistente jurídico e deve identificar, em uma frase,"
+            " qual é o problema apresentado pelo cliente."
+        )
+        return self.llm.chat(system=system, user=user)
+
+# ------------------------
 # Taxonomia simples de temas e intenções
 # ------------------------
 
@@ -131,4 +154,4 @@ class Extractor:
             "raw": text[:1000],
         }
 
-__all__ = ["Classifier", "Extractor", "EntityPack"]
+__all__ = ["AnalisadorDeProblemas", "Classifier", "Extractor", "EntityPack"]

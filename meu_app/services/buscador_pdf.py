@@ -306,6 +306,16 @@ class BuscadorPDF:
                 pass
             self._retriever._load_index()
     
+    @property
+    def indexador(self) -> PDFIndexer:
+        """Compatibilidade: expõe o indexador interno."""
+        return self._indexer
+
+    @property
+    def retriever(self) -> Retriever:
+        """Compatibilidade: expõe o retriever interno."""
+        return self._retriever
+    
     def buscar_contexto(self, consulta: str, k: int = 5) -> str:
         chunks = self._safe_retrieve(consulta, k=k)
         contexto = "\n\n".join(chunks)
