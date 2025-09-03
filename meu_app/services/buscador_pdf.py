@@ -77,11 +77,18 @@ class Retriever:
     # API pública
     # ------------------------------------------------------------------
     def _safe_retrieve(self, user_text: str, k: int = 5) -> List[str]:
-        """Busca no índice e garante uma lista de chunks."""
+        """Busca no índice FAISS retornando os textos dos chunks."""
         try:
-            raw = self.indexador.buscar_contexto(user_text, k=k) or ""
-            return [c for c in raw.split("\n\n") if c.strip()]
-        except Exception:
+            qvec = self._safe_embed(user_text)
+            if qvec is None:
+                return []
+            ids, scores = self._search_restrict(qvec, None, k)
+            if not ids:
+                return []
+            chunks = self._build_chunks(ids, scores, qvec, k)
+            return [c.text for c in chunks if c.text]
+        except Exception as e:  # pragma: no cover - defensivo
+            logger.exception("Falha ao recuperar contexto: %s", e)
             return []
 
     # ------------------------------------------------------------------
@@ -298,6 +305,15 @@ class BuscadorPDF:
         self._indexer = PDFIndexer(
             pasta_pdfs=pdf_dir, pasta_index=index_dir, openai_key=openai_key
         )
+         # opcionalmente inicializa Tavily para fallback web
+        if tavily_key and TavilyService:
+            try:  # pragma: no cover - inicialização simples
+                self.tavily = TavilyService(api_key=tavily_key)
+            except Exception:  # pragma: no cover - falha silenciosa
+                self.tavily = None
+        else:
+            self.tavily = None
+
         if not self._retriever.faiss_index or not self._retriever.manifest:
             # tenta construir o índice se ausente
             try:
@@ -316,6 +332,13 @@ class BuscadorPDF:
         """Compatibilidade: expõe o retriever interno."""
         return self._retriever
     
+    def _safe_retrieve(self, consulta: str, k: int = 5) -> List[str]:
+        """Wrapper seguro em torno do retriever interno."""
+        try:
+            return self._retriever._safe_retrieve(consulta, k=k)
+        except Exception:
+            return []
+
     def buscar_contexto(self, consulta: str, k: int = 5) -> str:
         chunks = self._safe_retrieve(consulta, k=k)
         contexto = "\n\n".join(chunks)
