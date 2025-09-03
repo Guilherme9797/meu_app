@@ -48,7 +48,7 @@ class OpenAIClient:
             chat_model
             or os.getenv("OPENAI_MODEL")
             or os.getenv("OPENAI_CHAT_MODEL")
-            or "gpt-4o-mini"
+            or "gpt-5-mini"
         )
 
         if OpenAI is None:  # pragma: no cover - ausência do SDK
@@ -71,7 +71,46 @@ class OpenAIClient:
             return self.client.chat.completions.create(**params)
         except BadRequestError as e:
             logging.error("OpenAI 400: %s", getattr(e, "message", str(e)))
-            alt_model = "gpt-4o-mini"
+            msg = str(e).lower()
+            if (
+                "temperature" in params
+                and "temperature" in msg
+                and ("unsupported" in msg or "only the default" in msg)
+            ):
+                params.pop("temperature", None)
+                return self._chat_create(params)
+            if (
+                "max_tokens" in params
+                and ("max_tokens" in msg or "unsupported parameter" in msg)
+            ):
+                max_tokens = params.pop("max_tokens", None)
+                r = self.client.responses.create(
+                    model=params.get("model", self.chat_model),
+                    input=[
+                        {"role": m["role"], "content": m["content"]}
+                        for m in params["messages"]
+                    ],
+                    temperature=params.get("temperature"),
+                    max_output_tokens=max_tokens,
+                )
+                return type(
+                    "RespWrap",
+                    (),
+                    {
+                        "choices": [
+                            type(
+                                "Choice",
+                                (),
+                                {
+                                    "message": type(
+                                        "Msg", (), {"content": getattr(r, "output_text", "")}
+                                    )()
+                                },
+                            )()
+                        ]
+                    },
+                )()
+            alt_model = "gpt-5-mini"
             if params.get("model") != alt_model:
                 params["model"] = alt_model
                 return self._chat_create(params)
@@ -250,7 +289,7 @@ class LLM(OpenAIClient):
         return text
 
     def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
-        model = os.getenv("OPENAI_TRANSCRIBE_MODEL", "gpt-4o-transcribe")
+        model = os.getenv("OPENAI_TRANSCRIBE_MODEL", "gpt-5-mini-transcribe")
         try:
             resp = self.client.audio.transcriptions.create(
                 model=model,
