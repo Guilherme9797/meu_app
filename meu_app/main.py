@@ -22,15 +22,13 @@ logging.basicConfig(
 )
 
 from meu_app.utils.paths import get_index_dir
-from meu_app.utils.openai_client import Embeddings, LLM
+from meu_app.utils.openai_client import LLM
 from meu_app.services import (
     Classifier,
     Extractor,
-    Retriever,
-    GroundingGuard,
+   GroundingGuard,
     TavilyClient,
-   
-)
+   )
 
 from meu_app.persistence.repositories import SessionRepository, MessageRepository
 
@@ -172,15 +170,9 @@ def _build_atendimento_service() -> AtendimentoService:
     """Instancia o pipeline completo de atendimento."""
     from meu_app.services.atendimento_service import AtendimentoService, AtendimentoConfig
     try:
-        from meu_app.services.buscador_pdf import Retriever  # type: ignore
-    except Exception:  # fallback simplificado
-        
-        class Retriever:  # type: ignore
-            def __init__(self, *a, **kw):
-                pass
-
-            def retrieve(self, *a, **kw):
-                return []
+         from meu_app.services.buscador_pdf import BuscadorPDF  # type: ignore
+    except Exception:
+        BuscadorPDF = None  # type: ignore
     try:
         from tavily import TavilyClient  # type: ignore
     except Exception:  # pragma: no cover - opcional
@@ -238,15 +230,51 @@ def _build_atendimento_service() -> AtendimentoService:
             def save(self, *a, **kw):
                 pass
 
-    try:
-        embedder = Embeddings()
-    except Exception:
-        class _NoEmbeddings:
-            def embed(self, *a, **kw):
+    retriever = None
+    if BuscadorPDF is not None:
+        try:
+            buscador = BuscadorPDF(
+                openai_key=os.getenv("OPENAI_API_KEY"),
+                tavily_key=os.getenv("TAVILY_API_KEY"),
+                pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
+                index_dir=get_index_dir(),
+            )
+
+            class RetrieverAdapter:
+                """Adapta BuscadorPDF para a interface esperada."""
+
+                def __init__(self, busc):
+                    self.busc = busc
+
+                def retrieve(self, query: str, k: int = 6):
+                    r = self.busc.retriever
+                    qvec = r._safe_embed(query)
+                    if qvec is None:
+                        return []
+                    cand = r._prefilter_candidates(None, {})
+                    ids, scores = r._search_restrict(qvec, cand, k)
+                    chunks = r._build_chunks(ids, scores, qvec, k)
+                    out = []
+                    for c in chunks:
+                        out.append(
+                            type(
+                                "Chunk",
+                                (),
+                                {"text": c.text, "metadata": {"source": c.path}},
+                            )
+                        )
+                    return out
+
+            retriever = RetrieverAdapter(buscador)
+        except Exception as e:
+            logging.exception("Falha ao instanciar BuscadorPDF: %s", e)
+
+    if retriever is None:
+        class _StubRetriever:
+            def retrieve(self, *a, **kw):
                 return []
 
-        embedder = _NoEmbeddings()
-    retriever = Retriever(index_path=get_index_dir(), embed_fn=getattr(embedder, "embed", lambda x: []))
+        retriever = _StubRetriever()
     tavily = None
     api_key = os.getenv("TAVILY_API_KEY")
     if api_key and TavilyClient:

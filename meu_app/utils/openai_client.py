@@ -58,6 +58,13 @@ class OpenAIClient:
         self.chat_model = model
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
     
+    def _token_key(self) -> str:
+        """Retorna o nome do parâmetro de limite de tokens suportado."""
+        model = (self.chat_model or "").lower()
+        if any(m in model for m in ("gpt-5-mini", "gpt-4o", "gpt-4.1")):
+            return "max_completion_tokens"
+        return "max_tokens"
+
     def _chat_create(self, params: Dict[str, Any]) -> Any:
         """Executa a chamada ao chat com fallbacks leves."""
         try:
@@ -93,17 +100,13 @@ class OpenAIClient:
         temp = extra.pop("temperature", self.temperature)
         if temp != 1.0:
             params["temperature"] = temp
-        
-        if "max_tokens" in extra:
-            params["max_tokens"] = extra.pop("max_tokens")
-        if "max_completion_tokens" in extra:
-            params["max_completion_tokens"] = extra.pop("max_completion_tokens")
-
         token_key = self._token_key()
-        if extra:
-            params[token_key] = extra.pop("max_tokens")
-        if "max_completion_tokens" in extra:
-            params["max_completion_tokens"] = extra.pop("max_completion_tokens")
+        max_tokens = extra.pop("max_tokens", None)
+        max_completion = extra.pop("max_completion_tokens", None)
+        if max_tokens is not None:
+            params[token_key] = max_tokens
+        elif max_completion is not None:
+            params["max_completion_tokens"] = max_completion
         if extra:
             params.update(extra)
         try:
