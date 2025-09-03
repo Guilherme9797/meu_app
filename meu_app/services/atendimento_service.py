@@ -2,6 +2,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import inspect
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
@@ -481,12 +482,18 @@ class AtendimentoService:
 
     def _build_source_pack(self, chunks: List[Any]) -> str:
         """Cria pacote numerado S1..Sn com micro-resumos e trechos."""
-        pack = []
+        pack: List[str] = []
+        total = 0
+        limit = self.conf.max_context_chars
         for i, c in enumerate(chunks, 1):
             txt = (getattr(c, "text", str(c)) or "").strip()
             snippet = txt[:450]
             resume = snippet.split(". ")[0][:200]
-            pack.append(f"[S{i}] {resume}.\nTrecho: {snippet}")
+            entry = f"[S{i}] {resume}.\nTrecho: {snippet}"
+            total += len(entry)
+            if total > limit:
+                break
+            pack.append(entry)
         return "\n\n".join(pack)
 
     def _answer_from_sources(self, user_text: str, source_pack: str) -> str:
@@ -595,6 +602,7 @@ class AtendimentoService:
 
         frame = self._caseframe_extract(user_text)
         queries = self._expand_queries(user_text, frame)
+        logging.info("queries=%s", queries[:4])
         chunks = self._retrieve_multi(queries, k=self.conf.retriever_k)
         coverage = self._score_pdf_coverage(chunks)
         logging.info(
@@ -602,19 +610,41 @@ class AtendimentoService:
         )
         web_ctx = ""
         if coverage < self.conf.coverage_threshold and not self._is_low_signal_query(user_text):
-            web_ctx = self._safe_web_search(user_text)
+            tags = " ".join((frame.get("tags") or [])[:3])
+            web_ctx = self._safe_web_search(f"{user_text} {tags}".strip())
             if web_ctx:
                 chunks = chunks + [type("WebChunk", (object,), {"text": web_ctx})()]
 
         if chunks:
             src_pack = self._build_source_pack(chunks)
+            src_pack = src_pack[: self.conf.max_context_chars]
+            logging.info(
+                "source_pack_preview=%s", src_pack[:200].replace("\n", " ")
+            )
             answer = self._answer_from_sources(user_text, src_pack)
         else:
             answer = ""
         if not answer:
             tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
             answer = self._build_fallback_answer(user_text, tema_fb)
-        if not self._guard_check(answer) or ("S" in answer and "[S" not in answer):
+        answer = sane_reply(
+            user_text,
+            answer,
+            reprompt_fn=lambda p: (
+                self.llm.generate(
+                    [{"role": "user", "content": p}],
+                    **(
+                        {"max_completion_tokens": 160}
+                        if "max_completion_tokens"
+                        in inspect.signature(self.llm.generate).parameters
+                        else {}
+                    ),
+                )
+                if hasattr(self.llm, "generate")
+                else ""
+            ),
+        ) or answer
+        if not self._guard_check(answer) or not re.search(r"\[S\d+\]", answer):
             logging.warning(
                 "Saída reprovada no guard ou sem citações S# — usando fallback seguro."
             )
