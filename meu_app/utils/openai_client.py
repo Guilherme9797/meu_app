@@ -99,6 +99,11 @@ class OpenAIClient:
         if "max_completion_tokens" in extra:
             params["max_completion_tokens"] = extra.pop("max_completion_tokens")
 
+        token_key = self._token_key()
+        if extra:
+            params[token_key] = extra.pop("max_tokens")
+        if "max_completion_tokens" in extra:
+            params["max_completion_tokens"] = extra.pop("max_completion_tokens")
         if extra:
             params.update(extra)
         try:
@@ -106,7 +111,8 @@ class OpenAIClient:
         except Exception as e:  # pragma: no cover - depende de modelo externo
             msg = str(e).lower()
             if (
-                "max_tokens" in msg
+                token_key == "max_tokens"
+                and "max_tokens" in msg
                 and "max_completion_tokens" in msg
                 and "max_tokens" in params
             ):
@@ -180,15 +186,22 @@ class LLM(OpenAIClient):
         if temp != 1.0:
             params["temperature"] = temp
 
-        def _call_with_token_key(token_key: str):
+        token_key = self._token_key()
+
+        def _call_with_token_key(tok: str):
             p = dict(params)
-            p[token_key] = max_tokens
+            p[tok] = max_tokens
             return self._chat_create(p)
+        
         try:
-            resp = _call_with_token_key("max_tokens")
+            resp = _call_with_token_key(token_key)
         except Exception as e:
             msg = str(e).lower()
-            if "max_tokens" in msg and "max_completion_tokens" in msg:
+            if (
+                token_key == "max_tokens"
+                and "max_tokens" in msg
+                and "max_completion_tokens" in msg
+            ):
                 resp = _call_with_token_key("max_completion_tokens")
             else:
                 raise
@@ -209,15 +222,19 @@ class LLM(OpenAIClient):
                 }
                 if temp != 1.0:
                     params_retry["temperature"] = temp
-                def _call_retry(token_key: str):
+                def _call_retry(tok: str):
                     p = dict(params_retry)
-                    p[token_key] = max_tokens
+                    p[tok] = max_tokens
                     return self._chat_create(p)
                 try:
-                    resp2 = _call_retry("max_tokens")
+                    resp2 = _call_retry(token_key)
                 except Exception as e2:
                     msg2 = str(e2).lower()
-                    if "max_tokens" in msg2 and "max_completion_tokens" in msg2:
+                    if (
+                        token_key == "max_tokens"
+                        and "max_tokens" in msg2
+                        and "max_completion_tokens" in msg2
+                    ):
                         resp2 = _call_retry("max_completion_tokens")
                     else:
                         raise

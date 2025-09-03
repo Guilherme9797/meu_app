@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
@@ -73,6 +74,18 @@ class AtendimentoService:
     def _infer_default_tema(self, text: str) -> str:
         """Heurística simples para tema padrão."""
         return "geral"
+    
+    def _is_greeting(self, text: str) -> bool:
+        t = (text or "").strip().lower()
+        return bool(re.match(r"^(oi|olá|ola|bom dia|boa tarde|boa noite|hello|hi)[!\.\s]*$", t))
+
+    def _is_low_signal_query(self, text: str) -> bool:
+        t = (text or "").strip()
+        if len(t) < 4:
+            return True
+        if len(t.split()) <= 2:
+            return True
+        return False
 
     def _safe_classify(self, text: str) -> Tuple[Optional[str], Optional[str]]:
         """Retorna (intent, tema) sem levantar exceções, compatível com várias interfaces."""
@@ -392,6 +405,8 @@ class AtendimentoService:
     
     def responder(self, user_text: str) -> str:
         """Gera resposta usando PDFs e, se necessário, busca web."""
+        if self._is_greeting(user_text):
+            return "Olá! Como posso ajudar?"
         intent, tema = self._safe_classify(user_text)
         ents: List[str] = []
         chunks = self._safe_retrieve(user_text, tema, ents)
@@ -408,8 +423,10 @@ class AtendimentoService:
             src = getattr(c, "source", None) or getattr(c, "metadata", {}).get("source")
             logging.info("RAG chunk %d fonte=%s", i + 1, src)
         web_ctx = ""
-        if coverage < self.conf.coverage_threshold:
+        if coverage < self.conf.coverage_threshold and not self._is_low_signal_query(user_text):
             web_ctx = self._safe_web_search(user_text)
+        else:
+            logging.info("WEB SKIPPED: consulta de baixo sinal ou cobertura PDF suficiente.")
 
         parts = [p for p in (pdf_ctx, web_ctx) if p]
         context = ("\n\n".join(parts))[: self.conf.max_context_chars]

@@ -106,4 +106,4 @@ def test_chat_model_fallback(monkeypatch):
     assert resp == "ok"
     calls = client.client.calls
     assert calls[0]["model"] == "bad-model"
-    assert calls[1]["model"] == "gpt-5-mini"
+    assert calls[1]["model"] == "gpt-4o-mini"
