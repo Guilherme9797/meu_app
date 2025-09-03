@@ -137,7 +137,48 @@ class AtendimentoService:
         if not tema:
             tema = self._infer_default_tema(text)
         return intent, tema
-    
+    def _infer_tema_from_text(self, text: str) -> Optional[str]:
+        t = (text or "").lower()
+        # honra/difamação → cível_honra
+        if any(k in t for k in ["difama", "injúria", "injuria", "calúnia", "calunia", "honra", "caloteiro", "exposição", "exposicao", "xingamento"]):
+            return "civel_honra"
+        # negativação/consumidor
+        if any(k in t for k in ["serasa", "spc", "negativa", "negativação", "negativacao", "cobrança", "cobranca"]):
+            return "consumidor"
+        # locação/despejo
+        if any(k in t for k in ["aluguel", "despejo", "locação", "locacao", "locador", "locatário", "locatario"]):
+            return "imobiliario"
+        return None
+
+    def _infer_tema_from_chunks(self, chunks: List[Any]) -> Optional[str]:
+        if not chunks:
+            return None
+        # junta possíveis fontes
+        srcs = []
+        for c in chunks:
+            s1 = getattr(c, "source", "") or ""
+            md = getattr(c, "metadata", {}) or {}
+            s2 = md.get("source", "")
+            srcs.append(str(s1).lower())
+            srcs.append(str(s2).lower())
+        blob = " ".join(srcs)
+
+        mapping = [
+            ("civel_honra", ["civil", "civel"]),   # honra costuma vir do civil
+            ("consumidor",  ["cdc", "consumidor"]),
+            ("imobiliario", ["inquilin", "loca", "imobili"]),
+            ("penal",       ["penal_especial", "penal", "criminologia"]),
+            ("tributario",  ["tributario"]),
+            ("previdenciario", ["previdenciario"]),
+            ("administrativo", ["administrativo"]),
+            ("processual_civil", ["processual civil", "cpc"]),
+            ("civel", ["civil", "civel"]),
+        ]
+        for tema, keys in mapping:
+            if any(k in blob for k in keys):
+                return tema
+        return None
+
     # -------------------------------
     # Fallback temático determinístico
     # -------------------------------
@@ -155,14 +196,14 @@ class AtendimentoService:
             "previdenciario": {"previdenciário", "inss", "beneficio", "aposentadoria"},
             "administrativo": {"licitação", "concurso", "ato administrativo", "ms", "mandado de segurança"},
             "empresarial": {"societário", "falência", "recuperação", "contratos empresariais"},
-            "civel": {"civil", "responsabilidade civil", "indenização"},
+             "civel": {"civil", "responsabilidade civil", "indenização", "civel_honra"},
             "processual_civil": {"processo civil", "cpc", "tutela", "execução", "cumprimento de sentença"},
         }
         for key, vals in aliases.items():
             if t == key or t in vals:
                 return key
         # tenta “cair” para grupos amplos
-        if "civil" in t:
+        if "civil" in t or "civel" in t:
             return "civel"
         return "geral"
 
@@ -410,6 +451,14 @@ class AtendimentoService:
         intent, tema = self._safe_classify(user_text)
         ents: List[str] = []
         chunks = self._safe_retrieve(user_text, tema, ents)
+        # tenta sobrescrever o tema quando vier "geral"
+        tema_override = None
+        if not tema or tema == "geral":
+            tema_override = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
+        tema_for_fallback = tema_override or tema or "geral"
+        logging.info(
+            "TEMA: classif=%s | override=%s | usado_no_fallback=%s", tema, tema_override, tema_for_fallback
+        )
         pdf_ctx = "\n\n".join(getattr(c, "text", str(c)) for c in chunks) if chunks else ""
         coverage = self._score_pdf_coverage(chunks)
         logging.info(
@@ -499,7 +548,7 @@ class AtendimentoService:
         raw = sane_reply(user_text, raw, _reprompt)
         if raw is None:
             logging.warning("LLM vazio/eco — usando fallback temático.")
-            raw = self._build_fallback_answer(user_text, tema)
+            raw = self._build_fallback_answer(user_text, tema_for_fallback)
         return raw
 
 
