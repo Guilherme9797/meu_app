@@ -41,7 +41,7 @@ def test_responder_greeting_skips_web(monkeypatch):
 def test_responder_low_signal_skips_web(monkeypatch):
     svc, called = _service(monkeypatch)
     resp = svc.responder("aluguel atrasado?")
-    assert resp == "ok"
+    assert "Diagnóstico" in resp
     assert called["web"] is False
 
 
