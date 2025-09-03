@@ -29,6 +29,15 @@ class AtendimentoConfig:
     coverage_threshold: float = 0.30  # só cai para web se PDFs cobrirem pouco
     use_web: bool = True
 
+# --- helpers para "pseudo-chunks" ---
+class _Chunk:
+    def __init__(self, text: str, source: str = None, metadata: dict | None = None):
+        self.text = text
+        self.source = source
+        self.metadata = metadata or {}
+
+
+
 def sane_reply(user_text: str, llm_reply: str, reprompt_fn):
     """Retorna resposta válida ou None após um re-prompt simples."""
     ut = (user_text or "").strip().lower()
@@ -464,6 +473,56 @@ class AtendimentoService:
         q.append(f"disputa: {facts or user_text}")
         return [s for s in q if s and len(s) > 3]
 
+    def _split_ctx_as_chunks(self, ctx: str, max_chars: int = 450, max_chunks: int = 6) -> list[_Chunk]:
+        import re
+        out: list[_Chunk] = []
+        if not ctx:
+            return out
+        blocks = re.split(r"\n{2,}", ctx) or [ctx]
+        for b in blocks:
+            s = (b or "").strip()
+            if not s:
+                continue
+            if len(s) > max_chars:
+                parts = re.split(r"(?<=[\.\!\?])\s+", s)
+                cur = ""
+                for p in parts:
+                    if not p:
+                        continue
+                    if len(cur) + len(p) + 1 <= max_chars:
+                        cur = (cur + " " + p).strip()
+                    else:
+                        if cur:
+                            out.append(_Chunk(cur, source="pdf_ctx"))
+                        cur = p
+                if cur:
+                    out.append(_Chunk(cur, source="pdf_ctx"))
+            else:
+                out.append(_Chunk(s, source="pdf_ctx"))
+            if len(out) >= max_chunks:
+                break
+        return out
+
+    def _retrieve_any(self, query: str, k: int) -> List[Any]:
+        r = self.retriever
+        try:
+            if hasattr(r, "retrieve"):
+                return list(r.retrieve(query, k=k))
+            if hasattr(r, "buscar_chunks"):
+                return list(r.buscar_chunks(query, k=k))
+            if hasattr(r, "buscar_contexto"):
+                ctx = r.buscar_contexto(query, k=k)
+                return self._split_ctx_as_chunks(ctx, max_chars=450, max_chunks=k)
+            if hasattr(r, "search"):
+                res = r.search(query, k=k)
+                if isinstance(res, str):
+                    return self._split_ctx_as_chunks(res, max_chars=450, max_chunks=k)
+                if isinstance(res, list):
+                    return [_Chunk(getattr(x, "text", str(x))) for x in res[:k]]
+        except Exception:
+            logging.exception("Falha na recuperação (adapter).")
+        return []
+    
     def _retrieve_multi(self, queries: List[str], k: int = 6) -> List[Any]:
         """Executa múltiplas recuperações e combina resultados (RRF + MMR)."""
         from collections import defaultdict
@@ -471,10 +530,7 @@ class AtendimentoService:
         ranked = defaultdict(float)
         pools = []
         for q in queries[:6]:
-            try:
-                results = list(self.retriever.retrieve(q, k=k))
-            except Exception:
-                results = []
+            results = self._retrieve_any(q, k=k)
             pools.append(results)
             for i, ch in enumerate(results):
                 ranked[id(ch)] += 1.0 / (i + 1.0)
@@ -554,11 +610,10 @@ class AtendimentoService:
     # ------------------------------------------------------------------
     def _safe_retrieve(self, query: str, tema: Optional[str] = None, ents: Optional[List[str]] = None) -> List[Any]:
         try:
-            if hasattr(self.retriever, "retrieve"):
-                return list(self.retriever.retrieve(query, k=self.conf.retriever_k))
+            return self._retrieve_any(query, k=self.conf.retriever_k)
         except Exception:
             logging.exception("Falha na recuperação.")
-        return []
+            return []
 
     def _score_pdf_coverage(self, chunks: List[Any]) -> float:
         if not chunks:
@@ -647,10 +702,9 @@ class AtendimentoService:
             answer,
             reprompt_fn=lambda p: self._gen([{"role": "user", "content": p}], max_new=160),
         ) or answer
-        if not self._guard_check(answer) or not re.search(r"\[S\d+\]", answer):
-            logging.warning(
-                "Saída reprovada no guard ou sem citações S# — usando fallback seguro."
-            )
+        _has_sref = bool(re.search(r"\[S\d+\]", answer or ""))
+        if not self._guard_check(answer) or (chunks and not _has_sref):
+            logging.warning("Saída sem [S#] válida — usando fallback seguro.")
             tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
             answer = self._build_fallback_answer(user_text, tema_fb)
 
