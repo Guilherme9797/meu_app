@@ -1,8 +1,6 @@
 from __future__ import annotations
-import logging
+import logging, re
 import os
-import re
-import inspect
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
@@ -68,6 +66,28 @@ class AtendimentoService:
         self.classifier = classifier
         self.extractor = extractor
         self.conf = conf or AtendimentoConfig()
+    
+    def _gen(self, messages, max_new: int = 900, temperature: Optional[float] = None) -> str:
+        """Wrapper resiliente para self.llm.generate."""
+        attempts = [
+            {"max_completion_tokens": max_new, "temperature": temperature},
+            {"max_tokens": max_new, "temperature": temperature},
+            {"max_tokens": max_new},
+            {},
+        ]
+        for params in attempts:
+            params = {k: v for k, v in params.items() if v is not None}
+            try:
+                return self.llm.generate(messages, **params)
+            except TypeError:
+                continue
+            except Exception as e:
+                s = str(e).lower()
+                if any(x in s for x in ["unsupported", "max_tokens", "max_completion_tokens", "temperature"]):
+                    continue
+                logging.exception("LLM.generate falhou de forma não tratável.")
+                break
+        return ""
 
     # ------------------------------------------------------------------
     # Helpers de classificação
@@ -78,15 +98,21 @@ class AtendimentoService:
     
     def _is_greeting(self, text: str) -> bool:
         t = (text or "").strip().lower()
-        return bool(re.match(r"^(oi|olá|ola|bom dia|boa tarde|boa noite|hello|hi)[!\.\s]*$", t))
+        return bool(
+            re.match(
+                r"^(oi|olá|ola|bom dia|boa tarde|boa noite)(?:\s+(tudo\s+bem|tudo\s+bom|como\s+vai))?[!\.\s]*$",
+                t,
+                flags=re.UNICODE,
+            )
+        )
 
     def _is_low_signal_query(self, text: str) -> bool:
-        t = (text or "").strip()
-        if len(t) < 4:
+        words = re.findall(r"\w+", (text or "").lower(), flags=re.UNICODE)
+        if len(words) <= 2:
             return True
-        if len(t.split()) <= 2:
-            return True
-        return False
+        fillers = {"oi", "olá", "ola", "bom", "dia", "boa", "tarde", "noite", "tudo", "bem", "como", "vai", "e", "ai", "aí"}
+        content = [w for w in words if w not in fillers]
+        return len(content) < 2
 
     def _safe_classify(self, text: str) -> Tuple[Optional[str], Optional[str]]:
         """Retorna (intent, tema) sem levantar exceções, compatível com várias interfaces."""
@@ -401,10 +427,7 @@ class AtendimentoService:
         )
         try:
             if hasattr(self.llm, "generate"):
-                out = self.llm.generate(
-                    [{"role": "user", "content": prompt}],
-                    max_completion_tokens=400,
-                )
+                out = self._gen([{"role": "user", "content": prompt}], max_new=400)
             else:
                 out = ""
         except Exception:
@@ -505,21 +528,13 @@ class AtendimentoService:
             f"SOURCE PACK:\n{source_pack}"
         )
         try:
-            if hasattr(self.llm, "generate"):
-                return self.llm.generate(
-                    [
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                    max_completion_tokens=900,
-                )
-            elif hasattr(self.llm, "chat"):
-                return self.llm.chat(
-                    system=system,
-                    user=user,
-                    extra={"max_completion_tokens": 900},
-                )
-            return ""
+            return self._gen(
+                [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                max_new=900,
+            )
         except Exception:
             logging.exception("Falha no gerador com fontes.")
             return ""
@@ -630,19 +645,7 @@ class AtendimentoService:
         answer = sane_reply(
             user_text,
             answer,
-            reprompt_fn=lambda p: (
-                self.llm.generate(
-                    [{"role": "user", "content": p}],
-                    **(
-                        {"max_completion_tokens": 160}
-                        if "max_completion_tokens"
-                        in inspect.signature(self.llm.generate).parameters
-                        else {}
-                    ),
-                )
-                if hasattr(self.llm, "generate")
-                else ""
-            ),
+            reprompt_fn=lambda p: self._gen([{"role": "user", "content": p}], max_new=160),
         ) or answer
         if not self._guard_check(answer) or not re.search(r"\[S\d+\]", answer):
             logging.warning(
