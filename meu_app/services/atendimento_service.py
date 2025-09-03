@@ -725,18 +725,30 @@ def _build_atendimento_service() -> AtendimentoService:
     except Exception:  # pragma: no cover - opcional
         TavilyClient = None  # type: ignore
 
-    # Dependências básicas (stubs se não houver implementações reais)
-    class Embeddings:
-        def embed(self, text: str) -> List[float]:
-            return []
+    # Tenta construir o buscador real baseado em FAISS. Em ambientes de teste
+    # ou sem dependências, recai para um stub que apenas retorna listas vazias.
+    retriever: Any
+    try:
+        from .buscador_pdf import BuscadorPDF
+        buscador = BuscadorPDF(
+            openai_key=os.getenv("OPENAI_API_KEY", ""),
+            tavily_key=os.getenv("TAVILY_API_KEY"),
+            pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
+            index_dir=get_index_dir(),
+        )
+        # Passamos o objeto BuscadorPDF diretamente para aproveitar o método
+        # ``buscar_contexto`` já suportado por AtendimentoService.
+        retriever = buscador
+    except Exception as e:  # pragma: no cover - defensivo
+        logging.exception("Falha ao inicializar BuscadorPDF: %s", e)
+        class RetrieverStub:
+            def retrieve(self, query: str, k: int = 4) -> List[Any]:
+                return []
 
-    class Retriever:
-        def __init__(self, index_path: str, embed_fn: Any = None) -> None:
-            self.index_path = index_path
-            self.embed_fn = embed_fn
+            def buscar_contexto(self, consulta: str, k: int = 5) -> str:
+                return ""
 
-        def retrieve(self, query: str, k: int = 4) -> List[Any]:
-            return []
+        retriever = RetrieverStub()
 
     # Tenta usar o cliente oficial baseado em OpenAI; se indisponível, usa um
     # stub que mantém a interface esperada pelo serviço.
@@ -772,8 +784,6 @@ def _build_atendimento_service() -> AtendimentoService:
     class MessageRepository:
         pass
 
-    embedder = Embeddings()
-    retriever = Retriever(index_path=get_index_dir(), embed_fn=getattr(embedder, "embed", None))
     tavily = None
     api_key = os.getenv("TAVILY_API_KEY")
     if api_key and TavilyClient:
