@@ -275,7 +275,9 @@ def _build_atendimento_service() -> AtendimentoService:
     extractor = Extractor()
     sess_repo = SessionRepository()
     msg_repo = MessageRepository()
-    conf = AtendimentoConfig(use_web=tavily is not None, append_low_coverage_note=False)
+    conf = AtendimentoConfig(
+        use_web_fallback=tavily is not None, append_low_coverage_note=False
+    )
     return AtendimentoService(
         sess_repo=sess_repo,
         msg_repo=msg_repo,
