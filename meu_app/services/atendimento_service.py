@@ -685,6 +685,7 @@ class AtendimentoService:
             if web_ctx:
                 chunks = chunks + [type("WebChunk", (object,), {"text": web_ctx})()]
 
+        src_pack = ""
         if chunks:
             src_pack = self._build_source_pack(chunks)
             src_pack = src_pack[: self.conf.max_context_chars]
@@ -703,6 +704,22 @@ class AtendimentoService:
             reprompt_fn=lambda p: self._gen([{"role": "user", "content": p}], max_new=160),
         ) or answer
         _has_sref = bool(re.search(r"\[S\d+\]", answer or ""))
+        if chunks and not _has_sref and src_pack:
+            logging.info("Re-prompting to include source references.")
+            reprompt = (
+                "Reescreva a resposta a seguir citando obrigatoriamente os S# do SOURCE PACK.\n\n"
+                f"PERGUNTA: {user_text}\n\nRESPOSTA: {answer}\n\nSOURCE PACK:\n{src_pack}"
+            )
+            answer2 = self._gen(
+                [
+                    {"role": "system", "content": self.conf.system_prompt},
+                    {"role": "user", "content": reprompt},
+                ],
+                max_new=900,
+            )
+            if answer2:
+                answer = answer2
+            _has_sref = bool(re.search(r"\[S\d+\]", answer or ""))
         if not self._guard_check(answer) or (chunks and not _has_sref):
             logging.warning("Saída sem [S#] válida — usando fallback seguro.")
             tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)

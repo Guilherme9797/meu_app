@@ -87,4 +87,68 @@ def test_fallback_infers_from_chunks(monkeypatch):
     )
     monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
     resp = svc.responder("fui acusado de furto em uma loja")
+    @@ -65,26 +65,63 @@ def test_fallback_infers_from_text(monkeypatch):
+    )
+    assert "tema civel" in resp.lower()
+
+
+class PenalChunk:
+    text = "dummy"
+    source = "data/pdfs/penal_especial/test.pdf"
+
+
+class PenalRetriever:
+    def retrieve(self, query, k):
+        return [PenalChunk()]
+
+
+def test_fallback_infers_from_chunks(monkeypatch):
+    svc = AtendimentoService(
+        sess_repo=None,
+        msg_repo=None,
+        retriever=PenalRetriever(),
+        tavily=None,
+        llm=EmptyLLM(),
+        conf=AtendimentoConfig(),
+    )
+    monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
+    resp = svc.responder("fui acusado de furto em uma loja")
     assert "tema penal" in resp.lower()
+    assert "tema penal" in resp.lower()
+
+
+class SeqLLM:
+    def __init__(self):
+        self.calls = 0
+
+    def generate(self, messages, temperature=0.2, max_tokens=900):
+        self.calls += 1
+        if self.calls == 1:
+            return "sem referencia"
+        return "com [S1]"
+
+
+class SingleChunk:
+    text = "algo"
+    source = "data/pdfs/test.pdf"
+
+
+class SingleRetriever:
+    def retrieve(self, query, k):
+        return [SingleChunk()]
+
+
+def test_responder_repump_adds_sref(monkeypatch):
+    llm = SeqLLM()
+    svc = AtendimentoService(
+        sess_repo=None,
+        msg_repo=None,
+        retriever=SingleRetriever(),
+        tavily=None,
+        llm=llm,
+        conf=AtendimentoConfig(),
+    )
+    monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
+    resp = svc.responder("pergunta")
+    assert "[S1]" in resp
+    assert llm.calls == 2
