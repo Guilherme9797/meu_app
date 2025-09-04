@@ -87,33 +87,6 @@ def test_fallback_infers_from_chunks(monkeypatch):
     )
     monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
     resp = svc.responder("fui acusado de furto em uma loja")
-    @@ -65,26 +65,63 @@ def test_fallback_infers_from_text(monkeypatch):
-    )
-    assert "tema civel" in resp.lower()
-
-
-class PenalChunk:
-    text = "dummy"
-    source = "data/pdfs/penal_especial/test.pdf"
-
-
-class PenalRetriever:
-    def retrieve(self, query, k):
-        return [PenalChunk()]
-
-
-def test_fallback_infers_from_chunks(monkeypatch):
-    svc = AtendimentoService(
-        sess_repo=None,
-        msg_repo=None,
-        retriever=PenalRetriever(),
-        tavily=None,
-        llm=EmptyLLM(),
-        conf=AtendimentoConfig(),
-    )
-    monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
-    resp = svc.responder("fui acusado de furto em uma loja")
-    assert "tema penal" in resp.lower()
     assert "tema penal" in resp.lower()
 
 
