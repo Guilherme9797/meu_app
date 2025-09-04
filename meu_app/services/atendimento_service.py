@@ -28,6 +28,7 @@ class AtendimentoConfig:
     max_context_chars: int = 4500
     coverage_threshold: float = 0.30  # só cai para web se PDFs cobrirem pouco
     use_web: bool = True
+    greeting_mode: str = "deterministic"  # "deterministic" | "llm"
 
 # --- helpers para "pseudo-chunks" ---
 class _Chunk:
@@ -75,6 +76,7 @@ class AtendimentoService:
         self.classifier = classifier
         self.extractor = extractor
         self.conf = conf or AtendimentoConfig()
+        self.conf.greeting_mode = getattr(self.conf, "greeting_mode", "deterministic")
     
     def _gen(self, messages, max_new: int = 900, temperature: Optional[float] = None) -> str:
         """Wrapper resiliente para self.llm.generate."""
@@ -105,15 +107,69 @@ class AtendimentoService:
         """Heurística simples para tema padrão."""
         return "geral"
     
-    def _is_greeting(self, text: str) -> bool:
+    def _is_greeting_only(self, text: str) -> bool:
         t = (text or "").strip().lower()
-        return bool(
-            re.match(
-                r"^(oi|olá|ola|bom dia|boa tarde|boa noite)(?:\s+(tudo\s+bem|tudo\s+bom|como\s+vai))?[!\.\s]*$",
-                t,
-                flags=re.UNICODE,
-            )
+        if len(t.split()) <= 3 and re.match(
+            r"^(oi|olá|ola|bom dia|boa tarde|boa noite|hello|hi)[\s\.,!\?\-]*$",
+            t,
+        ):
+            return True
+        return False
+
+    def _is_greeting_medium(self, text: str) -> bool:
+        t = (text or "").strip().lower()
+        if len(t.split()) <= 5 and re.match(
+            r"^(oi|olá|ola|bom dia|boa tarde|boa noite|hello|hi)(,|\s)*(tudo bem|como vai|tranquilo|boa|ok)?[\s\.,!\?\-]*$",
+            t,
+        ):
+            return True
+        if any(
+            k in t
+            for k in [
+                "preciso",
+                "problema",
+                "ajuda",
+                "duvida",
+                "dúvida",
+                "negativa",
+                "multa",
+                "transferência",
+                "transferencia",
+            ]
+        ):
+            return False
+        return False
+
+    def _greeting_reply(self) -> str:
+        return (
+            "Olá! Como posso ajudar? "
+            "Para eu orientar melhor, me diga em 1 frase: (i) o tema (ex.: consumidor, família, penal...), "
+            "(ii) se há prazo urgente, e (iii) quais documentos você tem em mãos."
         )
+
+    def _llm_smalltalk(self, user_text: str) -> str:
+        sys = (
+            "Você é um advogado brasileiro cordial. "
+            "Responda em 1 linha, acolhedor, SEM conteúdo jurídico. "
+            "Finalize com UMA pergunta de triagem (tema, prazo, documentos). "
+            "Máx ~60 tokens."
+        )
+        msgs = [
+            {"role": "system", "content": sys},
+            {"role": "user", "content": user_text},
+        ]
+        try:
+            if hasattr(self.llm, "generate"):
+                try:
+                    return self.llm.generate(msgs, max_completion_tokens=60) or self._greeting_reply()
+                except TypeError:
+                    try:
+                        return self.llm.generate(msgs, max_tokens=60) or self._greeting_reply()
+                    except TypeError:
+                        return self.llm.generate(msgs) or self._greeting_reply()
+        except Exception:
+            logging.exception("smalltalk falhou")
+        return self._greeting_reply()
 
     def _is_low_signal_query(self, text: str) -> bool:
         words = re.findall(r"\w+", (text or "").lower(), flags=re.UNICODE)
@@ -665,8 +721,15 @@ class AtendimentoService:
     
     def responder(self, user_text: str) -> str:
         """Orquestra a resposta usando CaseFrame, RAG multi e guard."""
-        if self._is_greeting(user_text):
-            return "Olá! Como posso ajudar?"
+        if self._is_greeting_only(user_text):
+            return (
+                self._llm_smalltalk(user_text)
+                if self.conf.greeting_mode == "llm"
+                else self._greeting_reply()
+            )
+
+        if self._is_greeting_medium(user_text) and self.conf.greeting_mode == "llm":
+            return self._llm_smalltalk(user_text)
         if not self._guard_check(user_text):
             return "No momento não posso atender a esse pedido."
 
@@ -720,10 +783,13 @@ class AtendimentoService:
             if answer2:
                 answer = answer2
             _has_sref = bool(re.search(r"\[S\d+\]", answer or ""))
-        if not self._guard_check(answer) or (chunks and not _has_sref):
-            logging.warning("Saída sem [S#] válida — usando fallback seguro.")
+        if not self._guard_check(answer):
+            logging.warning("Saída reprovada no guard — usando fallback seguro.")
             tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
             answer = self._build_fallback_answer(user_text, tema_fb)
+        elif chunks and not _has_sref:
+            logging.warning("Saída sem [S#]; inserindo referência mínima.")
+            answer = f"{answer.strip()} [S1]"
 
         return answer
 

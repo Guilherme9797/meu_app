@@ -125,3 +125,21 @@ def test_responder_repump_adds_sref(monkeypatch):
     resp = svc.responder("pergunta")
     assert "[S1]" in resp
     assert llm.calls == 2
+
+class StubbornLLM:
+    def generate(self, messages, temperature=0.2, max_tokens=900):
+        return "sempre sem referencia"
+
+
+def test_responder_inserts_min_sref_when_missing(monkeypatch):
+    svc = AtendimentoService(
+        sess_repo=None,
+        msg_repo=None,
+        retriever=SingleRetriever(),
+        tavily=None,
+        llm=StubbornLLM(),
+        conf=AtendimentoConfig(),
+    )
+    monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
+    resp = svc.responder("pergunta")
+    assert resp.endswith("[S1]")
