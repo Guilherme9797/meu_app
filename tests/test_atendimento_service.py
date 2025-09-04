@@ -58,6 +58,27 @@ def test_responder_low_signal_skips_web(monkeypatch):
     assert called["web"] is False
 
 
+def test_legal_query_boost(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    seeds = svc._legal_query_boost("bateram meu carro")
+    assert "acidente de trânsito" in seeds
+
+
+def test_looks_like_juris(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    assert svc._looks_like_juris("Ementa: algo")
+    assert not svc._looks_like_juris("texto comum")
+
+
+def test_responder_legal_hits_skip_generic(monkeypatch):
+    svc, called = _service(monkeypatch)
+    chunk = type("C", (), {"text": "Ementa: teste", "source": "http://ex"})()
+    monkeypatch.setattr(svc, "_web_search_law", lambda text, k: [chunk])
+    resp = svc.responder("tive um acidente de trânsito")
+    assert called["web"] is False
+    assert resp.strip().startswith("ok")
+
+
 class EmptyLLM:
     def generate(self, messages, temperature=0.2, max_tokens=900):
         return ""

@@ -753,6 +753,98 @@ class AtendimentoService:
         if isinstance(c, dict):
             return c.get("source") or c.get("metadata", {}).get("source")
         return getattr(c, "source", None) or getattr(c, "metadata", {}).get("source")
+    
+
+     # --- NOVO: boosts semânticos para consulta jurídica
+    def _legal_query_boost(self, user_text: str) -> List[str]:
+        t = (user_text or "").lower()
+        seeds = [user_text]
+        if any(k in t for k in ["bateram", "colisão", "acidente", "batida", "trânsito", "transito"]):
+            seeds += [
+                "responsabilidade civil",
+                "acidente de trânsito",
+                "danos materiais",
+                "dever de indenizar",
+            ]
+        if any(k in t for k in ["caloteiro", "difama", "injúria", "injuria", "calúnia", "calunia", "honra"]):
+            seeds += [
+                "dano moral",
+                "direito de personalidade",
+                "honra objetiva",
+                "responsabilidade civil extracontratual",
+            ]
+        if any(k in t for k in ["serasa", "spc", "negativa", "negativação", "negativacao"]):
+            seeds += [
+                "inscrição indevida",
+                "cadastro de inadimplentes",
+                "prova do débito",
+                "CDC jurisprudência",
+            ]
+        return list(dict.fromkeys(seeds))
+
+    # --- NOVO: detector simples de "hit" jurídico (jurisprudência/ementa)
+    def _looks_like_juris(self, text: str) -> bool:
+        t = (text or "").lower()
+        keys = [
+            "ementa",
+            "tese",
+            "precedente",
+            "jurisprud",
+            "relator",
+            "acórdão",
+            "acordao",
+            "repetitivo",
+        ]
+        return any(k in t for k in keys)
+
+    # --- NOVO: web search com lista branca de domínios oficiais
+    def _web_search_law(self, user_text: str, k: int = 6) -> List[_Chunk]:
+        if not (self.conf.use_web and getattr(self, "tavily", None)):
+            return []
+        qparts = self._legal_query_boost(user_text)
+        include_domains_priority = [
+            ["pangeabnp.pdpj.jus.br", "bnp.pdpj.jus.br", "pdpj.jus.br"],
+            ["stj.jus.br", "stf.jus.br", "tst.jus.br"],
+            ["trf1.jus.br", "trf2.jus.br", "trf3.jus.br", "trf4.jus.br", "trf5.jus.br"],
+            [
+                "tjmg.jus.br",
+                "tjsp.jus.br",
+                "tjrs.jus.br",
+                "tjba.jus.br",
+                "tjpr.jus.br",
+                "tjce.jus.br",
+            ],
+        ]
+        out: List[_Chunk] = []
+        try:
+            for doms in include_domains_priority:
+                for base in qparts[:3]:
+                    try:
+                        res = self.tavily.search(
+                            f"{base} {user_text}",
+                            include_domains=doms,
+                            search_depth="advanced",
+                            max_results=4,
+                        )
+                    except Exception:
+                        res = self.tavily.search(f"{base} {user_text}")
+                    items = (res or {}).get("results", []) if isinstance(res, dict) else []
+                    for it in items:
+                        title = (it.get("title") or "").strip()
+                        content = (it.get("content") or "").strip()
+                        url = (it.get("url") or "").strip()
+                        if not url:
+                            continue
+                        blob = f"{title}\n{content}\nFonte: {url}".strip()
+                        if self._looks_like_juris(blob):
+                            out.append(_Chunk(blob, source=url, metadata={"domain": doms}))
+                        if len(out) >= k:
+                            return out
+                if out:
+                    break
+        except Exception:
+            logging.exception("Falha na _web_search_law.")
+        return out[:k]
 
 
     def _safe_web_search(self, query: str) -> str:
@@ -817,8 +909,21 @@ class AtendimentoService:
         logging.info(
              "RAG multi: q=%d chunks=%d coverage=%.2f", len(queries), len(chunks), coverage
         )
+        needs_web_law = (coverage < self.conf.coverage_threshold) or not any(
+            self._looks_like_juris(getattr(c, "text", "")) for c in chunks
+        )
+        if needs_web_law:
+            bnp_hits = self._web_search_law(
+                user_text, k=max(3, self.conf.retriever_k // 2)
+            )
+            if bnp_hits:
+                chunks = bnp_hits + chunks
         web_ctx = ""
-        if coverage < self.conf.coverage_threshold and not self._is_low_signal_query(user_text):
+        if (
+            coverage < self.conf.coverage_threshold
+            and not self._is_low_signal_query(user_text)
+            and not any(self._looks_like_juris(getattr(c, "text", "")) for c in chunks)
+        ):
             tags = " ".join((frame.get("tags") or [])[:3])
             web_ctx = self._safe_web_search(f"{user_text} {tags}".strip())
             if web_ctx:

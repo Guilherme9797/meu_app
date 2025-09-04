@@ -7,6 +7,7 @@ __all__ = [
     "services",
     "persistence",
     "utils",
+    "integrations",
     "handle_incoming",
     "is_resolution_confirmation",
     "sess_repo",
