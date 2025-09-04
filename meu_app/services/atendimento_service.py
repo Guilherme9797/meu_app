@@ -110,6 +110,7 @@ class AtendimentoService:
     def _is_greeting_only(self, text: str) -> bool:
         # Cumprimento curto (≤ 4 palavras), tem palavra de cumprimento,
         # não tem gatilho de caso e é “baixo sinal”.
+        t = (text or "").strip().lower()
         if (
             len(t.split()) <= 4
             and self._has_greeting_word(t)
