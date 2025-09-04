@@ -116,6 +116,36 @@ class AtendimentoService:
             return True
         return False
 
+    def _has_greeting_word(self, t: str) -> bool:
+        t = (t or "").lower()
+        greetings = ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "hello", "hi"]
+        return any(g in t for g in greetings)
+
+    def _has_case_intent(self, t: str) -> bool:
+        t = (t or "").lower()
+        gatilhos = [
+            "preciso",
+            "tenho",
+            "tive",
+            "quero",
+            "não reconheço",
+            "nao reconheco",
+            "problema",
+            "negativa",
+            "negativ",
+            "multa",
+            "transfer",
+            "processo",
+            "despejo",
+            "divórcio",
+            "divorcio",
+            "janela",
+            "vizinh",
+            "cobrança",
+            "cobranca",
+        ]
+        return any(g in t for g in gatilhos)
+    
     def _is_greeting_medium(self, text: str) -> bool:
         t = (text or "").strip().lower()
         if len(t.split()) <= 5 and re.match(
@@ -123,21 +153,8 @@ class AtendimentoService:
             t,
         ):
             return True
-        if any(
-            k in t
-            for k in [
-                "preciso",
-                "problema",
-                "ajuda",
-                "duvida",
-                "dúvida",
-                "negativa",
-                "multa",
-                "transferência",
-                "transferencia",
-            ]
-        ):
-            return False
+        if self._has_greeting_word(t) and self._is_low_signal_query(t) and not self._has_case_intent(t):
+            return True
         return False
 
     def _greeting_reply(self) -> str:

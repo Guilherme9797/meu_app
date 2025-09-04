@@ -37,6 +37,12 @@ def test_responder_greeting_skips_web(monkeypatch):
     assert resp.lower().startswith("ol")
     assert called["web"] is False
 
+def test_responder_medium_greeting(monkeypatch):
+    svc, called = _service(monkeypatch)
+    svc.conf.greeting_mode = "llm"
+    resp = svc.responder("ola boa noite tudo bem")
+    assert resp == "ok"
+    assert called["web"] is False
 
 def test_responder_low_signal_skips_web(monkeypatch):
     svc, called = _service(monkeypatch)
