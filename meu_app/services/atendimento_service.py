@@ -30,10 +30,10 @@ class AtendimentoConfig:
     coverage_threshold: float = 0.30  # só cai para web se PDFs cobrirem pouco
     use_web: bool = True
     greeting_mode: str = "deterministic"  # "deterministic" | "llm"
-    min_rag_chunks: int = 2
-    force_topic_llm_on_ambiguous: bool = False
-    avoid_generic_fallback: bool = False
-    default_fallback_tema: str = ""
+    min_rag_chunks: int = 2                  # se <2, tenta query rewrite
+    force_topic_llm_on_ambiguous: bool = True
+    avoid_generic_fallback: bool = True      # não usar 'geral' se houver sinal
+    default_fallback_tema: str = "civel"     # tema mínimo aceitável
 
 # --- helpers para "pseudo-chunks" ---
 class _Chunk:
@@ -583,16 +583,19 @@ class AtendimentoService:
     def _query_rewrite(self, text: str) -> List[str]:
         p = (
             "Gere 3 a 5 consultas curtas (máx 6 palavras) sobre o caso, uma por linha, "
-            "sem pontuação, visando recuperação de trechos jurídicos úteis."
+             "sem pontuação."
         )
         try:
             out = self._gen(
                 [{"role": "user", "content": f"{p}\n\nCaso: {text}"}], max_new=80
-            )
+            ) or ""
         except Exception:
             out = ""
-        qs = [q.strip("•- ").lower() for q in (out or "").splitlines() if q.strip()]
-        return qs[:5]
+        return [
+            q.strip("•- ").lower()
+            for q in out.splitlines()
+            if q.strip()
+        ][:5]
     
     def _split_ctx_as_chunks(self, ctx: str, max_chars: int = 450, max_chunks: int = 6) -> list[_Chunk]:
         import re
@@ -803,10 +806,10 @@ class AtendimentoService:
         logging.info("queries=%s", queries[:4])
         chunks = self._retrieve_multi(queries, k=self.conf.retriever_k)
         if len(chunks) < self.conf.min_rag_chunks:
-            rewrites = self._query_rewrite(user_text)
-            if rewrites:
+            rew = self._query_rewrite(user_text)
+            if rew:
                 chunks2 = self._retrieve_multi(
-                    rewrites + queries[:2], k=self.conf.retriever_k
+                     rew + queries[:2], k=self.conf.retriever_k
                 )
                 if len(chunks2) > len(chunks):
                     chunks = chunks2
