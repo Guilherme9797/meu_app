@@ -29,6 +29,10 @@ class AtendimentoConfig:
     coverage_threshold: float = 0.30  # só cai para web se PDFs cobrirem pouco
     use_web: bool = True
     greeting_mode: str = "deterministic"  # "deterministic" | "llm"
+    min_rag_chunks: int = 2
+    force_topic_llm_on_ambiguous: bool = False
+    avoid_generic_fallback: bool = False
+    default_fallback_tema: str = ""
 
 # --- helpers para "pseudo-chunks" ---
 class _Chunk:
@@ -289,6 +293,32 @@ class AtendimentoService:
                 return tema
         return None
 
+    def _guess_topic_llm(self, text: str) -> Optional[str]:
+        prompt = (
+            "Aponte em uma palavra o tema jurídico principal da pergunta a seguir "
+            "(ex.: consumidor, trabalhista, penal, civel, familia)."
+        )
+        try:
+            out = self._gen(
+                [{"role": "user", "content": f"{prompt}\n\nPergunta: {text}"}],
+                max_new=20,
+            )
+        except Exception:
+            return None
+        parts = (out or "").strip().lower().split()
+        return parts[0] if parts else None
+
+    def _choose_fallback_tema(self, user_text: str, chunks: List[Any]) -> Optional[str]:
+        tema = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
+        if (not tema or tema == "geral") and not self._is_low_signal_query(user_text):
+            if getattr(self.conf, "force_topic_llm_on_ambiguous", False):
+                tema = self._guess_topic_llm(user_text) or tema
+            if (
+                not tema or tema == "geral"
+            ) and getattr(self.conf, "avoid_generic_fallback", False):
+                tema = getattr(self.conf, "default_fallback_tema", "civel")
+        return tema
+    
     # -------------------------------
     # Fallback temático determinístico
     # -------------------------------
@@ -547,6 +577,20 @@ class AtendimentoService:
         q.append(f"disputa: {facts or user_text}")
         return [s for s in q if s and len(s) > 3]
 
+    def _query_rewrite(self, text: str) -> List[str]:
+        p = (
+            "Gere 3 a 5 consultas curtas (máx 6 palavras) sobre o caso, uma por linha, "
+            "sem pontuação, visando recuperação de trechos jurídicos úteis."
+        )
+        try:
+            out = self._gen(
+                [{"role": "user", "content": f"{p}\n\nCaso: {text}"}], max_new=80
+            )
+        except Exception:
+            out = ""
+        qs = [q.strip("•- ").lower() for q in (out or "").splitlines() if q.strip()]
+        return qs[:5]
+    
     def _split_ctx_as_chunks(self, ctx: str, max_chars: int = 450, max_chunks: int = 6) -> list[_Chunk]:
         import re
         out: list[_Chunk] = []
@@ -755,6 +799,14 @@ class AtendimentoService:
         queries = self._expand_queries(user_text, frame)
         logging.info("queries=%s", queries[:4])
         chunks = self._retrieve_multi(queries, k=self.conf.retriever_k)
+        if len(chunks) < self.conf.min_rag_chunks:
+            rewrites = self._query_rewrite(user_text)
+            if rewrites:
+                chunks2 = self._retrieve_multi(
+                    rewrites + queries[:2], k=self.conf.retriever_k
+                )
+                if len(chunks2) > len(chunks):
+                    chunks = chunks2
         coverage = self._score_pdf_coverage(chunks)
         logging.info(
              "RAG multi: q=%d chunks=%d coverage=%.2f", len(queries), len(chunks), coverage
@@ -777,7 +829,7 @@ class AtendimentoService:
         else:
             answer = ""
         if not answer:
-            tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
+            tema_fb = self._choose_fallback_tema(user_text, chunks)
             answer = self._build_fallback_answer(user_text, tema_fb)
         answer = sane_reply(
             user_text,
@@ -803,7 +855,7 @@ class AtendimentoService:
             _has_sref = bool(re.search(r"\[S\d+\]", answer or ""))
         if not self._guard_check(answer):
             logging.warning("Saída reprovada no guard — usando fallback seguro.")
-            tema_fb = self._infer_tema_from_text(user_text) or self._infer_tema_from_chunks(chunks)
+            tema_fb = self._choose_fallback_tema(user_text, chunks)
             answer = self._build_fallback_answer(user_text, tema_fb)
         elif chunks and not _has_sref:
             logging.warning("Saída sem [S#]; inserindo referência mínima.")
