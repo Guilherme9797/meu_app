@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
+from .refinador import GroundingGuard, RefinadorResposta
 
 @dataclass
 class AtendimentoConfig:
@@ -69,6 +70,7 @@ class AtendimentoService:
         guard: Any = None,
         classifier: Any = None,
         extractor: Any = None,
+        refinador: Any = None,
         conf: Optional[AtendimentoConfig] = None,
     ) -> None:
         self.sess_repo = sess_repo
@@ -79,6 +81,7 @@ class AtendimentoService:
         self.guard = guard
         self.classifier = classifier
         self.extractor = extractor
+        self.refinador = refinador
         self.conf = conf or AtendimentoConfig()
         self.conf.greeting_mode = getattr(self.conf, "greeting_mode", "deterministic")
     
@@ -860,6 +863,12 @@ class AtendimentoService:
         elif chunks and not _has_sref:
             logging.warning("Saída sem [S#]; inserindo referência mínima.")
             answer = f"{answer.strip()} [S1]"
+        
+        if self.refinador:
+            try:
+                answer = self.refinador.refinar(answer)
+            except Exception:
+                logging.exception("Falha no refinador.")
 
         return answer
 
@@ -920,11 +929,6 @@ def _build_atendimento_service() -> AtendimentoService:
         def complete(self, *a, **kw):
             return ""
 
-    class GroundingGuard:
-        def check(self, text: str):
-            return {"allowed": True}
-
-
     class Classifier:
         pass
 
@@ -958,6 +962,7 @@ def _build_atendimento_service() -> AtendimentoService:
             "LLM real não inicializado. Verifique OPENAI_API_KEY/OPENAI_MODEL e o pacote 'openai'."
         )
     guard = GroundingGuard()
+    refinador = RefinadorResposta(llm)
     classifier = Classifier()
     extractor = Extractor()
     sess_repo = SessionRepository()
@@ -973,6 +978,7 @@ def _build_atendimento_service() -> AtendimentoService:
         guard=guard,
         classifier=classifier,
         extractor=extractor,
+        refinador=refinador,
         conf=conf,
     
     )
