@@ -578,6 +578,8 @@ class AtendimentoService:
         for t in tags[:5]:
             q.append(f"{t} {user_text}")
         q.append(f"disputa: {facts or user_text}")
+        # boosts semânticos ajudam a recuperar trechos jurídicos mais precisos
+        q.extend(self._legal_query_boost(user_text))
         return [s for s in q if s and len(s) > 3]
 
     def _query_rewrite(self, text: str) -> List[str]:
