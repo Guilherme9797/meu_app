@@ -108,10 +108,13 @@ class AtendimentoService:
         return "geral"
     
     def _is_greeting_only(self, text: str) -> bool:
-        t = (text or "").strip().lower()
-        if len(t.split()) <= 3 and re.match(
-            r"^(oi|olá|ola|bom dia|boa tarde|boa noite|hello|hi)[\s\.,!\?\-]*$",
-            t,
+        # Cumprimento curto (≤ 4 palavras), tem palavra de cumprimento,
+        # não tem gatilho de caso e é “baixo sinal”.
+        if (
+            len(t.split()) <= 4
+            and self._has_greeting_word(t)
+            and not self._has_case_intent(t)
+            and self._is_low_signal_query(t)
         ):
             return True
         return False
@@ -148,12 +151,9 @@ class AtendimentoService:
     
     def _is_greeting_medium(self, text: str) -> bool:
         t = (text or "").strip().lower()
-        if len(t.split()) <= 5 and re.match(
-            r"^(oi|olá|ola|bom dia|boa tarde|boa noite|hello|hi)(,|\s)*(tudo bem|como vai|tranquilo|boa|ok)?[\s\.,!\?\-]*$",
-            t,
-        ):
-            return True
-        if self._has_greeting_word(t) and self._is_low_signal_query(t) and not self._has_case_intent(t):
+        # Cumprimento com um pouquinho mais de “encheção”,
+        # mas ainda sem sinal de caso.
+        if self._has_greeting_word(t) and not self._has_case_intent(t) and self._is_low_signal_query(t):
             return True
         return False
 

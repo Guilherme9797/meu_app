@@ -37,6 +37,13 @@ def test_responder_greeting_skips_web(monkeypatch):
     assert resp.lower().startswith("ol")
     assert called["web"] is False
 
+def test_responder_composed_greeting(monkeypatch):
+    """Cumprimentos como 'ola boa noite' devem ser tratados como greeting only."""
+    svc, called = _service(monkeypatch)
+    resp = svc.responder("ola boa noite")
+    assert resp.lower().startswith("ol")
+    assert called["web"] is False
+
 def test_responder_medium_greeting(monkeypatch):
     svc, called = _service(monkeypatch)
     svc.conf.greeting_mode = "llm"
