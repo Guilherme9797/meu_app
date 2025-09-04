@@ -5,7 +5,13 @@ from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
 from .refinador import GroundingGuard, RefinadorResposta
-
+from meu_app.retrievers.datajud import (
+    DatajudClient,
+    DatajudRetriever,
+    CombinedRetriever,
+)
+from meu_app.retrievers.web_tavily import WebRetriever
+from meu_app.retrievers.query_expander import expand as expand_query
 @dataclass
 class AtendimentoConfig:
     """Configurações do AtendimentoService."""
@@ -628,6 +634,51 @@ class AtendimentoService:
             if len(out) >= max_chunks:
                 break
         return out
+    
+    def _relevance_score(self, query: str, chunk_text: str) -> float:
+        import re
+        stop = {
+            "de","da","do","das","dos","a","o","e","é","em","um","uma","para","por","com","no","na",
+            "ao","à","às","os","as","que","se","di","la","lo"
+        }
+        q = [w for w in re.findall(r"\w+", (query or "").lower()) if w not in stop]
+        c = [w for w in re.findall(r"\w+", (chunk_text or "").lower()) if w not in stop]
+        if not q or not c:
+            return 0.0
+        overlap = len(set(q) & set(c))
+        return overlap / float(1 + min(len(set(q)), len(set(c))))
+
+    def _filter_by_relevance(self, query: str, chunks: list, min_keep: int = 3, thr: float = 0.12):
+        scored = []
+        for c in chunks:
+            txt = getattr(c, "text", "") or ""
+            s = self._relevance_score(query, txt)
+            scored.append((s, c))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        kept = [c for s, c in scored if s >= thr]
+        if len(kept) < min_keep:
+            kept = [c for _, c in scored[:max(min_keep, 1)]]
+        return kept
+
+    def _anti_generic(self, answer: str, user_text: str, src_pack: str) -> str:
+        import re
+        if not answer:
+            return answer
+        txt = (answer or "").lower()
+        if re.search(r"\btema\s+(geral|c[ií]vel|civil)\b|quest[aã]o\s+(de\s+)?car[aá]ter\s+geral", txt):
+            reprompt = (
+                "A resposta ficou genérica. Reescreva específica ao caso, "
+                "usando e citando obrigatoriamente os S# do SOURCE PACK e dando passos concretos "
+                "(mínimo 4 passos no item 'O que fazer agora'). É proibido usar 'tema geral/ civil'.\n\n"
+                f"PERGUNTA: {user_text}\n\nSOURCE PACK:\n{src_pack}"
+            )
+            ans2 = self._gen(
+                [{"role": "system", "content": self.conf.system_prompt}, {"role": "user", "content": reprompt}],
+                max_new=900,
+            )
+            if ans2:
+                return ans2
+        return answer
 
     def _retrieve_any(self, query: str, k: int) -> List[Any]:
         r = self.retriever
@@ -897,6 +948,10 @@ class AtendimentoService:
 
         frame = self._caseframe_extract(user_text)
         queries = self._expand_queries(user_text, frame)
+        extra = expand_query(user_text, max_items=6)
+        for q in extra:
+            if q not in queries:
+                queries.append(q)
         logging.info("queries=%s", queries[:4])
         chunks = self._retrieve_multi(queries, k=self.conf.retriever_k)
         if len(chunks) < self.conf.min_rag_chunks:
@@ -907,6 +962,7 @@ class AtendimentoService:
                 )
                 if len(chunks2) > len(chunks):
                     chunks = chunks2
+        chunks = self._filter_by_relevance(user_text, chunks, min_keep=3, thr=0.12)
         coverage = self._score_pdf_coverage(chunks)
         logging.info(
              "RAG multi: q=%d chunks=%d coverage=%.2f", len(queries), len(chunks), coverage
@@ -966,6 +1022,7 @@ class AtendimentoService:
             if answer2:
                 answer = answer2
             _has_sref = bool(re.search(r"\[S\d+\]", answer or ""))
+        answer = self._anti_generic(answer, user_text, src_pack)
         if not self._guard_check(answer):
             logging.warning("Saída reprovada no guard — usando fallback seguro.")
             tema_fb = self._choose_fallback_tema(user_text, chunks)
@@ -999,7 +1056,6 @@ def _build_atendimento_service() -> AtendimentoService:
 
     # Tenta construir o buscador real baseado em FAISS. Em ambientes de teste
     # ou sem dependências, recai para um stub que apenas retorna listas vazias.
-    retriever: Any
     try:
         from .buscador_pdf import BuscadorPDF
         buscador = BuscadorPDF(
@@ -1008,19 +1064,28 @@ def _build_atendimento_service() -> AtendimentoService:
             pdf_dir=os.getenv("PDFS_DIR", "data/pdfs"),
             index_dir=get_index_dir(),
         )
-        # Passamos o objeto BuscadorPDF diretamente para aproveitar o método
-        # ``buscar_contexto`` já suportado por AtendimentoService.
-        retriever = buscador
     except Exception as e:  # pragma: no cover - defensivo
         logging.exception("Falha ao inicializar BuscadorPDF: %s", e)
-        class RetrieverStub:
+        class BuscadorStub:
             def retrieve(self, query: str, k: int = 4) -> List[Any]:
                 return []
 
             def buscar_contexto(self, consulta: str, k: int = 5) -> str:
                 return ""
 
-        retriever = RetrieverStub()
+        buscador = BuscadorStub()
+
+    datajud_enabled = os.getenv("DATAJUD_ENABLE", "true").lower() in {"1", "true", "yes", "on"}
+    datajud_retr = None
+    if datajud_enabled:
+        try:
+            dj_client = DatajudClient(api_key=os.getenv("DATAJUD_API_KEY"))
+            datajud_retr = DatajudRetriever(client=dj_client, size=int(os.getenv("DATAJUD_SIZE", "10")))
+        except Exception:
+            logging.exception("Datajud não inicializado.")
+
+    web_enabled = os.getenv("WEB_ENABLE", "true").lower() in {"1", "true", "yes", "on"}
+    web_retr = None
 
     # Tenta usar o cliente oficial baseado em OpenAI; se indisponível, usa um
     # stub que mantém a interface esperada pelo serviço.
@@ -1059,7 +1124,20 @@ def _build_atendimento_service() -> AtendimentoService:
         except Exception as e:
             logging.exception("Falha ao instanciar TavilyClient: %s", e)
             tavily = None
+    
+    if web_enabled and tavily:
+        try:
+            web_retr = WebRetriever(tavily_client=tavily, num_results=int(os.getenv("WEB_NUM_RESULTS", "8")))
+        except Exception:
+            logging.exception("WebRetriever/Tavily não inicializado.")
 
+    retrievers = [buscador]
+    if datajud_retr:
+        retrievers.append(datajud_retr)
+    if web_retr:
+        retrievers.append(web_retr)
+    combined = CombinedRetriever(retrievers, max_per_source=6, chunk_max_chars=450)
+    retriever = combined
     llm = LLMStub()
     if OpenAILLM is not None:
         try:
