@@ -124,6 +124,19 @@ def test_fallback_infers_from_chunks(monkeypatch):
     assert "tema penal" in resp.lower()
 
 
+def test_penal_detect_and_tags(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    paths = svc._penal_detect_paths("fui vítima de calúnia e difamação")
+    assert any(p.endswith("calunia") for p in paths)
+    tags = svc._penal_tags_from_paths(paths)
+    assert "penal_calunia" in tags
+
+
+def test_expand_with_legal_synonyms_penal(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    expanded = svc._expand_with_legal_synonyms(["injúria"], ["penal_injuria"])
+    assert any("injúria art 140" in q for q in expanded)
+
 class SeqLLM:
     def __init__(self):
         self.calls = 0

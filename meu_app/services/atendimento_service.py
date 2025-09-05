@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
 from .refinador import GroundingGuard, RefinadorResposta
+from .analisador import _norm_txt, _iter_ontology_paths, _get_node_by_path, _CPC_ONTOLOGY
+from .penal_ontology import _PENAL_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -536,6 +538,127 @@ class AtendimentoService:
         linhas.append(f"Próximos passos: {t['proximos_passos']}")
         return "\n".join(linhas)
     
+    # ---------------------------------------------------------
+    # CPC: detecção por ontologia (estrutura reduzida)
+    # ---------------------------------------------------------
+    def _cpc_detect_paths(self, user_text: str, max_hits: int = 8) -> list[str]:
+        t = _norm_txt(user_text)
+        paths = _iter_ontology_paths(_CPC_ONTOLOGY)
+        hits = []
+        for path, label in paths:
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _cpc_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"cpc_{leaf}")
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:12]
+
+    def _cpc_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:6]:
+            if key.startswith("cpc_"):
+                leaf = key[len("cpc_"):]
+                for p, _ in _iter_ontology_paths(_CPC_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_CPC_ONTOLOGY, p)
+                        break
+                else:
+                    node = None
+            else:
+                node = _get_node_by_path(_CPC_ONTOLOGY, key)
+            if node is None:
+                continue
+            if isinstance(node, list):
+                items = node
+            elif isinstance(node, dict):
+                items = list(node.keys())
+            else:
+                items = [str(node)]
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_cpc_macro(self, tags: list[str], cpc_paths: list[str]) -> list[str]:
+        macro = "processual_civil"
+        if cpc_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+
+    # ---------------------------------------------------------
+    # PENAL: detecção por ontologia
+    # ---------------------------------------------------------
+    def _penal_detect_paths(self, user_text: str, max_hits: int = 8) -> list[str]:
+        t = _norm_txt(user_text)
+        paths = _iter_ontology_paths(_PENAL_ONTOLOGY)
+        hits = []
+        for path, label in paths:
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _penal_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"penal_{leaf}")
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:12]
+
+    def _penal_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:6]:
+            if key.startswith("penal_"):
+                leaf = key[len("penal_"):]
+                for p, _ in _iter_ontology_paths(_PENAL_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_PENAL_ONTOLOGY, p)
+                        break
+                else:
+                    node = None
+            else:
+                node = _get_node_by_path(_PENAL_ONTOLOGY, key)
+            if node is None:
+                continue
+            if isinstance(node, list):
+                items = node
+            elif isinstance(node, dict):
+                items = list(node.keys())
+            else:
+                items = [str(node)]
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_penal_macro(self, tags: list[str], penal_paths: list[str]) -> list[str]:
+        macro = "direito_penal"
+        if penal_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
     # ------------------------------------------------------------------
@@ -589,6 +712,59 @@ class AtendimentoService:
         # boosts semânticos ajudam a recuperar trechos jurídicos mais precisos
         q.extend(self._legal_query_boost(user_text))
         return [s for s in q if s and len(s) > 3]
+    
+    def _expand_with_legal_synonyms(self, queries: list[str], tags: list[str]) -> list[str]:
+        syn = {
+            # --- Civil/Consumidor/Imobiliário (exemplos do patch anterior) ---
+            "honra_online": ["difamação internet", "remoção de conteúdo", "tutela de urgência", "direito de imagem"],
+            "responsabilidade_civil": ["dano moral", "ato ilícito", "reparação civil"],
+            "veiculo_nao_transferido": ["transferência de propriedade veículo", "obrigação de fazer Detran", "comunicado de venda"],
+            "vizinhança": ["direito de vizinhança", "obras NBR", "interdito proibitório liminar"],
+            "contratos": ["inadimplemento contratual", "cláusula penal", "rescisão perdas e danos"],
+            "consumidor": ["CDC", "prática abusiva", "responsabilidade objetiva"],
+            "imobiliario": ["escritura registro", "adjudicação compulsória", "averbação matrícula"],
+
+            # --- CPC (atalhos úteis) ---
+            "cpc_tutela_de_urgencia": ["probabilidade do direito", "periculum in mora", "reversibilidade", "contracautela"],
+            "cpc_tutela_de_evidencia": ["hipóteses legais", "abuso do direito de defesa", "prova documental robusta"],
+            "cpc_agravo_de_instrumento": ["taxatividade mitigada", "efeito suspensivo", "art 1.015 CPC"],
+            "cpc_embargos_de_declaracao": ["omissão contradição obscuridade", "efeitos infringentes", "prazo interrupção"],
+            "cpc_producao_antecipada_de_prova": ["urgência justo receio", "prova autônoma"],
+            "cpc_execucao_de_titulo_extrajudicial": ["penhora avaliação expropriação", "exceção de pré-executividade", "embargos à execução"],
+
+            # --- PENAL (principais folhas, focadas em consulta/base jurisprudencial) ---
+            "direito_penal": ["Código Penal", "ação penal pública/privada", "tipicidade e ilicitude"],
+            "penal_calunia": ["calúnia art 138", "falsa imputação de crime", "queixa-crime", "exceção da verdade"],
+            "penal_difamacao": ["difamação art 139", "ofensa à reputação", "composição civil", "queixa-crime"],
+            "penal_injuria": ["injúria art 140", "ofensa à dignidade", "composição civil", "ação penal privada"],
+            "penal_injuria_racial_lei_14532_2023": ["injúria racial Lei 14.532/2023", "ação penal pública incondicionada", "racismo/injúria racial"],
+            "penal_ameaca": ["ameaça art 147", "medidas protetivas", "ação penal pública condicionada"],
+            "penal_estelionato": ["estelionato art 171", "representação da vítima", "dolo antecedente"],
+            "penal_furto_simples": ["furto art 155", "crime sem violência", "princípio da insignificância"],
+            "penal_roubo_simples": ["roubo art 157", "grave ameaça", "arma de fogo majorante"],
+            "penal_lesao_corporal_leve": ["lesão corporal art 129", "exame de corpo de delito", "ação penal (MP)"] ,
+            "penal_lesao_domestica_violencia_maria_da_penha": ["Lei Maria da Penha", "medidas protetivas", "Juizado de Violência Doméstica"],
+            "penal_homicidio_simples": ["homicídio art 121", "competência do júri", "pronúncia e impronúncia"],
+            "penal_trafico_de_drogas": ["art 33 Lei 11.343", "tráfico privilegiado §4º", "dosimetria de pena"],
+            "penal_embriaguez_ao_volante": ["art 306 CTB", "prova etilômetro e testemunhal", "crime de perigo abstrato"],
+        }
+
+        extras: list[str] = []
+        for tg in tags:
+            if tg in syn:
+                extras.extend(syn[tg][:3])
+            elif tg.startswith("penal_"):
+                extras.append(tg.replace("_", " "))
+            elif tg.startswith("cpc_"):
+                extras.append(tg.replace("_", " "))
+
+        seen, out = set(), []
+        for q in queries + extras:
+            qn = q.strip()
+            if qn and qn not in seen:
+                seen.add(qn)
+                out.append(qn)
+        return out[:12]
 
     def _query_rewrite(self, text: str) -> List[str]:
         p = (
@@ -773,6 +949,36 @@ class AtendimentoService:
         except Exception:
             logging.exception("Falha no gerador com fontes.")
             return ""
+    
+    def _enforce_specificity(self, answer: str, queries: list[str], tags: list[str]) -> str:
+        if not answer:
+            return answer
+        txt_lower = (answer or "").lower()
+        if "diagnóstico" in txt_lower or "diagnostico" in txt_lower or "[s" in txt_lower:
+            return answer
+        kws = [q for q in queries if q]
+        cpc_hints = (
+            self._cpc_hints([t for t in tags if t.startswith("cpc_")], max_hints=6)
+            if any(t.startswith("cpc_") for t in tags)
+            else []
+        )
+        penal_hints = (
+            self._penal_hints([t for t in tags if t.startswith("penal_")], max_hints=6)
+            if any(t.startswith("penal_") for t in tags)
+            else []
+        )
+        hints = "; ".join((kws[:8] + cpc_hints + penal_hints)) or "faça passos concretos, vinculados aos S#"
+        prompt = (
+            "A resposta a seguir ficou genérica. Reescreva de forma mais específica e prática, "
+            "obrigatoriamente orientada à ação, considerando estes tópicos: "
+            f"{hints}.\n\nRESPOSTA: {answer}"
+        )
+        try:
+            improved = self._gen([{ "role": "user", "content": prompt }], max_new=400)
+            return improved or answer
+        except Exception:
+            return answer
+
 
     def _guard_check(self, text: str) -> bool:
         try:
@@ -960,7 +1166,23 @@ class AtendimentoService:
             return "No momento não posso atender a esse pedido."
 
         frame = self._caseframe_extract(user_text)
+
+        auto_tags: list[str] = []
+
+        cpc_paths = self._cpc_detect_paths(user_text)
+        cpc_tags = self._cpc_tags_from_paths(cpc_paths)
+
+        penal_paths = self._penal_detect_paths(user_text)
+        penal_tags = self._penal_tags_from_paths(penal_paths)
+
+        tags = list({*(frame.get("tags") or []), *auto_tags, *cpc_tags, *penal_tags})
+        tags = self._maybe_add_cpc_macro(tags, cpc_paths)
+        tags = self._maybe_add_penal_macro(tags, penal_paths)
+        frame["tags"] = tags
+
+
         queries = self._expand_queries(user_text, frame)
+        queries = self._expand_with_legal_synonyms(queries, tags)
         extra = expand_query(user_text, max_items=6)
         for q in extra:
             if q not in queries:
@@ -1021,6 +1243,7 @@ class AtendimentoService:
         if not answer:
             tema_fb = self._choose_fallback_tema(user_text, chunks)
             answer = self._build_fallback_answer(user_text, tema_fb)
+        answer = self._enforce_specificity(answer, queries, tags)
         answer = sane_reply(
             user_text,
             answer,
