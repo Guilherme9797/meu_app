@@ -9,6 +9,7 @@ from .analisador import _norm_txt, _iter_ontology_paths, _get_node_by_path, _CPC
 from .penal_ontology import _PENAL_ONTOLOGY
 from .proc_penal_ontology import _PROC_PENAL_ONTOLOGY
 from .tributario_ontology import _TRIBUTARIO_ONTOLOGY
+from .empresarial_ontology import _EMPRESARIAL_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -785,6 +786,62 @@ class AtendimentoService:
             tags = tags + [macro]
         return tags
 
+    # ---------------------------------------------------------
+    # EMPRESARIAL: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _emp_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_EMPRESARIAL_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _emp_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"emp_{leaf}")
+        # dedup + limite
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _emp_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("emp_"):
+                leaf = key[len("emp_"):]
+                for p, _ in _iter_ontology_paths(_EMPRESARIAL_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_EMPRESARIAL_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_EMPRESARIAL_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = node if isinstance(node, list) else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_emp_macro(self, tags: list[str], emp_paths: list[str]) -> list[str]:
+        macro = "direito_empresarial"
+        if emp_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+    
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
     # ------------------------------------------------------------------
@@ -897,13 +954,50 @@ class AtendimentoService:
             "dpp_transacao_penal": ["Lei 9.099/95", "requisitos", "JECrim"],
             "dpp_suspensao_condicional_do_processo": ["art 89 Lei 9.099/95", "condições", "prazo"],
             "dpp_provas_ilicitas": ["frutos da árvore envenenada", "derivadas lícitas", "nulidade"],
+
+            # --- EMPRESARIAL (NOVOS) ---
+            "direito_empresarial": ["sociedade limitada", "sociedade anônima", "recuperação judicial"],
+
+            "emp_sociedade_limitada": ["contrato social", "quotas", "administração"],
+            "emp_sociedade_anonima": ["assembleia geral", "conselho de administração", "debêntures", "Lei 6.404/76"],
+            "emp_transformacao_fusao_cisao_incorporacao": ["fusão", "cisão", "incorporação", "protocolo e justificação"],
+            "emp_dissolucao_e_liquidacao": ["dissolução e liquidação", "liquidante", "prestação de contas"],
+            "emp_cooperativas": ["princípios cooperativos", "responsabilidade dos cooperados"],
+
+            "emp_titulos_de_credito": ["duplicata", "nota promissória", "cheque", "letra de câmbio", "protesto"],
+            "emp_endosso": ["endosso translativo", "endosso-mandato", "endosso-caução"],
+            "emp_aval": ["aval", "responsabilidade solidária", "execução por título"],
+            "emp_protesto": ["protesto de títulos", "cancelamento de protesto"],
+
+            "emp_contratos_empresariais": ["franquia", "representação comercial", "distribuição", "factoring", "leasing"],
+            "emp_franquia": ["Lei 13.966/2019", "Circular de Oferta de Franquia (COF)"],
+            "emp_representacao_comercial": ["Lei 4.886/65", "indenização por rescisão", "comissão"],
+            "emp_factoring": ["cessão de crédito", "assunção de risco"],
+            "emp_leasing": ["arrendamento mercantil", "financeiro", "operacional"],
+            "emp_joint_ventures_e_parcerias": ["joint venture", "acordo de acionistas", "cláusula de não concorrência"],
+
+            "emp_propriedade_industrial": ["INPI", "Lei 9.279/96", "licenciamento", "nulidade"],
+            "emp_marcas": ["registro de marca", "colisão com nome empresarial"],
+            "emp_patentes": ["patente de invenção", "modelo de utilidade", "licença"],
+            "emp_concorrencia_desleal": ["parasitismo", "segredo industrial", "confusão"],
+
+            "emp_crise_da_empresa": ["Lei 11.101/2005", "Lei 14.112/2020", "recuperação judicial", "falência"],
+            "emp_recuperacao_judicial": ["plano de recuperação", "assembleia de credores", "classes de credores", "cram down"],
+            "emp_falencia": ["quadro geral de credores", "arrecadação", "realização do ativo", "extinção das obrigações"],
+            "emp_responsabilidade_dos_administradores": ["desconsideração da personalidade", "atos fraudulentos"],
+
+            "emp_governanca_corporativa": ["compliance", "auditoria", "transparência"],
+            "emp_direito_concorrencial": ["CADE", "ato de concentração", "cartel", "abuso de poder econômico"],
+            "emp_sociedade_digital": ["LGPD", "proteção de dados", "blockchain", "smart contracts"],
+            "emp_nome_empresarial": ["firma", "denominação", "colisão com marca"],
+            "emp_estabelecimento": ["trespasse", "fundo de comércio", "aviamento"],
         }
 
         extras: list[str] = []
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith(("penal_", "cpc_", "dpp_")):
+            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_")):
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
@@ -1120,7 +1214,19 @@ class AtendimentoService:
             if any(t.startswith("dpp_") for t in tags)
             else []
         )
-        hints = "; ".join((kws[:8] + cpc_hints + penal_hints + dpp_hints)) or "faça passos concretos, vinculados aos S#"
+        trib_hints = (
+            self._trib_hints([t for t in tags if t.startswith("trib_")], max_hints=6)
+            if any(t.startswith("trib_") for t in tags)
+            else []
+        )
+        emp_hints = (
+            self._emp_hints([t for t in tags if t.startswith("emp_")], max_hints=6)
+            if any(t.startswith("emp_") for t in tags)
+            else []
+        )
+        hints = "; ".join(
+            (kws[:8] + cpc_hints + penal_hints + dpp_hints + trib_hints + emp_hints)
+        ) or "faça passos concretos, vinculados aos S#"
         prompt = (
             "A resposta a seguir ficou genérica. Reescreva de forma mais específica e prática, "
             "obrigatoriamente orientada à ação, considerando estes tópicos: "
@@ -1336,13 +1442,22 @@ class AtendimentoService:
         trib_paths = self._trib_detect_paths(user_text)
         trib_tags  = self._trib_tags_from_paths(trib_paths)
         
-         # Consolidação de tags
-        tags = list({*(frame.get("tags") or []), *auto_tags, *cpc_tags, *penal_tags, *dpp_tags})
+        # EMPRESARIAL (novo)
+        emp_paths = self._emp_detect_paths(user_text)
+        emp_tags  = self._emp_tags_from_paths(emp_paths)
+
+        # Consolidação de tags (inclua emp_tags)
+        tags = list({
+            *(frame.get("tags") or []),
+            *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags
+        })
 
         # Macros por área
         tags = self._maybe_add_cpc_macro(tags, cpc_paths)
         tags = self._maybe_add_penal_macro(tags, penal_paths)
         tags = self._maybe_add_dpp_macro(tags, dpp_paths)
+        tags = self._maybe_add_trib_macro(tags, trib_paths)
+        tags = self._maybe_add_emp_macro(tags, emp_paths)
         frame["tags"] = tags
 
         queries = self._expand_queries(user_text, frame)

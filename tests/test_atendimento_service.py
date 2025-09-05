@@ -204,3 +204,17 @@ def test_responder_inserts_min_sref_when_missing(monkeypatch):
     monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
     resp = svc.responder("pergunta")
     assert resp.endswith("[S1]")
+
+
+def test_emp_detect_and_tags(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    paths = svc._emp_detect_paths("quero abrir uma sociedade limitada com contrato social")
+    assert any(p.endswith("sociedade_limitada") for p in paths)
+    tags = svc._emp_tags_from_paths(paths)
+    assert "emp_sociedade_limitada" in tags
+
+
+def test_expand_with_legal_synonyms_emp(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    expanded = svc._expand_with_legal_synonyms(["sociedade limitada"], ["emp_sociedade_limitada"])
+    assert any("contrato social" in q for q in expanded)
