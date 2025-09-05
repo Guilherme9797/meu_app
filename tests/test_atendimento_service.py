@@ -218,3 +218,17 @@ def test_expand_with_legal_synonyms_emp(monkeypatch):
     svc, _ = _service(monkeypatch)
     expanded = svc._expand_with_legal_synonyms(["sociedade limitada"], ["emp_sociedade_limitada"])
     assert any("contrato social" in q for q in expanded)
+
+
+def test_prev_detect_and_tags(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    paths = svc._prev_detect_paths("aposentadoria por idade no INSS")
+    assert any(p.endswith("aposentadoria_por_idade") for p in paths)
+    tags = svc._prev_tags_from_paths(paths)
+    assert "prev_aposentadoria_por_idade" in tags
+
+
+def test_expand_with_legal_synonyms_prev(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    expanded = svc._expand_with_legal_synonyms(["aposentadoria por idade"], ["prev_aposentadoria_por_idade"])
+    assert any("idade mínima" in q for q in expanded)

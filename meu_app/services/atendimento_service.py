@@ -10,6 +10,7 @@ from .penal_ontology import _PENAL_ONTOLOGY
 from .proc_penal_ontology import _PROC_PENAL_ONTOLOGY
 from .tributario_ontology import _TRIBUTARIO_ONTOLOGY
 from .empresarial_ontology import _EMPRESARIAL_ONTOLOGY
+from .previdenciario_ontology import _PREVID_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -842,6 +843,62 @@ class AtendimentoService:
             tags = tags + [macro]
         return tags
     
+    # ---------------------------------------------------------
+    # PREVIDENCIÁRIO: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _prev_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_PREVID_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _prev_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"prev_{leaf}")
+        # dedup + limite
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _prev_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("prev_"):
+                leaf = key[len("prev_"):]
+                for p, _ in _iter_ontology_paths(_PREVID_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_PREVID_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_PREVID_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = node if isinstance(node, list) else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_prev_macro(self, tags: list[str], prev_paths: list[str]) -> list[str]:
+        macro = "direito_previdenciario"
+        if prev_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+    
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
     # ------------------------------------------------------------------
@@ -991,13 +1048,64 @@ class AtendimentoService:
             "emp_sociedade_digital": ["LGPD", "proteção de dados", "blockchain", "smart contracts"],
             "emp_nome_empresarial": ["firma", "denominação", "colisão com marca"],
             "emp_estabelecimento": ["trespasse", "fundo de comércio", "aviamento"],
+
+            # --- PREVIDENCIÁRIO (NOVOS) ---
+            "direito_previdenciario": ["INSS", "RGPS", "benefício previdenciário"],
+
+            # Seguridade / organização / custeio
+            "prev_seguridade_social": ["saúde previdência assistência", "solidariedade social"],
+            "prev_organizacao": ["RGPS", "RPPS", "regime complementar"],
+            "prev_custeio": ["contribuição previdenciária", "CTC certidão de tempo de contribuição", "GPS/SEFIP"],
+
+            # Segurados e qualidade
+            "prev_obrigatorios": ["empregado", "contribuinte individual", "avulso", "segurado especial"],
+            "prev_facultativos": ["facultativo", "estudante", "dona de casa"],
+            "prev_qualidade_de_segurado": ["período de graça", "perda e recuperação da qualidade", "manutenção do vínculo"],
+            "prev_dependentes": ["pensão por morte dependente", "classe I II III"],
+
+            # Carência e tempo
+            "prev_carencia": ["isenção de carência", "acidente de qualquer natureza"],
+            "prev_tempo_de_contribuicao": ["CNIS", "CTPS", "tempo rural", "contagem recíproca"],
+            "prev_tempo_especial_ppp_lcat_epi": ["PPP", "LCAT", "EPI", "agentes nocivos"],
+
+            # Benefícios RGPS
+            "prev_aposentadoria_por_idade": ["idade mínima", "carência", "regra de transição"],
+            "prev_aposentadoria_por_tempo_de_contribuicao": ["pedágio", "fator previdenciário", "regra 85/95 progressiva"],
+            "prev_aposentadoria_especial": ["PPP e LCAT", "agentes nocivos", "atividade especial"],
+            "prev_aposentadoria_por_invalidez": ["incapacidade total e permanente", "conversão do auxílio-doença"],
+
+            "prev_pensao_por_morte": ["qualidade de dependente", "duração por idade do dependente", "acumulação"],
+
+            "prev_auxilios": ["auxílio-doença", "auxílio-acidente", "auxílio-reclusão"],
+            "prev_auxilio_doenca_incapacidade_temporaria": ["benefício por incapacidade temporária", "perícia médica"],
+            "prev_auxilio_acidente_reducao_da_capacidade": ["indenizatório", "redução da capacidade"],
+            "prev_auxilio_reclusao": ["baixa renda", "qualidade de segurado"],
+
+            "prev_salario_maternidade": ["carência por categoria", "segurada especial"],
+            "prev_salario_familia": ["renda-limite", "comprovação de dependentes"],
+
+            # RPPS
+            "prev_beneficios_do_rpps": ["RPPS aposentadoria", "pensão RPPS", "regras de transição"],
+
+            # Acumulação
+            "prev_acumulacao_de_beneficios": ["vedações de acumular benefícios", "acumulação permitida RGPS/RPPS"],
+
+            # Revisões
+            "prev_revisao_da_vida_toda": ["salários anteriores a 1994", "temas repetitivos"],
+            "prev_revisao_do_teto": ["EC 20/98 e EC 41/03", "limites de teto"],
+            "prev_revisao_de_beneficio": ["erro de cálculo", "índice de correção", "fato novo"],
+            "prev_desaposentacao": ["STF", "impossibilidade", "reaposentação"],
+
+            # Processo previdenciário
+            "prev_fase_administrativa": ["requerimento no INSS", "perícia médica", "recurso administrativo"],
+            "prev_fase_judicial": ["Justiça Federal", "JEF", "tutela de urgência", "perícia judicial"],
         }
 
         extras: list[str] = []
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_")):
+            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_")):
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
@@ -1224,8 +1332,13 @@ class AtendimentoService:
             if any(t.startswith("emp_") for t in tags)
             else []
         )
+        prev_hints = (
+            self._prev_hints([t for t in tags if t.startswith("prev_")], max_hints=6)
+            if any(t.startswith("prev_") for t in tags)
+            else []
+        )
         hints = "; ".join(
-            (kws[:8] + cpc_hints + penal_hints + dpp_hints + trib_hints + emp_hints)
+            (kws[:8] + cpc_hints + penal_hints + dpp_hints + trib_hints + emp_hints + prev_hints)
         ) or "faça passos concretos, vinculados aos S#"
         prompt = (
             "A resposta a seguir ficou genérica. Reescreva de forma mais específica e prática, "
@@ -1446,10 +1559,15 @@ class AtendimentoService:
         emp_paths = self._emp_detect_paths(user_text)
         emp_tags  = self._emp_tags_from_paths(emp_paths)
 
+        # PREVIDENCIÁRIO (novo)
+        prev_paths = self._prev_detect_paths(user_text)
+        prev_tags  = self._prev_tags_from_paths(prev_paths)
+
+
         # Consolidação de tags (inclua emp_tags)
         tags = list({
             *(frame.get("tags") or []),
-            *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags
+             *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags, *prev_tags
         })
 
         # Macros por área
@@ -1458,6 +1576,7 @@ class AtendimentoService:
         tags = self._maybe_add_dpp_macro(tags, dpp_paths)
         tags = self._maybe_add_trib_macro(tags, trib_paths)
         tags = self._maybe_add_emp_macro(tags, emp_paths)
+        tags = self._maybe_add_prev_macro(tags, prev_paths)
         frame["tags"] = tags
 
         queries = self._expand_queries(user_text, frame)
