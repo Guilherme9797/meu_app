@@ -12,6 +12,7 @@ from meu_app.retrievers.datajud import (
 )
 from meu_app.retrievers.web_tavily import WebRetriever
 from meu_app.retrievers.query_expander import expand as expand_query
+from meu_app.providers.bnp_provider import BNPProvider
 @dataclass
 class AtendimentoConfig:
     """Configurações do AtendimentoService."""
@@ -83,6 +84,7 @@ class AtendimentoService:
         self.msg_repo = msg_repo
         self.retriever = retriever
         self.tavily = tavily
+        self.bnp = BNPProvider(tavily)
         self.llm = llm
         self.guard = guard
         self.classifier = classifier
@@ -850,6 +852,17 @@ class AtendimentoService:
         ]
         return any(k in t for k in keys)
 
+    def _bnp_chunks(self, user_text: str, frame: dict, limit: int = 6) -> list:
+        try:
+            raw = self.bnp.search_precedents(user_text, frame, limit=limit) if getattr(self, "bnp", None) else []
+            # normaliza em objetos similares a _Chunk
+            out = []
+            for r in raw:
+                out.append(_Chunk(r.get("text",""), source=r.get("source","bnp_web"), metadata=r.get("metadata") or {}))
+            return out
+        except Exception:
+            return []
+    
     # --- NOVO: web search com lista branca de domínios oficiais
     def _web_search_law(self, user_text: str, k: int = 6) -> List[_Chunk]:
         if not (self.conf.use_web and getattr(self, "tavily", None)):
@@ -986,6 +999,14 @@ class AtendimentoService:
             web_ctx = self._safe_web_search(f"{user_text} {tags}".strip())
             if web_ctx:
                 chunks = chunks + [type("WebChunk", (object,), {"text": web_ctx})()]
+        bnp_more = self._bnp_chunks(user_text, frame, limit=4)
+        if bnp_more:
+            have = {" ".join((getattr(c, "text","") or "")[:120].split()).lower() for c in chunks}
+            for c in bnp_more:
+                sig = " ".join((getattr(c, "text","") or "")[:120].split()).lower()
+                if sig not in have:
+                    chunks.append(c)
+                    have.add(sig)
 
         src_pack = ""
         if chunks:
