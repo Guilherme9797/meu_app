@@ -232,3 +232,16 @@ def test_expand_with_legal_synonyms_prev(monkeypatch):
     svc, _ = _service(monkeypatch)
     expanded = svc._expand_with_legal_synonyms(["aposentadoria por idade"], ["prev_aposentadoria_por_idade"])
     assert any("idade mínima" in q for q in expanded)
+
+def test_amb_detect_and_tags(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    paths = svc._amb_detect_paths("licenciamento ambiental para obra")
+    assert any(p.endswith("licenciamento_ambiental") for p in paths)
+    tags = svc._amb_tags_from_paths(paths)
+    assert "amb_licenciamento_ambiental" in tags
+
+
+def test_expand_with_legal_synonyms_amb(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    expanded = svc._expand_with_legal_synonyms(["licenciamento ambiental"], ["amb_licenciamento_ambiental"])
+    assert any("LP LI LO" in q for q in expanded)

@@ -11,6 +11,7 @@ from .proc_penal_ontology import _PROC_PENAL_ONTOLOGY
 from .tributario_ontology import _TRIBUTARIO_ONTOLOGY
 from .empresarial_ontology import _EMPRESARIAL_ONTOLOGY
 from .previdenciario_ontology import _PREVID_ONTOLOGY
+from .ambiental_ontology import _AMBIENTAL_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -899,6 +900,66 @@ class AtendimentoService:
             tags = tags + [macro]
         return tags
     
+     # ---------------------------------------------------------
+    # AMBIENTAL: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _amb_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_AMBIENTAL_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _amb_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"amb_{leaf}")
+        # dedup + limite
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _amb_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("amb_"):
+                leaf = key[len("amb_"):]
+                for p, _ in _iter_ontology_paths(_AMBIENTAL_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_AMBIENTAL_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_AMBIENTAL_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = (
+                node
+                if isinstance(node, list)
+                else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            )
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_amb_macro(self, tags: list[str], amb_paths: list[str]) -> list[str]:
+        macro = "direito_ambiental"
+        if amb_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
     # ------------------------------------------------------------------
@@ -1099,13 +1160,63 @@ class AtendimentoService:
             # Processo previdenciário
             "prev_fase_administrativa": ["requerimento no INSS", "perícia médica", "recurso administrativo"],
             "prev_fase_judicial": ["Justiça Federal", "JEF", "tutela de urgência", "perícia judicial"],
+
+             # --- AMBIENTAL (NOVOS) ---
+            "direito_ambiental": ["meio ambiente", "licenciamento ambiental", "responsabilidade por dano ambiental"],
+
+            # Fundamentos constitucionais
+            "amb_principios": [
+                "poluidor-pagador", "precaução", "prevenção", "desenvolvimento sustentável",
+                "equidade intergeracional", "participação social"
+            ],
+            "amb_competencias_legislativas": [
+                "competência concorrente", "competência municipal", "competência da União"
+            ],
+
+            # PNMA / SISNAMA / CONAMA
+            "amb_lei_6938_1981": ["PNMA", "SISNAMA", "CONAMA", "instrumentos da PNMA"],
+            "amb_instrumentos": ["licenciamento", "EIA/RIMA", "ZEE zoneamento", "auditoria ambiental", "relatórios de qualidade"],
+
+            # Licenciamento e AIA
+            "amb_licenciamento_ambiental": ["LP LI LO", "competência IBAMA/estados/municípios", "regularização"],
+            "amb_eia_rima": ["conteúdo mínimo do EIA", "audiência pública", "controle judicial do EIA/RIMA"],
+            "amb_dispensas_e_autorizacoes": ["licenciamento simplificado", "baixo impacto"],
+
+            # Unidades de conservação / Código Florestal
+            "amb_lei_9985_2000": ["SNUC", "proteção integral", "uso sustentável"],
+            "amb_codigo_florestal_lei_12651_2012": ["APP", "Reserva Legal", "CRA", "CAR", "PRA"],
+            "amb_patrimonio_cultural_paisagistico": ["tombamento", "área de proteção do patrimônio"],
+
+            # Responsabilidade por dano ambiental
+            "amb_responsabilidade_civil": ["objetiva", "risco integral", "dano moral coletivo", "solidariedade do poluidor"],
+            "amb_responsabilidade_administrativa": ["auto de infração", "multas diárias", "embargo", "apreensão"],
+            "amb_responsabilidade_penal": ["Lei 9605/1998", "crimes de poluição", "fauna e flora", "pessoa jurídica"],
+
+            # Poluição e resíduos
+            "amb_poluicao": ["poluição do ar/água/solo", "poluição sonora/visual/luminosa"],
+            "amb_residuos_solidos": ["PNRS", "responsabilidade compartilhada", "logística reversa", "PGRS"],
+
+            # Fauna e flora
+            "amb_fauna": ["fauna silvestre", "pesca predatória", "tráfico de animais"],
+            "amb_flora": ["desmatamento", "supressão de vegetação", "incêndios florestais", "exploração ilegal"],
+
+            # Tutela coletiva ambiental
+            "amb_acao_civil_publica": ["Lei 7347/85", "reparação e compensação", "dano moral coletivo"],
+            "amb_acao_popular_ambiental": ["direito líquido e certo", "patrimônio público"],
+            "amb_tac_termo_de_ajustamento_de_conduta": ["TAC", "execução de TAC"],
+            "amb_mandado_de_segurança_ambiental": ["ato omissivo", "direito líquido e certo"],
+
+            # Temas modernos
+            "amb_mudancas_climaticas": ["PNMC", "redução de emissões", "créditos de carbono", "Acordo de Paris"],
+            "amb_direito_ambiental_internacional": ["tratados", "conferências", "responsabilidades comuns porém diferenciadas"],
+            "amb_economia_verde_e_sustentabilidade": ["energias renováveis", "PSA", "finanças sustentáveis"],
         }
 
         extras: list[str] = []
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_")):
+            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_"))
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
@@ -1337,8 +1448,13 @@ class AtendimentoService:
             if any(t.startswith("prev_") for t in tags)
             else []
         )
+        amb_hints = (
+            self._amb_hints([t for t in tags if t.startswith("amb_")], max_hints=6)
+            if any(t.startswith("amb_") for t in tags)
+            else []
+        )
         hints = "; ".join(
-            (kws[:8] + cpc_hints + penal_hints + dpp_hints + trib_hints + emp_hints + prev_hints)
+            (kws[:8] + cpc_hints + penal_hints + dpp_hints + trib_hints + emp_hints + prev_hints + amb_hints)
         ) or "faça passos concretos, vinculados aos S#"
         prompt = (
             "A resposta a seguir ficou genérica. Reescreva de forma mais específica e prática, "
@@ -1563,11 +1679,15 @@ class AtendimentoService:
         prev_paths = self._prev_detect_paths(user_text)
         prev_tags  = self._prev_tags_from_paths(prev_paths)
 
+         # AMBIENTAL (novo)
+        amb_paths = self._amb_detect_paths(user_text)
+        amb_tags  = self._amb_tags_from_paths(amb_paths)
 
         # Consolidação de tags (inclua emp_tags)
         tags = list({
             *(frame.get("tags") or []),
-             *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags, *prev_tags
+              *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags, *prev_tags,
+             *amb_tags
         })
 
         # Macros por área
@@ -1577,6 +1697,7 @@ class AtendimentoService:
         tags = self._maybe_add_trib_macro(tags, trib_paths)
         tags = self._maybe_add_emp_macro(tags, emp_paths)
         tags = self._maybe_add_prev_macro(tags, prev_paths)
+        tags = self._maybe_add_amb_macro(tags, amb_paths)
         frame["tags"] = tags
 
         queries = self._expand_queries(user_text, frame)
