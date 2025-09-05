@@ -8,6 +8,7 @@ from .refinador import GroundingGuard, RefinadorResposta
 from .analisador import _norm_txt, _iter_ontology_paths, _get_node_by_path, _CPC_ONTOLOGY
 from .penal_ontology import _PENAL_ONTOLOGY
 from .proc_penal_ontology import _PROC_PENAL_ONTOLOGY
+from .tributario_ontology import _TRIBUTARIO_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -17,6 +18,7 @@ from meu_app.retrievers.web_tavily import WebRetriever
 from meu_app.retrievers.query_expander import expand as expand_query
 from meu_app.providers.bnp_provider import BNPProvider
 @dataclass
+
 class AtendimentoConfig:
     """Configurações do AtendimentoService."""
     system_prompt: str = (
@@ -723,6 +725,66 @@ class AtendimentoService:
             tags = tags + [macro]
         return tags
 
+    # ---------------------------------------------------------
+    # TRIBUTÁRIO: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _trib_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_TRIBUTARIO_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _trib_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"trib_{leaf}")
+        # dedup e limite
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _trib_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("trib_"):
+                leaf = key[len("trib_"):]
+                for p, _ in _iter_ontology_paths(_TRIBUTARIO_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_TRIBUTARIO_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_TRIBUTARIO_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = (
+                node
+                if isinstance(node, list)
+                else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            )
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_trib_macro(self, tags: list[str], trib_paths: list[str]) -> list[str]:
+        macro = "direito_tributario"
+        if trib_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
     # ------------------------------------------------------------------
@@ -1270,7 +1332,11 @@ class AtendimentoService:
         dpp_paths = self._dpp_detect_paths(user_text)
         dpp_tags = self._dpp_tags_from_paths(dpp_paths)
 
-        # Tags consolidadas
+        # TRIBUTÁRIO (novo)
+        trib_paths = self._trib_detect_paths(user_text)
+        trib_tags  = self._trib_tags_from_paths(trib_paths)
+        
+         # Consolidação de tags
         tags = list({*(frame.get("tags") or []), *auto_tags, *cpc_tags, *penal_tags, *dpp_tags})
 
         # Macros por área
