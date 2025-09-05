@@ -16,7 +16,7 @@ _PENAL_ONTOLOGY = _json.loads(
         "princípio_da_insignificancia"
       ],
       "fontes_e_interpretacao": [
-ååååååååååååååååååååååååååååååååååååååååååååååååume",
+        "costume_e_doutrina",
         "fonte_formal_constituicao_código_leis_penais_extravagantes",
         "interpretacao_literal_extensiva_restritiva",
         "interpretacao_analogica_in_malampartem_in_bonampartem",

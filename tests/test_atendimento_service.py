@@ -137,6 +137,20 @@ def test_expand_with_legal_synonyms_penal(monkeypatch):
     expanded = svc._expand_with_legal_synonyms(["injúria"], ["penal_injuria"])
     assert any("injúria art 140" in q for q in expanded)
 
+def test_dpp_detect_and_tags(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    paths = svc._dpp_detect_paths("prisão em flagrante e audiência de custódia")
+    assert any(p.endswith("prisao_em_flagrante") for p in paths)
+    tags = svc._dpp_tags_from_paths(paths)
+    assert "dpp_prisao_em_flagrante" in tags
+
+
+def test_expand_with_legal_synonyms_dpp(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    expanded = svc._expand_with_legal_synonyms(["prisão preventiva"], ["dpp_prisao_preventiva"])
+    assert any("fumus commissi delicti" in q for q in expanded)
+
+
 class SeqLLM:
     def __init__(self):
         self.calls = 0

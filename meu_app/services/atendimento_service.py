@@ -7,6 +7,7 @@ from typing import Any, List, Optional, Tuple
 from .refinador import GroundingGuard, RefinadorResposta
 from .analisador import _norm_txt, _iter_ontology_paths, _get_node_by_path, _CPC_ONTOLOGY
 from .penal_ontology import _PENAL_ONTOLOGY
+from .proc_penal_ontology import _PROC_PENAL_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -659,6 +660,69 @@ class AtendimentoService:
         if penal_paths and macro not in tags:
             tags = tags + [macro]
         return tags
+    
+    # ---------------------------------------------------------
+    # DPP (Direito Processual Penal): detecção por ontologia
+    # ---------------------------------------------------------
+    def _dpp_detect_paths(self, user_text: str, max_hits: int = 8) -> list[str]:
+        t = _norm_txt(user_text)
+        paths = _iter_ontology_paths(_PROC_PENAL_ONTOLOGY)
+        hits: list[str] = []
+        for path, label in paths:
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _dpp_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"dpp_{leaf}")
+        # dedup
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:12]
+
+    def _dpp_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:6]:
+            if key.startswith("dpp_"):
+                leaf = key[len("dpp_"):]
+                for p, _ in _iter_ontology_paths(_PROC_PENAL_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_PROC_PENAL_ONTOLOGY, p)
+                        break
+                else:
+                    node = None
+            else:
+                node = _get_node_by_path(_PROC_PENAL_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = (
+                node
+                if isinstance(node, list)
+                else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            )
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_dpp_macro(self, tags: list[str], dpp_paths: list[str]) -> list[str]:
+        macro = "direito_processual_penal"
+        if dpp_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
     # ------------------------------------------------------------------
@@ -747,15 +811,37 @@ class AtendimentoService:
             "penal_homicidio_simples": ["homicídio art 121", "competência do júri", "pronúncia e impronúncia"],
             "penal_trafico_de_drogas": ["art 33 Lei 11.343", "tráfico privilegiado §4º", "dosimetria de pena"],
             "penal_embriaguez_ao_volante": ["art 306 CTB", "prova etilômetro e testemunhal", "crime de perigo abstrato"],
+
+            # --- DPP (Direito Processual Penal) ---
+            "direito_processual_penal": ["CPP", "prisões cautelares", "nulidades processuais"],
+            "dpp_prisao_em_flagrante": ["auto de prisão", "audiência de custódia", "conversão em preventiva"],
+            "dpp_prisao_preventiva": ["fumus commissi delicti", "periculum libertatis", "garantia da ordem pública"],
+            "dpp_prisao_temporaria": ["lei 7.960/89", "prazo e prorrogação", "rol de crimes"],
+            "dpp_medidas_cautelares_diversas": ["monitoramento eletrônico", "proibição de contato", "comparecimento periódico"],
+            "dpp_audiencia_de_custodia": ["controle de legalidade", "maus tratos", "medidas alternativas"],
+            "dpp_cadeia_de_custodia": ["coleta e preservação", "quebra de cadeia", "prova ilícita"],
+            "dpp_interceptacao": ["lei 9.296/96", "fundamentação", "prazo e prorrogação"],
+            "dpp_busca_e_apreensao": ["fundadas razões", "mandado", "horário e limites"],
+            "dpp_denuncia_e_queixa": ["requisitos CPP 41", "aditamento", "recebimento e rejeição"],
+            "dpp_acao_penal": ["pública condicionada", "representação da vítima", "privada subsidiária"],
+            "dpp_recurso_em_sentido_estrito": ["hipóteses CPP 581", "prazo", "juízo de retratação"],
+            "dpp_apelacao": ["efeito devolutivo", "sustentação oral", "sentença absolutória/condenatória"],
+            "dpp_embargos": ["de declaração", "infringentes", "efeitos"],
+            "dpp_habeas_corpus": ["constrangimento ilegal", "liberdade de locomoção", "liminar"],
+            "dpp_revisao_criminal": ["erro de fato", "prova nova", "trânsito em julgado"],
+            "dpp_juiz_das_garantias": ["controle da investigação", "separação de funções", "decisões sobre prisões"],
+            "dpp_tribunal_do_juri": ["pronúncia", "impronúncia", "quesitação e plenário"],
+            "dpp_acordo_de_nao_persecucao_penal": ["art 28-A CPP", "condições", "homologação"],
+            "dpp_transacao_penal": ["Lei 9.099/95", "requisitos", "JECrim"],
+            "dpp_suspensao_condicional_do_processo": ["art 89 Lei 9.099/95", "condições", "prazo"],
+            "dpp_provas_ilicitas": ["frutos da árvore envenenada", "derivadas lícitas", "nulidade"],
         }
 
         extras: list[str] = []
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith("penal_"):
-                extras.append(tg.replace("_", " "))
-            elif tg.startswith("cpc_"):
+            elif tg.startswith(("penal_", "cpc_", "dpp_")):
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
@@ -967,7 +1053,12 @@ class AtendimentoService:
             if any(t.startswith("penal_") for t in tags)
             else []
         )
-        hints = "; ".join((kws[:8] + cpc_hints + penal_hints)) or "faça passos concretos, vinculados aos S#"
+        dpp_hints = (
+            self._dpp_hints([t for t in tags if t.startswith("dpp_")], max_hints=6)
+            if any(t.startswith("dpp_") for t in tags)
+            else []
+        )
+        hints = "; ".join((kws[:8] + cpc_hints + penal_hints + dpp_hints)) or "faça passos concretos, vinculados aos S#"
         prompt = (
             "A resposta a seguir ficou genérica. Reescreva de forma mais específica e prática, "
             "obrigatoriamente orientada à ação, considerando estes tópicos: "
@@ -1175,13 +1266,21 @@ class AtendimentoService:
         penal_paths = self._penal_detect_paths(user_text)
         penal_tags = self._penal_tags_from_paths(penal_paths)
 
-        tags = list({*(frame.get("tags") or []), *auto_tags, *cpc_tags, *penal_tags})
+        # >>> DPP (NOVO)
+        dpp_paths = self._dpp_detect_paths(user_text)
+        dpp_tags = self._dpp_tags_from_paths(dpp_paths)
+
+        # Tags consolidadas
+        tags = list({*(frame.get("tags") or []), *auto_tags, *cpc_tags, *penal_tags, *dpp_tags})
+
+        # Macros por área
         tags = self._maybe_add_cpc_macro(tags, cpc_paths)
         tags = self._maybe_add_penal_macro(tags, penal_paths)
+        tags = self._maybe_add_dpp_macro(tags, dpp_paths)
         frame["tags"] = tags
 
-
         queries = self._expand_queries(user_text, frame)
+        # Expansão de consultas com sinônimos (inclui DPP agora)
         queries = self._expand_with_legal_synonyms(queries, tags)
         extra = expand_query(user_text, max_items=6)
         for q in extra:
