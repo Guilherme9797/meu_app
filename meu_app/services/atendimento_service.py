@@ -12,6 +12,8 @@ from .tributario_ontology import _TRIBUTARIO_ONTOLOGY
 from .empresarial_ontology import _EMPRESARIAL_ONTOLOGY
 from .previdenciario_ontology import _PREVID_ONTOLOGY
 from .ambiental_ontology import _AMBIENTAL_ONTOLOGY
+from .ambiental_ontology import _AMBIENTAL_ONTOLOGY
+from .administrativo_ontology import _ADMINISTRATIVO_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -959,6 +961,65 @@ class AtendimentoService:
         if amb_paths and macro not in tags:
             tags = tags + [macro]
         return tags
+    
+     # ---------------------------------------------------------
+    # ADMINISTRATIVO: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _adm_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_ADMINISTRATIVO_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _adm_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"adm_{leaf}")
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _adm_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("adm_"):
+                leaf = key[len("adm_"):]
+                for p, _ in _iter_ontology_paths(_ADMINISTRATIVO_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_ADMINISTRATIVO_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_ADMINISTRATIVO_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = (
+                node
+                if isinstance(node, list)
+                else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            )
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_adm_macro(self, tags: list[str], adm_paths: list[str]) -> list[str]:
+        macro = "direito_administrativo"
+        if adm_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
 
     # ------------------------------------------------------------------
     # Nova arquitetura: CaseFrame, multi-retrieve e geração com fontes
@@ -1267,13 +1328,137 @@ class AtendimentoService:
                 "poder de polícia", "autoexecutoriedade", "coercibilidade",
                 "multas administrativas", "ciclo de polícia", "limites constitucionais"
             ],
-        }
+         } 
+        # -----------------------------
+        # DIREITO DO CONSUMIDOR (CDC)
+        # -----------------------------
+        syn.update({
+            # Geral / princípios / atores
+            "cons_geral": [
+                "CDC", "Código de Defesa do Consumidor", "relação de consumo",
+                "fornecedor", "cadeia de fornecimento", "PROCON", "Senacon",
+                "hipervulnerável", "equilíbrio contratual", "boa-fé objetiva",
+                "informação clara", "reparação integral"
+            ],
+
+            # Práticas comerciais e contratos
+            "cons_praticas": [
+                "publicidade enganosa", "publicidade abusiva", "venda casada",
+                "oferta vinculante", "orçamento prévio", "marketing infantil",
+                "drip pricing", "taxas ocultas", "Black Friday"
+            ],
+            "cons_contratos": [
+                "contrato de adesão", "cláusula abusiva", "limitação de responsabilidade",
+                "foro de eleição", "renovação automática", "multa de fidelidade",
+                "downgrade", "alteração unilateral"
+            ],
+
+            # Vício e fato do produto/serviço, garantias e recall
+            "cons_vicio_defeito": [
+                "vício do produto", "vício do serviço", "defeito de segurança",
+                "garantia legal", "garantia contratual", "assistência técnica",
+                "peças de reposição", "prazo de 30 dias", "substituição, restituição ou abatimento",
+                "recall", "campanha de chamamento", "risco à saúde e segurança"
+            ],
+
+            # E-commerce / logísticas / pagamentos
+            "cons_ecommerce": [
+                "direito de arrependimento", "sete dias", "logística reversa",
+                "estorno integral", "marketplace", "intermediação",
+                "não entregou", "atraso na entrega", "produto em desacordo",
+                "produto avariado", "extravio", "rastreio", "comprovante de postagem"
+            ],
+            "cons_pagamentos": [
+                "chargeback", "transação não reconhecida", "pix indevido",
+                "boleto falso", "gateway de pagamento", "responsabilidade do banco"
+            ],
+
+            # Bancos / cartões / seguros
+            "cons_bancario": [
+                "anuidade", "tarifa não contratada", "juros abusivos",
+                "capitalização", "anatocismo", "aumento unilateral de limite",
+                "cartão não solicitado", "negativa indevida de cobertura", "seguro embutido"
+            ],
+            "cons_fraudes": [
+                "phishing", "WhatsApp", "SIM swap", "engenharia social",
+                "responsabilidade objetiva do banco", "falha de segurança", "estelionato"
+            ],
+            "cons_superendividamento": [
+                "plano de pagamento", "educação financeira",
+                "vedação de assédio", "práticas predatórias", "priorização de essenciais"
+            ],
+
+            # Saúde / planos
+            "cons_planos_saude": [
+                "ANS", "rol de procedimentos", "urgência e emergência",
+                "reembolso", "coparticipação", "reajuste por faixa etária",
+                "carência", "portabilidade", "home care", "terapias continuadas",
+                "negativa de cobertura"
+            ],
+
+            # Transportes e turismo
+            "cons_aereo": [
+                "overbooking", "bagagem extraviada", "cancelamento e reembolso",
+                "assistência material", "conexão perdida", "remarcação", "indenização"
+            ],
+            "cons_turismo": [
+                "no-show", "pacote combinado", "responsabilidade solidária",
+                "taxa de resort", "política de cancelamento"
+            ],
+
+            # Serviços essenciais e utilidades
+            "cons_telecom": [
+                "Anatel", "qualidade do sinal", "velocidade mínima",
+                "redução de velocidade", "serviço não contratado", "portabilidade",
+                "fidelidade", "bloqueio por inadimplemento"
+            ],
+            "cons_energia": [
+                "oscilação de energia", "queima de aparelho", "bandeira tarifária",
+                "ligações e prazos", "corte por inadimplemento"
+            ],
+            "cons_agua_gas": [
+                "hidrômetro", "vício de medição", "vazamento em via pública",
+                "interrupção e religação", "tarifa de água ou esgoto"
+            ],
+
+            # LGPD em consumo / marketing
+            "cons_dados": [
+                "dados pessoais", "LGPD", "base legal", "minimização",
+                "compartilhamento com terceiros", "direitos do titular",
+                "incidente de segurança", "opt-out", "lista de não perturbe"
+            ],
+
+            # Proteção do crédito
+            "cons_credito": [
+                "Serasa", "SPC", "notificação prévia", "exclusão após quitação",
+                "prazo de manutenção", "negativação indevida", "score de crédito",
+                "correção de dados", "cadastro positivo"
+            ],
+
+            # Processo do consumidor
+            "cons_processual": [
+                "juizado especial cível", "inversão do ônus da prova",
+                "tutela de urgência", "obrigação de fazer", "restabelecimento de serviço",
+                "ação civil pública", "substituição processual", "dano moral coletivo",
+                "plataforma consumidor.gov.br", "mediação no Procon", "TAC"
+            ],
+
+            # Checklists (ajuda a ancorar respostas específicas)
+            "cons_checklists": [
+                "prints com URL, data e hora", "confirmação de pedido e pagamento",
+                "código de rastreio", "protocolos do SAC", "nota fiscal",
+                "laudo e fotos do defeito", "ordem de serviço", "registro de recall",
+                "comprovantes de quitação", "BO", "fatura e extrato", "logs de dispositivo",
+                "pedido médico e laudos", "negativa formal", "medições de velocidade",
+                "laudo técnico do aparelho", "protocolo na concessionária"
+            ],
+        })
 
         extras: list[str] = []
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_", "adm_")):
+            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_", "adm_", "cons_")):
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
