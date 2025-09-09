@@ -1216,7 +1216,7 @@ class AtendimentoService:
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_"))
+            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_")):
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
