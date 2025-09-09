@@ -245,3 +245,17 @@ def test_expand_with_legal_synonyms_amb(monkeypatch):
     svc, _ = _service(monkeypatch)
     expanded = svc._expand_with_legal_synonyms(["licenciamento ambiental"], ["amb_licenciamento_ambiental"])
     assert any("LP LI LO" in q for q in expanded)
+
+
+def test_adm_detect_and_tags(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    paths = svc._adm_detect_paths("princípio da legalidade e moralidade")
+    assert any(p.endswith("legalidade") for p in paths)
+    tags = svc._adm_tags_from_paths(paths)
+    assert "adm_legalidade" in tags
+
+
+def test_expand_with_legal_synonyms_adm(monkeypatch):
+    svc, _ = _service(monkeypatch)
+    expanded = svc._expand_with_legal_synonyms(["licitação"], ["adm_licitacoes"])
+    assert any("Lei 14.133/2021" in q for q in expanded)

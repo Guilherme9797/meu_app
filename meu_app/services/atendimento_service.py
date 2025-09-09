@@ -1210,13 +1210,70 @@ class AtendimentoService:
             "amb_mudancas_climaticas": ["PNMC", "redução de emissões", "créditos de carbono", "Acordo de Paris"],
             "amb_direito_ambiental_internacional": ["tratados", "conferências", "responsabilidades comuns porém diferenciadas"],
             "amb_economia_verde_e_sustentabilidade": ["energias renováveis", "PSA", "finanças sustentáveis"],
+
+            # --- ADMINISTRATIVO ---
+            "adm_licitacoes": [
+                "licitação", "Lei 14.133/2021", "14133", "nova lei de licitações",
+                "pregão", "dispensa de licitação", "inexigibilidade", "credenciamento",
+                "matriz de riscos", "equilíbrio econômico-financeiro", "alteração unilateral",
+                "sanções administrativas", "impugnação de edital", "representação ao TCU/TCE"
+            ],
+            "adm_contratos_administrativos": [
+                "cláusulas exorbitantes", "rescisão unilateral", "reajuste e revisão",
+                "garantias contratuais", "penalidades administrativas", "gestão e fiscalização contratual"
+            ],
+            "adm_pad": [
+                "PAD", "processo administrativo disciplinar", "sindicância",
+                "afastamento preventivo", "defesa prévia", "relatório da comissão",
+                "demissão", "suspensão", "advertência", "revisão do PAD"
+            ],
+            "adm_concurso_publico": [
+                "concurso público", "direito à nomeação", "cadastro de reserva",
+                "preterição", "cotistas", "exame psicotécnico", "teste físico", "editais"
+            ],
+            "adm_responsabilidade_estado": [
+                "responsabilidade civil do Estado", "risco administrativo",
+                "omissão estatal", "regresso contra agente", "acidente em serviço público",
+                "fornecimento de medicamentos", "saúde pública"
+            ],
+            "adm_concessoes_ppp": [
+                "PPP", "parceria público-privada", "concessão comum",
+                "concessão patrocinada", "concessão administrativa",
+                "encampação", "caducidade", "step-in rights", "relicitação"
+            ],
+            "adm_controle": [
+                "Tribunal de Contas", "TCU", "TCE", "controle interno e externo",
+                "controle judicial do ato administrativo", "discricionariedade", "vinculação"
+            ],
+            "adm_lai": [
+                "LAI", "Lei de Acesso à Informação", "transparência ativa",
+                "transparência passiva", "sigilo", "recurso administrativo"
+            ],
+            "adm_improbidade": [
+                "Lei 8.429", "LIA", "improbidade administrativa", "enriquecimento ilícito",
+                "prejuízo ao erário", "violação a princípios", "dosimetria", "ANPC cível",
+                "prescrição", "dolo", "culpa grave"
+            ],
+            "adm_desapropriacao": [
+                "desapropriação", "interesse social", "utilidade pública",
+                "servidão administrativa", "requisicao administrativa", "tombamento",
+                "desapropriação indireta", "lucro cessante"
+            ],
+            "adm_servicos_publicos": [
+                "modicidade tarifária", "continuidade do serviço", "tarifas",
+                "agências reguladoras", "ouvidoria", "regulação"
+            ],
+            "adm_poder_policia": [
+                "poder de polícia", "autoexecutoriedade", "coercibilidade",
+                "multas administrativas", "ciclo de polícia", "limites constitucionais"
+            ],
         }
 
         extras: list[str] = []
         for tg in tags:
             if tg in syn:
                 extras.extend(syn[tg][:3])
-            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_")):
+            elif tg.startswith(("trib_", "cpc_", "penal_", "dpp_", "emp_", "prev_", "amb_", "adm_")):
                 extras.append(tg.replace("_", " "))
 
         seen, out = set(), []
@@ -1453,8 +1510,23 @@ class AtendimentoService:
             if any(t.startswith("amb_") for t in tags)
             else []
         )
+        adm_hints = (
+            self._adm_hints([t for t in tags if t.startswith("adm_")], max_hints=6)
+            if any(t.startswith("adm_") for t in tags)
+            else []
+        )
         hints = "; ".join(
-            (kws[:8] + cpc_hints + penal_hints + dpp_hints + trib_hints + emp_hints + prev_hints + amb_hints)
+            (
+                kws[:8]
+                + cpc_hints
+                + penal_hints
+                + dpp_hints
+                + trib_hints
+                + emp_hints
+                + prev_hints
+                + amb_hints
+                + adm_hints
+            )
         ) or "faça passos concretos, vinculados aos S#"
         prompt = (
             "A resposta a seguir ficou genérica. Reescreva de forma mais específica e prática, "
@@ -1683,11 +1755,16 @@ class AtendimentoService:
         amb_paths = self._amb_detect_paths(user_text)
         amb_tags  = self._amb_tags_from_paths(amb_paths)
 
+        # ADMINISTRATIVO (novo)
+        adm_paths = self._adm_detect_paths(user_text)
+        adm_tags  = self._adm_tags_from_paths(adm_paths)
+
+
         # Consolidação de tags (inclua emp_tags)
         tags = list({
             *(frame.get("tags") or []),
               *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags, *prev_tags,
-             *amb_tags
+             *amb_tags, *adm_tags
         })
 
         # Macros por área
@@ -1698,6 +1775,7 @@ class AtendimentoService:
         tags = self._maybe_add_emp_macro(tags, emp_paths)
         tags = self._maybe_add_prev_macro(tags, prev_paths)
         tags = self._maybe_add_amb_macro(tags, amb_paths)
+        tags = self._maybe_add_adm_macro(tags, adm_paths)
         frame["tags"] = tags
 
         queries = self._expand_queries(user_text, frame)
