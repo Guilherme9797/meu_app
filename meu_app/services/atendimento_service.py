@@ -16,6 +16,7 @@ from .consumidor_ontology import _CONSUMIDOR_ONTOLOGY
 from .administrativo_ontology import _ADMINISTRATIVO_ONTOLOGY
 from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY
 from .trabalho_ontology import _TRABALHO_ONTOLOGY
+from .proc_trab_ontology import _PROC_TRAB_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -963,7 +964,65 @@ class AtendimentoService:
         if trab_paths and macro not in tags:
             tags = tags + [macro]
         return tags
+    
+    # ---------------------------------------------------------
+    # PTRAB: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _ptrab_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_PROC_TRAB_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
 
+    def _ptrab_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"ptrab_{leaf}")
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _ptrab_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("ptrab_"):
+                leaf = key[len("ptrab_"):]
+                for p, _ in _iter_ontology_paths(_PROC_TRAB_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_PROC_TRAB_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_PROC_TRAB_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = (
+                node
+                if isinstance(node, list)
+                else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            )
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_ptrab_macro(self, tags: list[str], ptrab_paths: list[str]) -> list[str]:
+        macro = "direito_processual_do_trabalho"
+        if ptrab_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
 
      # ---------------------------------------------------------
     # AMBIENTAL: detecção por ontologia → tags → hints
@@ -1392,6 +1451,68 @@ class AtendimentoService:
                 "multas administrativas", "ciclo de polícia", "limites constitucionais"
             ],
          }
+        # -----------------------------
+        # DIREITO PROCESSUAL DO TRABALHO (PTRAB)
+        # -----------------------------
+        syn.update({
+            "ptrab_principios": [
+                "celeridade", "oralidade", "simplicidade", "concentração de atos",
+                "tentativa de conciliação", "conciliação obrigatória",
+                "aplicação subsidiária do CPC", "compatibilidade com CPC",
+                "Lei dos Juizados", "informalismo"
+            ],
+            "ptrab_organizacao_competencia": [
+                "Justiça do Trabalho", "JT", "Vara do Trabalho", "TRT", "TST",
+                "competência material trabalhista", "acidente de trabalho",
+                "dano moral trabalhista", "servidor celetista", "contribuições previdenciárias"
+            ],
+            "ptrab_partes_procuracao": [
+                "jus postulandi", "substabelecimento", "poderes para transigir",
+                "poderes para acordo", "mandato expresso", "regularidade de representação"
+            ],
+            "ptrab_peticao_rito": [
+                "inicial trabalhista", "pedidos certos e determinados",
+                "liquidação dos pedidos", "rito sumaríssimo", "até 40 salários",
+                "rito sumário", "rito ordinário", "dissídio coletivo"
+            ],
+            "ptrab_citacao_notificacao": [
+                "notificação postal", "AR", "oficial de justiça", "citação por edital",
+                "nulidade da notificação", "erro de endereço"
+            ],
+            "ptrab_audiencias": [
+                "primeira audiência", "audiência una", "instrução e julgamento",
+                "revelia", "confissão ficta", "ata de audiência", "tentativa de acordo"
+            ],
+            "ptrab_provas": [
+                "cartões de ponto", "holerites", "contradita de testemunha",
+                "perícia de insalubridade", "perícia de periculosidade",
+                "perícia médica", "perícia contábil", "confissão real"
+            ],
+            "ptrab_sentenca_rescisoria": [
+                "prequestionamento", "dispositivo", "coisa julgada", "ação rescisória"
+            ],
+            "ptrab_recursos": [
+                "embargos de declaração", "recurso ordinário", "prazo de 8 dias",
+                "depósito recursal", "recurso de revista", "transcendência",
+                "Súmula do TST", "OJ", "agravo de petição", "agravo de instrumento",
+                "agravo interno", "recurso extraordinário"
+            ],
+            "ptrab_execucao": [
+                "liquidação por cálculos", "liquidação por artigos", "liquidação por perícia",
+                "Sisbajud", "Renajud", "Arisp", "penhora on-line", "ordem de penhora",
+                "embargos à execução", "impugnação à liquidação",
+                "exceção de pré-executividade", "crédito alimentar preferencial",
+                "execução provisória"
+            ],
+            "ptrab_coletivo": [
+                "ACP trabalhista", "MPT", "dano moral coletivo",
+                "dissídio coletivo", "sentença normativa", "convenção coletiva"
+            ],
+            "ptrab_custas_honorarios": [
+                "custas processuais", "justiça gratuita", "depósito recursal",
+                "ME/EPP dispensadas", "honorários sucumbenciais", "honorários periciais"
+            ],
+        })
         # -----------------------------
         # DIREITO DO TRABALHO (TRAB)
         # -----------------------------
@@ -1958,6 +2079,16 @@ class AtendimentoService:
             if any(t.startswith("prev_") for t in tags)
             else []
         )
+        trab_hints = (
+            self._trab_hints([t for t in tags if t.startswith("trab_")], max_hints=6)
+            if any(t.startswith("trab_") for t in tags)
+            else []
+        )
+        ptrab_hints = (
+            self._ptrab_hints([t for t in tags if t.startswith("ptrab_")], max_hints=6)
+            if any(t.startswith("ptrab_") for t in tags)
+            else []
+        )
         amb_hints = (
             self._amb_hints([t for t in tags if t.startswith("amb_")], max_hints=6)
             if any(t.startswith("amb_") for t in tags)
@@ -1978,6 +2109,7 @@ class AtendimentoService:
                 + emp_hints
                 + prev_hints
                 + trab_hints
+                + ptrab_hints
                 + amb_hints
                 + adm_hints
             )
@@ -2209,6 +2341,10 @@ class AtendimentoService:
         trab_paths = self._trab_detect_paths(user_text)
         trab_tags  = self._trab_tags_from_paths(trab_paths)
 
+        # PTRAB (novo)
+        ptrab_paths = self._ptrab_detect_paths(user_text)
+        ptrab_tags  = self._ptrab_tags_from_paths(ptrab_paths)
+
          # AMBIENTAL (novo)
         amb_paths = self._amb_detect_paths(user_text)
         amb_tags  = self._amb_tags_from_paths(amb_paths)
@@ -2222,7 +2358,7 @@ class AtendimentoService:
         tags = list({
             *(frame.get("tags") or []),
               *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags, *prev_tags,
-             *trab_tags, *amb_tags, *adm_tags
+             *trab_tags, *ptrab_tags, *amb_tags, *adm_tags
         })
 
         # Macros por área
@@ -2233,6 +2369,7 @@ class AtendimentoService:
         tags = self._maybe_add_emp_macro(tags, emp_paths)
         tags = self._maybe_add_prev_macro(tags, prev_paths)
         tags = self._maybe_add_trab_macro(tags, trab_paths)
+        tags = self._maybe_add_ptrab_macro(tags, ptrab_paths)
         tags = self._maybe_add_amb_macro(tags, amb_paths)
         tags = self._maybe_add_adm_macro(tags, adm_paths)
         frame["tags"] = tags
