@@ -14,7 +14,8 @@ from .previdenciario_ontology import _PREVID_ONTOLOGY
 from .ambiental_ontology import _AMBIENTAL_ONTOLOGY
 from .consumidor_ontology import _CONSUMIDOR_ONTOLOGY
 from .administrativo_ontology import _ADMINISTRATIVO_ONTOLOGY
-from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY 
+from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY
+from .trabalho_ontology import _TRABALHO_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -903,6 +904,67 @@ class AtendimentoService:
             tags = tags + [macro]
         return tags
     
+    # ---------------------------------------------------------
+    # TRABALHO: detecção por ontologia → tags → hints
+    # ---------------------------------------------------------
+    def _trab_detect_paths(self, user_text: str, max_hits: int = 10) -> list[str]:
+        t = _norm_txt(user_text)
+        hits: list[str] = []
+        for path, label in _iter_ontology_paths(_TRABALHO_ONTOLOGY):
+            if label and label in t and path not in hits:
+                hits.append(path)
+                if len(hits) >= max_hits:
+                    break
+        return hits
+
+    def _trab_tags_from_paths(self, paths: list[str]) -> list[str]:
+        tags: list[str] = []
+        for p in paths:
+            leaf = p.split(".")[-1]
+            tags.append(f"trab_{leaf}")
+        # dedup + limite
+        seen, out = set(), []
+        for tg in tags:
+            if tg not in seen:
+                seen.add(tg)
+                out.append(tg)
+        return out[:16]
+
+    def _trab_hints(self, paths_or_tags: list[str], max_hints: int = 10) -> list[str]:
+        hints: list[str] = []
+        for key in paths_or_tags[:8]:
+            node = None
+            if key.startswith("trab_"):
+                leaf = key[len("trab_"):]
+                for p, _ in _iter_ontology_paths(_TRABALHO_ONTOLOGY):
+                    if p.endswith("." + leaf) or p == leaf:
+                        node = _get_node_by_path(_TRABALHO_ONTOLOGY, p)
+                        break
+            else:
+                node = _get_node_by_path(_TRABALHO_ONTOLOGY, key)
+
+            if node is None:
+                continue
+            items = (
+                node
+                if isinstance(node, list)
+                else (list(node.keys()) if isinstance(node, dict) else [str(node)])
+            )
+            for it in items:
+                h = _norm_txt(str(it))
+                if h and h not in hints:
+                    hints.append(h)
+                if len(hints) >= max_hints:
+                    return hints
+        return hints
+
+    def _maybe_add_trab_macro(self, tags: list[str], trab_paths: list[str]) -> list[str]:
+        macro = "direito_do_trabalho"
+        if trab_paths and macro not in tags:
+            tags = tags + [macro]
+        return tags
+
+
      # ---------------------------------------------------------
     # AMBIENTAL: detecção por ontologia → tags → hints
     # ---------------------------------------------------------
@@ -1330,6 +1392,95 @@ class AtendimentoService:
                 "multas administrativas", "ciclo de polícia", "limites constitucionais"
             ],
          }
+        # -----------------------------
+        # DIREITO DO TRABALHO (TRAB)
+        # -----------------------------
+        syn.update({
+            # Fundamentos e fontes
+            "trab_fundamentos": [
+                "CLT", "Consolidação das Leis do Trabalho", "art. 7º CF/88",
+                "TST", "TRT", "Súmula", "Orientação Jurisprudencial", "OJ",
+                "princípio da proteção", "primazia da realidade", "norma mais favorável"
+            ],
+
+            # Contrato de trabalho e vínculo
+            "trab_contrato": [
+                "vínculo empregatício", "carteira assinada", "CTPS", "pejotização", "terceirização",
+                "pessoalidade", "subordinação", "onerosidade", "não eventualidade", "alteridade",
+                "contrato por prazo determinado", "experiência", "tempo parcial", "intermitente",
+                "home office", "teletrabalho", "trabalho remoto internacional"
+            ],
+
+            # Jornada, horas extras e intervalos
+            "trab_jornada": [
+                "banco de horas", "compensação", "controle de ponto", "intervalo intrajornada",
+                "intervalo interjornada", "DSR", "turnos ininterruptos de revezamento",
+                "sobreaviso", "prorrogação de jornada", "minutos residuais"
+            ],
+            "trab_horas_extras": [
+                "adicional de 50%", "adicional de 100%", "habitualidade", "integração ao repouso",
+                "reflexos em férias 13º FGTS", "Súmula 376", "Súmula 85"
+            ],
+            "trab_noturno": [
+                "hora noturna reduzida", "52min30s", "adicional noturno de 20%", "prorrogação do noturno"
+            ],
+
+            # Salário, remuneração e FGTS
+            "trab_salario": [
+                "salário in natura", "auxílio-alimentação", "vale-refeição", "vale-transporte",
+                "gorjetas", "comissões", "gratificação", "quebra de caixa",
+                "irredutibilidade salarial", "salário incontroverso", "atraso salarial"
+            ],
+            "trab_fgts": [
+                "FGTS", "multa de 40%", "chave de conectividade social", "extrato analítico do FGTS"
+            ],
+            "trab_13_ferias": [
+                "13º salário", "décimo terceiro", "aviso-prévio projetado", "férias em dobro",
+                "abono pecuniário", "terço constitucional", "férias proporcionais"
+            ],
+
+            # Saúde e segurança (NRs)
+            "trab_saude_seg": [
+                "NR-6 EPI", "NR-9 PGR/PPRA", "NR-7 PCMSO", "NR-5 CIPA",
+                "laudo pericial", "perícia técnica", "PPP", "LTCAT", "CAT",
+                "insalubridade", "periculosidade", "energia elétrica", "inflamáveis", "motoboy"
+            ],
+
+            # Extinção do contrato e verbas rescisórias
+            "trab_rescisao": [
+                "rescisão indireta", "dispensa sem justa causa", "justa causa",
+                "pedido de demissão", "culpa recíproca", "força maior",
+                "aviso-prévio proporcional", "TRCT", "homologação", "prazo de pagamento 10 dias",
+                "multa do art. 477", "guia do seguro-desemprego"
+            ],
+
+            # Coletivo e sindicatos
+            "trab_coletivo": [
+                "acordo coletivo", "convenção coletiva", "negociado sobre legislado",
+                "data-base", "greve", "atividades essenciais", "mediação MPT"
+            ],
+
+            # Categorias especiais
+            "trab_domestico": [
+                "LC 150", "empregado doméstico", "FGTS obrigatório", "jornada do doméstico",
+                "pernoite", "controle de ponto doméstico"
+            ],
+            "trab_rural": [
+                "trabalhador rural", "sazonalidade", "frente de trabalho", "corte de cana",
+                "condições ambientais rurais"
+            ],
+            "trab_aprendiz_estagio": [
+                "aprendiz 14 a 24", "termo de compromisso de estágio", "Lei 11.788/2008",
+                "jornada do estagiário", "acompanhamento educacional"
+            ],
+
+            # Checklists e provas usuais
+            "trab_checklists": [
+                "holerites", "contrato de trabalho", "ponto/cartões de ponto", "escala",
+                "extratos do FGTS", "comprovantes de pagamento", "comunicação de dispensa",
+                "CAT e prontuários médicos", "PPRA/PGR e PCMSO", "ACT/CCT aplicáveis"
+            ],
+        })
         # -----------------------------
         # DIREITO IMOBILIÁRIO (IMOB)
         # -----------------------------
@@ -1826,6 +1977,7 @@ class AtendimentoService:
                 + trib_hints
                 + emp_hints
                 + prev_hints
+                + trab_hints
                 + amb_hints
                 + adm_hints
             )
@@ -2053,6 +2205,10 @@ class AtendimentoService:
         prev_paths = self._prev_detect_paths(user_text)
         prev_tags  = self._prev_tags_from_paths(prev_paths)
 
+        # TRABALHO (novo)
+        trab_paths = self._trab_detect_paths(user_text)
+        trab_tags  = self._trab_tags_from_paths(trab_paths)
+
          # AMBIENTAL (novo)
         amb_paths = self._amb_detect_paths(user_text)
         amb_tags  = self._amb_tags_from_paths(amb_paths)
@@ -2066,7 +2222,7 @@ class AtendimentoService:
         tags = list({
             *(frame.get("tags") or []),
               *auto_tags, *cpc_tags, *penal_tags, *dpp_tags, *trib_tags, *emp_tags, *prev_tags,
-             *amb_tags, *adm_tags
+             *trab_tags, *amb_tags, *adm_tags
         })
 
         # Macros por área
@@ -2076,6 +2232,7 @@ class AtendimentoService:
         tags = self._maybe_add_trib_macro(tags, trib_paths)
         tags = self._maybe_add_emp_macro(tags, emp_paths)
         tags = self._maybe_add_prev_macro(tags, prev_paths)
+        tags = self._maybe_add_trab_macro(tags, trab_paths)
         tags = self._maybe_add_amb_macro(tags, amb_paths)
         tags = self._maybe_add_adm_macro(tags, adm_paths)
         frame["tags"] = tags
