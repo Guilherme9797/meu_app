@@ -12,8 +12,9 @@ from .tributario_ontology import _TRIBUTARIO_ONTOLOGY
 from .empresarial_ontology import _EMPRESARIAL_ONTOLOGY
 from .previdenciario_ontology import _PREVID_ONTOLOGY
 from .ambiental_ontology import _AMBIENTAL_ONTOLOGY
-from .ambiental_ontology import _AMBIENTAL_ONTOLOGY
+from .consumidor_ontology import _CONSUMIDOR_ONTOLOGY
 from .administrativo_ontology import _ADMINISTRATIVO_ONTOLOGY
+from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY 
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -1328,7 +1329,123 @@ class AtendimentoService:
                 "poder de polícia", "autoexecutoriedade", "coercibilidade",
                 "multas administrativas", "ciclo de polícia", "limites constitucionais"
             ],
-         } 
+         }
+        # -----------------------------
+        # DIREITO IMOBILIÁRIO (IMOB)
+        # -----------------------------
+        syn.update({
+            # Registro de imóveis e princípios
+            "imob_registro": [
+                "LRP", "Lei 6.015/73", "registro de imóveis", "cartório de registro",
+                "prenotação", "matrícula", "averbação", "certidões",
+                "princípio da continuidade", "especialidade objetiva", "especialidade subjetiva",
+                "fé pública registral", "concentração na matrícula",
+                "retificação registral", "art. 213 LRP", "confinantes",
+                "dúvida registral", "oficial registrador", "exigência registral",
+            ],
+
+            # Propriedade, posse e direitos reais
+            "imob_propriedade_posse": [
+                "usucapião", "usucapião extrajudicial", "posse nova", "posse velha",
+                "esbulho", "turbação", "interdito proibitório", "manutenção de posse", "reintegração de posse",
+                "acessio possessionis", "servidão de passagem", "direito de laje", "superfície",
+                "usufruto", "habitação",
+            ],
+
+            # Contratos imobiliários
+            "imob_contratos": [
+                "promessa de compra e venda", "compromisso de compra e venda", "arras", "sinal",
+                "adjudicação compulsória", "cláusula penal", "resolução por inadimplemento",
+                "escritura pública", "evicção", "permuta", "dação em pagamento",
+                "comissão de corretagem", "taxa SATI", "impostos ITBI ITCMD",
+            ],
+
+            # Alienação fiduciária e leilões
+            "imob_fiducia": [
+                "alienação fiduciária", "Lei 9.514/97", "intimação do fiduciante",
+                "consolidação da propriedade", "leilão extrajudicial", "1ª praça", "2ª praça",
+                "purgação da mora", "saldo residual", "nulidades formais do leilão",
+                "imissão na posse do arrematante", "sub-rogação em condomínio e IPTU",
+            ],
+
+            # Incorporação e condomínio
+            "imob_incorporacao": [
+                "Lei 4.591/64", "memorial de incorporação", "patrimônio de afetação",
+                "garantias ao adquirente", "publicidade da incorporação",
+            ],
+            "imob_condominio": [
+                "condomínio edilício", "convenção condominial", "regimento interno",
+                "quórum para obras", "assembleia", "impugnação de assembleia",
+                "fração ideal", "vaga de garagem", "animais em condomínio",
+                "Airbnb", "locação por temporada", "cobrança de cotas", "multa e juros",
+                "penhora da unidade", "vícios em áreas comuns",
+            ],
+
+            # Loteamento e multipropriedade
+            "imob_loteamento": [
+                "Lei 6.766/79", "aprovação municipal", "obras de infraestrutura",
+                "deveres do loteador", "rescisão por atraso",
+            ],
+            "imob_multipropriedade": [
+                "Lei 13.777/18", "uso exclusivo por períodos", "administração e rateio",
+            ],
+
+            # Vícios construtivos, atraso e distrato
+            "imob_vicios_atraso": [
+                "NBR 15575", "vício construtivo", "garantia", "prescrição",
+                "lucros cessantes", "aluguel social", "astreintes",
+                "força maior", "caso fortuito", "Lei do Distrato 13.786/18",
+                "percentual de retenção", "prazo de restituição", "cláusula penal inversa",
+            ],
+
+            # Locação urbana
+            "imob_locacao": [
+                "locação residencial", "locação não residencial", "caução", "fiança",
+                "seguro-fiança", "título de capitalização", "bem de família do fiador",
+                "benfeitorias necessárias úteis voluptuárias",
+                "despejo", "liminar do art. 59", "consignação em pagamento",
+                "revisional de aluguel", "renovatória", "shopping center",
+                "direito de preferência do locatário", "denúncia vazia",
+            ],
+
+            # Regularização fundiária e rural
+            "imob_regularizacao": [
+                "REURB", "Lei 13.465/17", "REURB-S", "REURB-E",
+                "projeto urbanístico", "memorial descritivo", "matrículas pós-REURB",
+                "georreferenciamento INCRA", "CCIR", "ITR", "CAR", "reserva legal", "APP",
+                "servidões ambientais", "retificação de área rural", "usucapião familiar",
+                "reconhecimento de domínio", "Corregedoria",
+            ],
+
+            # Litígios frequentes e responsabilidade
+            "imob_litigios": [
+                "bem de família", "impenhorabilidade", "exceção da fiança locatícia",
+                "protesto e negativação de cotas", "execução de título extrajudicial",
+                "uso anormal da propriedade", "barulho", "odor", "infiltração",
+                "obra irregular", "ABNT", "perícia de engenharia",
+                "suscitação de dúvida", "recusa de registro", "conflito de princípios registrais",
+            ],
+
+            # Tributos incidentes
+            "imob_tributos": [
+                "IPTU", "ITBI", "ITCMD", "taxa de iluminação", "taxa de limpeza",
+                "progressividade", "planta genérica de valores",
+                "base de cálculo valor de mercado",
+                "imunidade em integralização de capital", "holding imobiliária",
+            ],
+
+            # Checklists práticos
+            "imob_checklists": [
+                "contrato e quitação", "notificação do vendedor", "certidões negativas",
+                "cadeia dominial", "ata notarial", "planta e memorial",
+                "anuência de confinantes", "fotos e testemunhas",
+                "cronograma e memorial", "e-mails e notificações",
+                "relatórios de engenharia", "aluguel social",
+                "relatório técnico NBR 15575", "OS e orçamentos", "apólice SFH",
+                "planilha de débitos", "intimação regular", "edital e ata de leilão",
+                "nulidades formais",
+            ],
+        }) 
         # -----------------------------
         # DIREITO DO CONSUMIDOR (CDC)
         # -----------------------------

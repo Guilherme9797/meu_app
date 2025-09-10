@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Ontologia de Direito do Consumidor para detecção temática."""
 
 
