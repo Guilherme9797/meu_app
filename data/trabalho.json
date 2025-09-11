@@ -1,0 +1,233 @@
+{
+  "direito_do_trabalho": {
+    "fundamentos_constitucionais": {
+      "direitos_sociais_art7_cf": [
+        "salario_minimo",
+        "irredutibilidade_salarial",
+        "decimo_terceiro",
+        "fgts",
+        "ferias_remuneradas",
+        "adicional_noturno",
+        "adicional_periculosidade",
+        "adicional_insalubridade",
+        "jornada_8h_diarias_44h_semanais",
+        "repouso_semanal_remunerado",
+        "licenca_maternidade",
+        "licenca_paternidade",
+        "protecao_do_trabalho_da_mulher",
+        "protecao_do_trabalho_do_menor",
+        "aviso_previo_proporcional",
+        "seguro_desemprego",
+        "reducoes_por_acordo_coletivo"
+      ],
+      "principios_trabalhistas": [
+        "protecao",
+        "irrenunciabilidade",
+        "continuidade_relacao_emprego",
+        "primazia_da_realidade",
+        "condicao_mais_benf",
+        "norma_mais_favoravel",
+        "inalienabilidade_dos_direitos",
+        "imperatividade_das_normas",
+        "intangibilidade_salarial"
+      ]
+    },
+    "contrato_de_trabalho": {
+      "requisitos_essenciais": [
+        "pessoalidade",
+        "subordinacao",
+        "onerosidade",
+        "nao_eventualidade",
+        "alteridade"
+      ],
+      "tipos": [
+        "prazo_indeterminado",
+        "prazo_determinado",
+        "experiencia",
+        "tempo_parcial",
+        "intermitente",
+        "aprendizagem",
+        "estagio"
+      ],
+      "modalidades_especiais": [
+        "teletrabalho_home_office",
+        "trabalho_remoto_internacional",
+        "contrato_verde_e_amarelo",
+        "trabalho_domestico_lc150",
+        "trabalho_portuario",
+        "trabalho_terceirizado"
+      ],
+      "alteracoes_contratuais": [
+        "jus_variandi",
+        "transferencia_de_local",
+        "reducoes_por_acordo",
+        "alteracao_lesiva_nulidade"
+      ]
+    },
+    "jornada_e_descanso": {
+      "jornada_normal": [
+        "8h_dia_44h_semana",
+        "6h_turnos_ininterruptos",
+        "compensacao_e_banco_de_horas"
+      ],
+      "horas_extras": [
+        "adicional_50_minimo",
+        "compensacao_banco_de_horas",
+        "habitualidade_e_incorporacao"
+      ],
+      "intervalos": [
+        "intrajornada_minimo_1h",
+        "interjornada_minimo_11h",
+        "descanso_semanal_remunerado",
+        "descanso_domingo_mulheres_e_menores"
+      ],
+      "trabalho_noturno": [
+        "jornada_reduzida_52min30s",
+        "adicional_noturno_20%",
+        "prorrogacao_horas_noturnas"
+      ]
+    },
+    "remuneracao_e_salario": {
+      "composicao": [
+        "salario_base",
+        "comissoes",
+        "gorjetas",
+        "gratificacoes",
+        "adicionais",
+        "diarias_viagens"
+      ],
+      "natureza": [
+        "salario_in_natura",
+        "utilidades",
+        "habitualidade_e_incorporacao"
+      ],
+      "protecao_salarial": [
+        "irredutibilidade",
+        "intocabilidade",
+        "salario_incontroverso",
+        "prazo_de_pagamento"
+      ],
+      "decimo_terceiro": [
+        "proporcionalidade",
+        "adicional_integracao"
+      ],
+      "fgts": [
+        "depositos_mensais",
+        "multa_40_porcento_rescisao_sem_justa_causa",
+        "saques_autorizados"
+      ]
+    },
+    "ferias_e_descanso": {
+      "ferias_anuais": [
+        "30_dias",
+        "reducoes_por_faltas",
+        "abono_pecuniario",
+        "concessao_coletiva",
+        "dobro_ferias_nao_concedidas"
+      ],
+      "licencas": [
+        "licenca_maternidade",
+        "licenca_paternidade",
+        "licencas_remuneradas_e_nao_remuneradas"
+      ]
+    },
+    "seguranca_e_saude": {
+      "normas_regulamentadoras": [
+        "epi",
+        "epc",
+        "cipa",
+        "ppra_pgr",
+        "pcms"
+      ],
+      "adicional_insalubridade": [
+        "graus_minimo_medio_maximo",
+        "base_de_calculo",
+        "pericia_obrigatoria"
+      ],
+      "adicional_periculosidade": [
+        "inflamaveis_explosivos",
+        "energia_eletrica",
+        "motociclistas"
+      ],
+      "doencas_e_acidentes": [
+        "nexo_causal",
+        "estabilidade_acidentaria",
+        "comunicacao_cat",
+        "beneficios_previdenciarios_inss"
+      ]
+    },
+    "extincao_contrato": {
+      "hipoteses": [
+        "dispensa_sem_justa_causa",
+        "dispensa_com_justa_causa",
+        "pedido_de_demissao",
+        "rescisao_indireta",
+        "forca_maior",
+        "culpa_reciproca",
+        "falecimento_do_empregado",
+        "aposentadoria"
+      ],
+      "aviso_previo": [
+        "proporcionalidade_tempo_servico",
+        "indenizacao",
+        "dispensa_do_trabalho_no_periodo"
+      ],
+      "verbas_rescisorias": [
+        "saldo_salario",
+        "ferias_vencidas_e_proporcionais",
+        "decimo_terceiro",
+        "fgts_multa",
+        "seguro_desemprego"
+      ],
+      "homologacao": [
+        "prazo_para_pagamento",
+        "quitacao_e_defesas",
+        "assistencia_sindical"
+      ]
+    },
+    "coletivo_sindical": {
+      "liberdade_sindical": [
+        "unicidade",
+        "contribuicao_sindical_facultativa",
+        "contribuicao_associativa",
+        "negociacao_coletiva"
+      ],
+      "convenções_e_acordos_coletivos": [
+        "prevalencia_da_norma_mais_favoravel",
+        "prevalencia_do_negociado_sobre_o_legislado",
+        "clausulas_tipicas_jornada_salario_beneficios",
+        "limites_a_renuncia_de_direitos"
+      ],
+      "greve": [
+        "direito_constitucional",
+        "atividades_essenciais",
+        "abusividade",
+        "intervencao_judicial"
+      ]
+    },
+    "categorias_especiais": {
+      "trabalho_domestico": [
+        "direitos_constitucionais_lc150",
+        "fgts_obrigatorio",
+        "jornada_e_intervalos",
+        "adicional_noturno",
+        "multas_por_descumprimento"
+      ],
+      "trabalho_rural": [
+        "jornada_especial",
+        "condicoes_ambientais",
+        "sazonalidade"
+      ],
+      "aprendizagem": [
+        "contrato_formal",
+        "idade_14_24",
+        "direitos_especificos"
+      ],
+      "estagio": [
+        "lei_11788_2008",
+        "obrigatoriedade_do_termo",
+        "jornada_e_acompanhamento"
+      ]
+    }
+  }
+}

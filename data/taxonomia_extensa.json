@@ -1,0 +1,2877 @@
+{
+  "direito_processual_penal": {
+    "sistemas_e_principios": {
+      "sistemas_processuais": [
+        "inquisitorial",
+        "acusatorio",
+        "misto"
+      ],
+      "principios_constitucionais": [
+        "presuncao_de_inocencia",
+        "contraditorio",
+        "ampla_defesa",
+        "publicidade_dos_atos",
+        "busca_da_verdade_real",
+        "favor_rei",
+        "juiz_natural",
+        "proporcionalidade",
+        "livre_convencimento_motivado",
+        "liberdade_probatória"
+      ]
+    },
+    "lei_processual_penal": {
+      "fontes": [
+        "constitucionais",
+        "legais_codigos_e_leis_extravagantes",
+        "jurisprudenciais_e_supletivas"
+      ],
+      "aplicacao_no_tempo": [
+        "tempus_regit_actum",
+        "ultraatividade",
+        "retroatividade_benefica"
+      ],
+      "aplicacao_no_espaco": [
+        "territorialidade",
+        "extraterritorialidade_relativa"
+      ],
+      "interpretacao": [
+        "gramatical",
+        "sistemática",
+        "teleológica",
+        "analogia_in_bonampartem",
+        "aplicacao_subsidiaria_do_cpc"
+      ]
+    },
+    "juiz_das_garantias": {
+      "conceito": [
+        "fase_preprocessual",
+        "juiz_diferente_do_merito"
+      ],
+      "atribuicoes": [
+        "controle_de_legalidade_da_investigacao",
+        "decisoes_sobre_prisoes",
+        "autorizacao_de_interceptacoes",
+        "validacao_de_provas"
+      ],
+      "competencia": [
+        "delimitacao_ate_recebimento_da_denuncia",
+        "separacao_funcoes"
+      ]
+    },
+    "investigacao_criminal": {
+      "inquerito_policial": [
+        "conceito",
+        "natureza_juridica",
+        "finalidade",
+        "valor_probatório",
+        "dispensabilidade"
+      ],
+      "caracteristicas": [
+        "oficiosidade",
+        "inquisitorialidade",
+        "sigilosidade",
+        "indisponibilidade",
+        "discricionariedade",
+        "escrita"
+      ],
+      "presidencia": [
+        "autoridade_policial",
+        "competencia_da_policia_federal_e_civil"
+      ],
+      "policia_judiciaria": [
+        "competencias",
+        "limites_constitucionais",
+        "controle_externo_mp"
+      ],
+      "meios_investigativos": [
+        "busca_e_apreensao",
+        "interceptacao_telefonica_telematica",
+        "quebra_de_sigilo_bancario_e_fiscal",
+        "colaboracao_premiada",
+        "agente_infiltrado",
+        "acao_controlada"
+      ],
+      "cadeia_de_custodia": [
+        "definicao",
+        "etapas_recolhimento_armazenamento_preservacao",
+        "nulidade_por_violacao"
+      ]
+    },
+    "acao_penal": {
+      "tipos": [
+        "publica_incondicionada",
+        "publica_condicionada_representacao",
+        "condicionada_requisicao_ministro_justica",
+        "privada",
+        "privada_personalissima",
+        "privada_subsidiaria_da_publica"
+      ],
+      "denuncia_e_queixa": [
+        "requisitos_denuncia",
+        "requisitos_queixa",
+        "aditamento",
+        "recebimento_e_rejeicao"
+      ],
+      "principios": [
+        "indivisibilidade",
+        "oportunidade_representacao",
+        "indisponibilidade"
+      ]
+    },
+    "prisao_e_medidas_cautelares": {
+      "prisao_em_flagrante": [
+        "requisitos",
+        "formalidades",
+        "relatorio_de_prisao",
+        "conversao_em_preventiva"
+      ],
+      "prisao_preventiva": [
+        "fumus_commissi_delicti",
+        "periculum_libertatis",
+        "garantia_da_ordem_publica",
+        "garantia_da_ordem_economica",
+        "conveniencia_da_instrucao",
+        "assegurar_aplicacao_da_lei_penal"
+      ],
+      "prisao_temporaria": [
+        "crimes_cabiveis",
+        "prazo",
+        "prorrogacao"
+      ],
+      "prisao_domiciliar": [
+        "idoso",
+        "mae_de_menor",
+        "gravida",
+        "doenca_grave"
+      ],
+      "medidas_cautelares_diversas": [
+        "comparecimento_periodico_em_juizo",
+        "proibicao_de_acesso_a_lugares",
+        "proibicao_de_contato",
+        "suspensao_do_exercicio_funcao",
+        "monitoramento_eletronico"
+      ],
+      "audiencia_de_custodia": [
+        "controle_da_legalidade",
+        "verificacao_de_maus_tratos",
+        "analise_de_medidas_cautelares"
+      ],
+      "revogacao_e_substituicao": [
+        "perda_do_motivo",
+        "medidas_menos_gravosas"
+      ]
+    },
+    "provas": {
+      "provas_em_geral": [
+        "principio_da_liberdade_probatória",
+        "licitude",
+        "exame_de_corpo_de_delito",
+        "testemunhal",
+        "documental",
+        "pericial"
+      ],
+      "provas_digitais": [
+        "cadeia_de_custodia",
+        "logs",
+        "dados_extraidos_de_celulares",
+        "prints_e_autenticacao"
+      ],
+      "meios_de_obtencao": [
+        "busca_e_apreensao",
+        "interceptacao",
+        "colaboracao_premiada",
+        "infiltracao_virtual",
+        "acao_controlada"
+      ],
+      "provas_ilicitas": [
+        "exclusao_por_ilicitude",
+        "teoria_dos_frutos_da_arvore_envenenada",
+        "provas_derivadas_licitas"
+      ]
+    },
+    "procedimentos": {
+      "rito_ordinario": [
+        "denuncia",
+        "citacao",
+        "resposta_a_acusacao",
+        "audiencia_de_instrução_e_julgamento",
+        "sentenca"
+      ],
+      "rito_sumario": [
+        "hipoteses",
+        "prazos_reduzidos",
+        "julgamento_celere"
+      ],
+      "rito_simplificado": [
+        "contravencoes",
+        "pequena_complexidade"
+      ],
+      "procedimentos_especiais": {
+        "tribunal_do_juri": [
+          "judicium_accusationis_pronuncia_impronuncia",
+          "absolvicao_sumaria",
+          "desclassificacao",
+          "judicium_causae_plenario",
+          "quesitacao",
+          "soberania_dos_veredictos"
+        ],
+        "crimes_de_responsabilidade": [
+          "processo_dos_funcionarios_publicos",
+          "foro_por_prerrogativa"
+        ],
+        "leis_especiais": [
+          "lei_de_drogas_rito",
+          "lei_de_crimes_hediondos",
+          "lei_maria_da_penha",
+          "estatuto_do_idoso",
+          "estatuto_da_crianca_e_adolescente"
+        ]
+      }
+    },
+    "recursos_e_impugnacoes": {
+      "recursos_em_geral": [
+        "efeito_devolutivo_e_suspensivo",
+        "regra_do_duplo_grau",
+        "fungibilidade",
+        "desercao",
+        "reformatio_in_pejus"
+      ],
+      "recurso_em_sentido_estrito": [
+        "decisoes_cabiveis",
+        "prazo",
+        "juizo_de_retratacao"
+      ],
+      "apelacao": [
+        "hipoteses",
+        "efeito_devolutivo",
+        "sustentacao_oral"
+      ],
+      "embargos": [
+        "declaracao",
+        "infringentes"
+      ],
+      "recursos_aos_tribunais_superiores": [
+        "recurso_especial",
+        "recurso_extraordinario",
+        "agravo_em_REsp",
+        "agravo_em_RE"
+      ],
+      "acao_autonoma_de_impugnacao": [
+        "habeas_corpus",
+        "revisao_criminal",
+        "mandado_de_segurança"
+      ]
+    },
+    "justica_consensual": {
+      "colaboracao_premiada": [
+        "premios_reducao_de_pena",
+        "requisitos_eficacia",
+        "controle_judicial"
+      ],
+      "acordo_de_nao_persecucao_penal": [
+        "hipoteses_de_cabimento",
+        "condicoes",
+        "homologacao"
+      ],
+      "transacao_penal": [
+        "juizados_especiais_criminais",
+        "requisitos"
+      ],
+      "suspensao_condicional_do_processo": [
+        "hipoteses",
+        "prazo",
+        "condicoes"
+      ]
+    },
+    "nulidades_processuais": {
+      "conceito": [
+        "nulidade_absoluta_relativa",
+        "teoria_do_prejuizo",
+        "convalidacao"
+      ],
+      "casos": [
+        "ausencia_de_defesa_tecnica",
+        "citacao_nula",
+        "violacao_ao_contraditorio"
+      ]
+    }
+  },
+  "direito_de_familia": {
+    "divorcio_partilha": {},
+    "uniao_estavel": {},
+    "alimentos": {},
+    "guarda_visitas": {},
+    "alienacao_parental": {},
+    "filiacao": {},
+    "medidas_protetivas": {},
+    "tutela_curatela": {},
+    "checklists": {}
+  },
+  "direito_ambiental": {
+    "fundamentos_constitucionais": {
+      "principios": [
+        "direito_fundamental_ao_meio_ambiente_ecologicamente_equilibrado",
+        "funcao_socioambiental_da_propriedade",
+        "principio_do_poluidor_pagador",
+        "principio_do_protetor_recebedor",
+        "principio_da_prevencao",
+        "principio_da_precaucao",
+        "principio_do_desenvolvimento_sustentavel",
+        "principio_da_participacao",
+        "principio_da_equidade_intergeracional"
+      ],
+      "competencias_legislativas": [
+        "competencia_concorrente_uniao_estados",
+        "competencia_municipal",
+        "competencia_exclusiva_da_uniao"
+      ]
+    },
+    "politica_nacional_do_meio_ambiente": {
+      "lei_6938_1981": [
+        "conceito_de_meio_ambiente",
+        "objetivos_da_pnma",
+        "instrumentos_pnma",
+        "sistema_nacional_do_meio_ambiente_sisnama",
+        "conselho_nacional_meio_ambiente_conama"
+      ],
+      "instrumentos": [
+        "licenciamento_ambiental",
+        "avaliação_de_impacto_ambiental_eia_rima",
+        "zoneamento_ecologico_economico",
+        "auditoria_ambiental",
+        "relatorios_de_qualidade"
+      ]
+    },
+    "licenciamento_e_avaliacao_de_impacto": {
+      "licenciamento_ambiental": [
+        "licenca_previa",
+        "licenca_de_instalacao",
+        "licenca_de_operacao",
+        "competencia_ibama_estados_municipios",
+        "dispensa_e_regularizacao"
+      ],
+      "eia_rima": [
+        "conteudo_minimo",
+        "audiencias_publicas",
+        "controle_judicial"
+      ],
+      "dispensas_e_autorizacoes": [
+        "licenciamento_simplificado",
+        "atividades_de_pequeno_impacto"
+      ]
+    },
+    "unidades_de_conservacao_e_areas_protegidas": {
+      "lei_9985_2000": [
+        "sistema_nacional_de_unidades_de_conservacao_snu",
+        "categorias_de_protecao_integral",
+        "categorias_de_uso_sustentavel"
+      ],
+      "codigo_florestal_lei_12651_2012": [
+        "area_de_preservacao_permanente_app",
+        "reserva_legal",
+        "cotas_de_reserva_ambiental",
+        "cadastro_ambiental_rural_car",
+        "programa_de_regularizacao_ambiental_pra"
+      ],
+      "patrimonio_cultural_paisagistico": [
+        "tombamento",
+        "areas_de_protecao_patrimonial"
+      ]
+    },
+    "responsabilidade_por_dano_ambiental": {
+      "responsabilidade_civil": [
+        "responsabilidade_objetiva",
+        "teoria_do_risco_integral",
+        "dano_moral_coletivo",
+        "solidariedade_dos_poluidor_es",
+        "indenizacao_integral"
+      ],
+      "responsabilidade_administrativa": [
+        "auto_de_infracao",
+        "multas_simples_e_diarias",
+        "embargo_e_interdicao",
+        "apreensao_de_produtos"
+      ],
+      "responsabilidade_penal": [
+        "crimes_da_lei_9605_1998",
+        "crimes_contra_a_fauna",
+        "crimes_contra_a_flora",
+        "crimes_de_poluicao",
+        "crimes_contra_patrimonio_cultural",
+        "responsabilidade_penal_da_pessoa_juridica"
+      ]
+    },
+    "poluicao_e_residuos": {
+      "poluicao": [
+        "poluicao_do_ar",
+        "poluicao_da_agua",
+        "poluicao_do_solo",
+        "poluicao_sonora",
+        "poluicao_visual",
+        "poluicao_luminosa"
+      ],
+      "residuos_solidos": [
+        "politica_nacional_de_residuos_solidos",
+        "responsabilidade_compartilhada",
+        "logistica_reversa",
+        "plano_de_gerenciamento_de_residuos"
+      ]
+    },
+    "fauna_e_flora": {
+      "fauna": [
+        "protecao_da_fauna_silvestre",
+        "proibicao_de_crueldade",
+        "caca_proibida",
+        "pesca_predatoria",
+        "trafico_de_animais"
+      ],
+      "flora": [
+        "desmatamento",
+        "supressao_irregular_de_vegetacao",
+        "incendios_florestais",
+        "exploracao_florestal_ilegal",
+        "biopirataria"
+      ]
+    },
+    "tutela_coletiva_ambiental": {
+      "acao_civil_publica": [
+        "legitimados_art_5_lei_7347_85",
+        "pedido_de_reparacao_e_compensacao",
+        "indenizacao_por_dano_moral_coletivo"
+      ],
+      "acao_popular_ambiental": [
+        "cabimento",
+        "direito_liquido_e_certo",
+        "defesa_do_patrimonio_publico"
+      ],
+      "tac_termo_de_ajustamento_de_conduta": [
+        "celebracao_pelo_mp",
+        "cumprimento_e_execucao"
+      ],
+      "mandado_de_segurança_ambiental": [
+        "direito_liquido_e_certo",
+        "cabimento_contra_ato_omissivo"
+      ]
+    },
+    "temas_modernos": {
+      "mudancas_climaticas": [
+        "politica_nacional_sobre_mudanca_do_clima",
+        "reducao_de_emissoes",
+        "mercado_de_creditos_de_carbono",
+        "acordo_de_paris"
+      ],
+      "direito_ambiental_internacional": [
+        "tratados_e_conferencias",
+        "principio_das_responsabilidades_comuns_mas_diferenciadas",
+        "cooperação_internacional"
+      ],
+      "economia_verde_e_sustentabilidade": [
+        "energias_renovaveis",
+        "pagamento_por_servicos_ambientais",
+        "financas_sustentaveis"
+      ]
+    }
+  },
+  "direito_penal": {
+    "parte_geral": {
+      "fundamentos": [
+        "funcao_do_direito_penal",
+        "princípios_da_legalidade_e_anterioridade",
+        "princípio_da_intervenção_mínima",
+        "princípio_da_ofensividade",
+        "princípio_da_proporcionalidade",
+        "princípio_da_humanidade_da_pena",
+        "princípio_da_insignificancia"
+      ],
+      "fontes_e_interpretacao": [
+        "costume_e_doutrina",
+        "fonte_formal_constituicao_código_leis_penais_extravagantes",
+        "interpretacao_literal_extensiva_restritiva",
+        "interpretacao_analogica_in_malampartem_in_bonampartem",
+        "leis_penais_em_branco",
+        "lei_penal_no_tempo_irretroatividade_retroatividade_benefica",
+        "lei_penal_no_espaco_territorialidade_extraterritorialidade"
+      ],
+      "teoria_do_crime": {
+        "fato_tipico": [
+          "conduta_comissiva_omissiva",
+          "resultado_material_formal",
+          "nexo_causal_teoria_da_equivalencia_dos_antecedentes",
+          "tipicidade_formal_e_material",
+          "tipicidade_conglobante"
+        ],
+        "ilicitude": [
+          "estado_de_necessidade",
+          "legitima_defesa",
+          "estrito_cumprimento_do_dever_legal",
+          "exercicio_regular_de_direito",
+          "excludentes_supralegais",
+          "ilicitude_principio_da_proporcionalidade"
+        ],
+        "culpabilidade": [
+          "imputabilidade_penal_maioridade_doenca_mental_embriaguez",
+          "potencial_consciencia_da_ilicitude",
+          "exigibilidade_de_conduta_diversa",
+          "erro_de_proibicao_inevitavel_e_evitavel"
+        ],
+        "iter_criminis": [
+          "cogitação",
+          "atos_preparatorios",
+          "execucao",
+          "consumacao",
+          "tentativa",
+          "desistencia_voluntaria",
+          "arrependimento_eficaz",
+          "arrependimento_posterior",
+          "crime_impossivel"
+        ],
+        "elemento_subjetivo": [
+          "dolo_direto_eventual",
+          "culpa_consciente_inconsciente",
+          "preterdolo"
+        ]
+      },
+      "concurso_de_pessoas": [
+        "coautoria_participacao",
+        "autor_imediato_e_mediato",
+        "instigacao_e_induzimento",
+        "dominio_do_fato",
+        "responsabilidade_por_excesso"
+      ],
+      "concurso_de_crimes": [
+        "concurso_material",
+        "concurso_formal_proprio_improprio",
+        "crime_continuado",
+        "consuncao_absorcao",
+        "especialidade",
+        "subsidiariedade"
+      ],
+      "penas": {
+        "tipos": [
+          "privativas_de_liberdade",
+          "restritivas_de_direitos",
+          "multa"
+        ],
+        "dosimetria": [
+          "sistema_trifasico",
+          "circunstancias_judiciais_art_59",
+          "atenuantes_e_agravantes",
+          "causas_de_aumento_e_diminuicao"
+        ],
+        "substituicao_e_sursis": [
+          "substituicao_por_restritivas",
+          "sursis_penal",
+          "regime_inicial_de_cumprimento"
+        ],
+        "medidas_de_seguranca": [
+          "internacao",
+          "tratamento_ambulatorial",
+          "prazo_minimo",
+          "periculosidade"
+        ]
+      },
+      "extincao_da_punibilidade": [
+        "morte_do_agente",
+        "anistia_graca_indulto",
+        "prescricao_da_pretensao_punitiva",
+        "prescricao_da_pretensao_executoria",
+        "decadencia",
+        "perempcao",
+        "renuncia_e_perdao_do_ofendido"
+      ]
+    },
+    "parte_especial": {
+      "crimes_contra_a_pessoa": {
+        "vida": [
+          "homicidio_simples",
+          "homicidio_qualificado",
+          "homicidio_privilegiado",
+          "feminicidio",
+          "infanticidio",
+          "aborto_provocado_pela_gestante",
+          "aborto_provocado_por_terceiro",
+          "aborto_sentimental_e_terapeutico",
+          "crime_de_inducao_ao_aborto"
+        ],
+        "integridade_corporal": [
+          "lesao_corporal_leve",
+          "lesao_corporal_grave",
+          "lesao_corporal_gravissima",
+          "lesao_culposa",
+          "lesao_domestica_violencia_maria_da_penha",
+          "lesao_seguida_de_morte"
+        ],
+        "honra": [
+          "calunia",
+          "difamacao",
+          "injuria",
+          "injuria_racial_lei_14532_2023",
+          "injuria_coletiva"
+        ],
+        "liberdade": [
+          "ameaca",
+          "constrangimento_ilegal",
+          "sequestro_carcere_privado",
+          "reducao_a_condicao_analogica_a_escravo",
+          "violacao_de_domicilio"
+        ],
+        "dignidade_sexual": [
+          "estupro",
+          "estupro_de_vulneravel",
+          "violacao_sexual_mediante_fraude",
+          "ato_obsceno",
+          "importunacao_sexual",
+          "assédio_sexual",
+          "mediação_para_exploração_sexual",
+          "favorecimento_prostituicao"
+        ]
+      },
+      "crimes_contra_o_patrimonio": [
+        "furto_simples",
+        "furto_qualificado",
+        "roubo_simples",
+        "roubo_majorado",
+        "extorsao",
+        "sequestro_relampago",
+        "estelionato",
+        "apropiacao_indebita",
+        "receptacao",
+        "dano_simples_e_qualificado",
+        "usurpacao",
+        "esbulho_possessório"
+      ],
+      "crimes_contra_a_fe_publica": [
+        "moeda_falsa",
+        "falsificacao_documento_publico",
+        "falsificacao_documento_particular",
+        "uso_de_documento_falso",
+        "falsidade_ideologica",
+        "falsificacao_de_selo_ou_sinal_publico"
+      ],
+      "crimes_contra_a_administracao_publica": [
+        "peculato",
+        "peculato_furto",
+        "peculato_desvio",
+        "concussao",
+        "corrupcao_passiva",
+        "corrupcao_ativa",
+        "prevaricacao",
+        "resistencia",
+        "desobediencia",
+        "desacato",
+        "advocacia_administrativa",
+        "contrabando_e_descaminho"
+      ],
+      "crimes_contra_a_paz_publica": [
+        "associacao_criminosa",
+        "organizacao_criminosa_lei_12850_2013",
+        "apologia_de_crime_ou_criminoso",
+        "incitacao_ao_crime"
+      ],
+      "crimes_em_legislacoes_extravagantes": {
+        "lei_de_drogas": [
+          "trafico_de_drogas",
+          "associacao_para_o_trafico",
+          "financiamento_do_trafico",
+          "porte_para_consumo_pessoal",
+          "tráfico_privilegiado_art_33_par_4"
+        ],
+        "estatuto_do_desarmamento": [
+          "porte_ilegal_de_arma",
+          "posse_ilegal_de_arma",
+          "comercio_ilegal_de_arma",
+          "trafico_internacional_de_armas"
+        ],
+        "lei_de_crimes_ambientais": [
+          "poluicao",
+          "crime_contra_fauna",
+          "crime_contra_flora",
+          "crime_contra_patrimonio_cultural"
+        ],
+        "crimes_de_transito": [
+          "homicidio_culposo_no_transito",
+          "lesao_culposa_no_transito",
+          "embriaguez_ao_volante",
+          "fuga_do_local_de_acidente"
+        ],
+        "lei_de_licitacoes": [
+          "fraude_a_licitacao",
+          "contratacao_direta_irregular",
+          "sobrepreço_superfaturamento"
+        ]
+      }
+    }
+  },
+  "direito_imobiliario": {
+    "propriedade_posse_e_direitos_reais": {
+      "propriedade": [
+        "aquisicao_derivada_compra_e_venda_doacao_sucessao",
+        "aquisicao_originaria_usucapiao",
+        "perda_da_propriedade",
+        "funcao_social_da_propriedade",
+        "desapropriacao_utilidade_interesse_social"
+      ],
+      "posse": [
+        "posse_nova_e_velha",
+        "posse_de_boafe_e_mafe",
+        "interditos_possessorios_manutencao_reintegracao_interdito_proibitorio",
+        "esbulho_turbacao_ameaça",
+        "acessio_possessionis"
+      ],
+      "direitos_reais_limitados": [
+        "servidao_passagem_luz_agua",
+        "superficie_urbana_rural",
+        "direito_real_de_laje",
+        "usufruto_uso_habitacao",
+        "enfiteuse_enfitêutico_resíduos"
+      ]
+    },
+    "registro_de_imoveis_e_titulacao": {
+      "principios_registrais": [
+        "especialidade_objetiva_e_subjetiva",
+        "continuidade",
+        "prioridade_prenotacao",
+        "legalidade",
+        "fé_publica_registral",
+        "concentracao_na_matricula"
+      ],
+      "atos_registrais_comuns": [
+        "abertura_de_matricula",
+        "registro_de_transferencia",
+        "averbacao_de_construcao_e_habite_se",
+        "averbacao_de_obras_reformas_e_demolicao",
+        "averbacao_de_estado_civil_e_convenção_antenuptial",
+        "averbacao_de_penhora_hipoteca_e_usufruto",
+        "indisponibilidade",
+        "cancelamento_e_retificacao"
+      ],
+      "retificacao_registral": [
+        "art_213_lrp_planta_e_memorial",
+        "retificacao_consensual",
+        "retificacao_contenciosa",
+        "notificacao_de_confinantes"
+      ],
+      "usucapiao_extrajudicial": [
+        "ata_notarial_posse_mansa_e_pacifica",
+        "planta_memorial_anuencia_confinantes",
+        "certidoes_negativas",
+        "justo_titulo_e_boafe_nao_obrigatorios",
+        "impugnacao_e_remessa_ao_judiciario"
+      ],
+      "adjudicacao_compulsoria": [
+        "promessa_de_compra_e_venda_registrada",
+        "recusa_injustificada_do_alienante",
+        "judicial_e_extrajudicial",
+        "sentenca_mandamental_titulo_registravel"
+      ]
+    },
+    "contratos_imobiliarios": {
+      "promessa_compra_e_venda": [
+        "sinal_arras",
+        "arrependimento_e_perdas_e_danos",
+        "clausula_penal",
+        "adjudicacao_compulsoria",
+        "resolucao_por_inadimplemento"
+      ],
+      "compra_e_venda_definitiva": [
+        "escritura_publica",
+        "registro_na_matricula_efetiva_a_translacao",
+        "eviccao_imobiliaria",
+        "impostos_itbi_itcmd"
+      ],
+      "permuta_e_dacao_em_pagamento": [
+        "permuta_com_torno",
+        "permuta_por_area_construida",
+        "tributacao_e_efeitos_registrais"
+      ],
+      "corretagem": [
+        "deveres_do_corretor",
+        "comissao_condicao_devida",
+        "taxa_sati_abusividade"
+      ],
+      "garantias_reais": [
+        "hipoteca",
+        "alienacao_fiduciaria_imobiliaria_lei_9514_97",
+        "anticrese",
+        "penhor_atipico_de_direitos"
+      ]
+    },
+    "financiamento_e_alienacao_fiduciaria": {
+      "sistemas_de_financiamento": [
+        "sfh",
+        "sfi",
+        "cédula_de_credito_imobiliario",
+        "taxas_e seguros_mip_dfi"
+      ],
+      "alienacao_fiduciaria_lei_9514_97": [
+        "contrato_e_registro_na_matricula",
+        "mora_e_constituicao_por_interpelacao",
+        "intimacao_fiduciante",
+        "consolidacao_da_propriedade_em_nome_do_fiduciario",
+        "leilao_extrajudicial_1a_e_2a_praca",
+        "saldo_residual_e_restituicao",
+        "purgação_da_mora_limites",
+        "nulidades_formais_no_procedimento"
+      ],
+      "execucao_e_leiloes": [
+        "leilao_judicial_x_extrajudicial",
+        "posse_e_imissao_do_arrematante",
+        "sub-rogacao_nas_condominio_e_iptu",
+        "tutela_de_urgencia_para_suspender_leilao"
+      ]
+    },
+    "incorporacao_e_construcao": {
+      "incorporacao_imobiliaria_lei_4591_64": [
+        "registro_do_memorial_de_incorporacao",
+        "patrimonio_de_afetacao",
+        "publicidade_e_prospeccao",
+        "garantias_ao_adquirente"
+      ],
+      "condominio_edilicio": [
+        "convencao_e_regimento_interno",
+        "quoruns_para_obras_necessarias_uteis_voluptuarias",
+        "assembleias_convocacao_quorum_e_impugnacao",
+        "fracao_ideal_vagas_de_garagem_autonomas_e_acessorias",
+        "animais_domesticos_e_uso_anormal_da_unidade",
+        "locacao_por_temporada_airbnb_regras_e_quorum",
+        "cobranca_de_cotas_condominiais_multa_e_juros",
+        "penhora_da_unidade_por_divida_de_cotas",
+        "responsabilidade_por_vicios_em_areas_comuns"
+      ],
+      "loteamento_e_parcelamento_do_solo": [
+        "lei_6766_79",
+        "aprovacao_municipal_e_registro",
+        "obras_de_infraestrutura",
+        "deveres_do_loteador",
+        "resolucao_por_atraso_de_obras"
+      ],
+      "multipropriedade_lei_13777_18": [
+        "instituicao_e_convencao",
+        "uso_exclusivo_por_periodos",
+        "administracao_e_rateio",
+        "alienacao_e_garantias"
+      ],
+      "shopping_center_e_built_to_suit": [
+        "clausulas_atipicas",
+        "aluguel_percentual_e_fundo_de_promocao",
+        "reajuste_e_renovacao",
+        "equilibrio_economico_financeiro"
+      ]
+    },
+    "vicios_construtivos_atraso_e_distrato": {
+      "vicios_construtivos": [
+        "solidez_e_seguranca_nbr_15575",
+        "prazo_de_garantia_e_prescricao",
+        "responsabilidade_construtora_incorporadora",
+        "seguro_habitacional_sfh_cobertura_de_vicios",
+        "pericia_engenharia_prova_fotografica_e_videos"
+      ],
+      "atraso_de_obra": [
+        "clausula_de_tolerancia",
+        "lucros_cessantes_e_aluguel_social",
+        "astreintes",
+        "forca_maior_caso_fortuito_limites"
+      ],
+      "distrato_lei_13786_18": [
+        "percentuais_de_retenção",
+        "prazo_de_restituicao",
+        "correcao_monetaria_e_juros",
+        "culpa_do_comprador_vs_culpa_do_vendedor",
+        "clausula_penal_inversa"
+      ]
+    },
+    "locacao_urbana_lei_8245_91": {
+      "contratacao_e_garantias": [
+        "locacao_residencial_e_nao_residencial",
+        "caucao_fianca_seguro_fianca_titulo_de_capitalizacao",
+        "fiador_bem_de_familia_penhorabilidade_excecao",
+        "benfeitorias_necessarias_uteis_voluptuarias"
+      ],
+      "execucao_e_despejo": [
+        "acao_de_despejo_falta_de_pagamento",
+        "despejo_por_denuncia_vazia",
+        "liminar_art_59",
+        "consignacao_em_pagamento",
+        "reintegracao_de_posse_x_despejo"
+      ],
+      "revisional_e_renovatoria": [
+        "acao_revisional_aluguel_valor_de_mercado",
+        "acao_renovatoria_prazo_e_requisitos",
+        "shopping_center_especificidades"
+      ],
+      "direito_de_preferencia": [
+        "alienacao_do_imovel",
+        "prazo_e_formalidades",
+        "perda_da_preferencia_e_perdas_e_danos"
+      ]
+    },
+    "regularizacao_fundiaria_e_rural": {
+      "reurb_lei_13465_17": [
+        "reurb_s_interesse_social",
+        "reurb_e_interesse_especifico",
+        "legitimados_procedimento",
+        "projeto_urbanistico_memorial_descritivo",
+        "matriculas_individuais_pos_reurb"
+      ],
+      "imoveis_rurais": [
+        "georreferenciamento_incra",
+        "ccir_itr",
+        "car_reserva_legal_e_app",
+        "servidoes_ambientais",
+        "retificacao_de_area_rural"
+      ],
+      "regularizacao_cartorial": [
+        "usucapiao_familiar",
+        "reconhecimento_de_domínio",
+        "dúvida_registral_corregedoria"
+      ]
+    },
+    "responsabilidade_e_litigios_frequentes": {
+      "bem_de_familia": [
+        "impenhorabilidade_regra_geral",
+        "excecao_fianca_locatícia",
+        "outras_excecoes_creditos",
+        "descaracterizacao_por_imovel_de_alto_padrao_ou_imovel_luxo_nao_residencial"
+      ],
+      "condominio_cobranca": [
+        "prova_da_divida_planilha_cotas",
+        "multa_convencional_e_juros",
+        "protesto_e_negativacao",
+        "execucao_titulo_extrajudicial"
+      ],
+      "responsabilidade_por_vizinhança": [
+        "uso_anormal_da_propriedade",
+        "barulho_odor_infiltracoes",
+        "obra_irregular_e_abnt",
+        "pericia_engenharia"
+      ],
+      "contencioso_registral": [
+        "dúvida_registral",
+        "recusa_de_registro_ou_averbacao",
+        "conflito_de_principios_registrais",
+        "suscitacao_ao_judiciario"
+      ]
+    },
+    "tributos_e_encargos_reais": {
+      "iptu": [
+        "sujeito_passivo_proprietario_possuidor_promitente_comprador",
+        "progressividade_e_planta_de_valores",
+        "imunidades_e_isencoes"
+      ],
+      "itbi": [
+        "fato_gerador_promessa_vs_escritura",
+        "base_de_calculo_valor_de_mercado",
+        "imunidade_na_integracao_de_capital_e_holding_imobiliaria_limites"
+      ],
+      "itcmd": [
+        "doacao_e_sucessao",
+        "competencia_estadual",
+        "base_de_calculo_e_isencoes"
+      ],
+      "taxas_e_contribuicoes": [
+        "melhorias",
+        "limpeza_publica",
+        "iluminacao"
+      ]
+    },
+    "checklists_de_prova_por_cenario": {
+      "adjudicacao_compulsoria": [
+        "contrato_promessa_com_provas_de_quitacao",
+        "notificacao_previa_do_vendedor",
+        "certidoes_negativas",
+        "matricula_e_cadeia_dominial"
+      ],
+      "usucapiao_extrajudicial": [
+        "ata_notarial",
+        "planta_memorial_assinados",
+        "certidoes_negativas",
+        "anuencias_confinantes_ou_justificativa",
+        "fotos_e_testemunhas"
+      ],
+      "atraso_de_obra": [
+        "contrato_memorial_e_cronograma",
+        "emails_notificacoes",
+        "fotos_videos_e_relatorios_de_engenharia",
+        "comprovantes_de_aluguel_social",
+        "publicidade_ofertas"
+      ],
+      "vicios_construtivos": [
+        "relatorio_tecnico_nbr_15575",
+        "fotos_e_videos",
+        "ordem_de_servico_e_orcamentos",
+        "apolice_sfh_se_coberta"
+      ],
+      "despejo_por_falta_de_pagamento": [
+        "contrato_de_locacao",
+        "planilha_de_debito_cotas_e_alugueis",
+        "comprovacao_de_mora_notificacao",
+        "fianca_e_bens_do_fiador"
+      ],
+      "leilao_extrajudicial_fiduciario": [
+        "contrato_e_matricula_com_alienacao_fiduciaria",
+        "provas_de_intimacao_regular",
+        "edital_e_ata_de_leilao",
+        "planilha_de_debito",
+        "nulidades_formais"
+      ]
+    }
+  },
+  "direito_das_sucessoes": {
+    "inventario": {},
+    "herdeiros_legitima": {},
+    "testamento": {},
+    "planejamento": {},
+    "litigios": {},
+    "internacional": {},
+    "checklists": {}
+  },
+  "direito_do_trabalho": {
+    "fundamentos_constitucionais": {
+      "direitos_sociais_art7_cf": [
+        "salario_minimo",
+        "irredutibilidade_salarial",
+        "decimo_terceiro",
+        "fgts",
+        "ferias_remuneradas",
+        "adicional_noturno",
+        "adicional_periculosidade",
+        "adicional_insalubridade",
+        "jornada_8h_diarias_44h_semanais",
+        "repouso_semanal_remunerado",
+        "licenca_maternidade",
+        "licenca_paternidade",
+        "protecao_do_trabalho_da_mulher",
+        "protecao_do_trabalho_do_menor",
+        "aviso_previo_proporcional",
+        "seguro_desemprego",
+        "reducoes_por_acordo_coletivo"
+      ],
+      "principios_trabalhistas": [
+        "protecao",
+        "irrenunciabilidade",
+        "continuidade_relacao_emprego",
+        "primazia_da_realidade",
+        "condicao_mais_benf",
+        "norma_mais_favoravel",
+        "inalienabilidade_dos_direitos",
+        "imperatividade_das_normas",
+        "intangibilidade_salarial"
+      ]
+    },
+    "contrato_de_trabalho": {
+      "requisitos_essenciais": [
+        "pessoalidade",
+        "subordinacao",
+        "onerosidade",
+        "nao_eventualidade",
+        "alteridade"
+      ],
+      "tipos": [
+        "prazo_indeterminado",
+        "prazo_determinado",
+        "experiencia",
+        "tempo_parcial",
+        "intermitente",
+        "aprendizagem",
+        "estagio"
+      ],
+      "modalidades_especiais": [
+        "teletrabalho_home_office",
+        "trabalho_remoto_internacional",
+        "contrato_verde_e_amarelo",
+        "trabalho_domestico_lc150",
+        "trabalho_portuario",
+        "trabalho_terceirizado"
+      ],
+      "alteracoes_contratuais": [
+        "jus_variandi",
+        "transferencia_de_local",
+        "reducoes_por_acordo",
+        "alteracao_lesiva_nulidade"
+      ]
+    },
+    "jornada_e_descanso": {
+      "jornada_normal": [
+        "8h_dia_44h_semana",
+        "6h_turnos_ininterruptos",
+        "compensacao_e_banco_de_horas"
+      ],
+      "horas_extras": [
+        "adicional_50_minimo",
+        "compensacao_banco_de_horas",
+        "habitualidade_e_incorporacao"
+      ],
+      "intervalos": [
+        "intrajornada_minimo_1h",
+        "interjornada_minimo_11h",
+        "descanso_semanal_remunerado",
+        "descanso_domingo_mulheres_e_menores"
+      ],
+      "trabalho_noturno": [
+        "jornada_reduzida_52min30s",
+        "adicional_noturno_20%",
+        "prorrogacao_horas_noturnas"
+      ]
+    },
+    "remuneracao_e_salario": {
+      "composicao": [
+        "salario_base",
+        "comissoes",
+        "gorjetas",
+        "gratificacoes",
+        "adicionais",
+        "diarias_viagens"
+      ],
+      "natureza": [
+        "salario_in_natura",
+        "utilidades",
+        "habitualidade_e_incorporacao"
+      ],
+      "protecao_salarial": [
+        "irredutibilidade",
+        "intocabilidade",
+        "salario_incontroverso",
+        "prazo_de_pagamento"
+      ],
+      "decimo_terceiro": [
+        "proporcionalidade",
+        "adicional_integracao"
+      ],
+      "fgts": [
+        "depositos_mensais",
+        "multa_40_porcento_rescisao_sem_justa_causa",
+        "saques_autorizados"
+      ]
+    },
+    "ferias_e_descanso": {
+      "ferias_anuais": [
+        "30_dias",
+        "reducoes_por_faltas",
+        "abono_pecuniario",
+        "concessao_coletiva",
+        "dobro_ferias_nao_concedidas"
+      ],
+      "licencas": [
+        "licenca_maternidade",
+        "licenca_paternidade",
+        "licencas_remuneradas_e_nao_remuneradas"
+      ]
+    },
+    "seguranca_e_saude": {
+      "normas_regulamentadoras": [
+        "epi",
+        "epc",
+        "cipa",
+        "ppra_pgr",
+        "pcms"
+      ],
+      "adicional_insalubridade": [
+        "graus_minimo_medio_maximo",
+        "base_de_calculo",
+        "pericia_obrigatoria"
+      ],
+      "adicional_periculosidade": [
+        "inflamaveis_explosivos",
+        "energia_eletrica",
+        "motociclistas"
+      ],
+      "doencas_e_acidentes": [
+        "nexo_causal",
+        "estabilidade_acidentaria",
+        "comunicacao_cat",
+        "beneficios_previdenciarios_inss"
+      ]
+    },
+    "extincao_contrato": {
+      "hipoteses": [
+        "dispensa_sem_justa_causa",
+        "dispensa_com_justa_causa",
+        "pedido_de_demissao",
+        "rescisao_indireta",
+        "forca_maior",
+        "culpa_reciproca",
+        "falecimento_do_empregado",
+        "aposentadoria"
+      ],
+      "aviso_previo": [
+        "proporcionalidade_tempo_servico",
+        "indenizacao",
+        "dispensa_do_trabalho_no_periodo"
+      ],
+      "verbas_rescisorias": [
+        "saldo_salario",
+        "ferias_vencidas_e_proporcionais",
+        "decimo_terceiro",
+        "fgts_multa",
+        "seguro_desemprego"
+      ],
+      "homologacao": [
+        "prazo_para_pagamento",
+        "quitacao_e_defesas",
+        "assistencia_sindical"
+      ]
+    },
+    "coletivo_sindical": {
+      "liberdade_sindical": [
+        "unicidade",
+        "contribuicao_sindical_facultativa",
+        "contribuicao_associativa",
+        "negociacao_coletiva"
+      ],
+      "convenções_e_acordos_coletivos": [
+        "prevalencia_da_norma_mais_favoravel",
+        "prevalencia_do_negociado_sobre_o_legislado",
+        "clausulas_tipicas_jornada_salario_beneficios",
+        "limites_a_renuncia_de_direitos"
+      ],
+      "greve": [
+        "direito_constitucional",
+        "atividades_essenciais",
+        "abusividade",
+        "intervencao_judicial"
+      ]
+    },
+    "categorias_especiais": {
+      "trabalho_domestico": [
+        "direitos_constitucionais_lc150",
+        "fgts_obrigatorio",
+        "jornada_e_intervalos",
+        "adicional_noturno",
+        "multas_por_descumprimento"
+      ],
+      "trabalho_rural": [
+        "jornada_especial",
+        "condicoes_ambientais",
+        "sazonalidade"
+      ],
+      "aprendizagem": [
+        "contrato_formal",
+        "idade_14_24",
+        "direitos_especificos"
+      ],
+      "estagio": [
+        "lei_11788_2008",
+        "obrigatoriedade_do_termo",
+        "jornada_e_acompanhamento"
+      ]
+    }
+  },
+  "direito_processual_do_trabalho": {
+    "principios": {
+      "especificos": [
+        "proteção",
+        "celeridade",
+        "oralidade",
+        "simplicidade",
+        "concentracao_dos_atos",
+        "informalismo",
+        "prevalencia_da_conciliacao"
+      ],
+      "subsidiariedade": [
+        "aplicacao_do_cpc",
+        "aplicacao_da_lei_dos_juizados",
+        "limites_da_compatibilidade"
+      ]
+    },
+    "justica_do_trabalho": {
+      "organizacao": [
+        "vara_do_trabalho",
+        "tribunal_regional_do_trabalho",
+        "tribunal_superior_do_trabalho",
+        "competencia_originaria_tst_trt"
+      ],
+      "competencia": [
+        "relacoes_de_trabalho_emprego",
+        "servidores_publicos_regime_celetista",
+        "acoes_de_reparacao_por_acidente_de_trabalho",
+        "contribuicoes_previdenciarias",
+        "dano_moral_e_existencial_no_trabalho"
+      ]
+    },
+    "partes_e_procuracao": {
+      "legitimidade": [
+        "empregado",
+        "empregador",
+        "sindicatos",
+        "ministerio_publico_do_trabalho",
+        "terceiros_interessados"
+      ],
+      "jus_postulandi": [
+        "ate_instancia_ordinaria",
+        "restricao_instancias_superiores"
+      ],
+      "procuracao": [
+        "mandato_expressso",
+        "substabelecimento",
+        "poderes_especificos_acordo"
+      ]
+    },
+    "peticoes_e_rito": {
+      "peticao_inicial": [
+        "requisitos_basicos",
+        "brevidade_simplificacao",
+        "pedidos_certos_e_determinados",
+        "liquidacao_previa_obrigatoria",
+        "documentos_essenciais"
+      ],
+      "ritos_processuais": [
+        "rito_sumarissimo_valor_ate_40_salarios",
+        "rito_sumario_adm_fazenda_publica",
+        "rito_ordinario_regra_geral",
+        "procedimentos_especiais_dissidios_coletivos"
+      ]
+    },
+    "citacao_e_notificacao": {
+      "formas": [
+        "correio_registrado",
+        "oficial_de_justica",
+        "edital"
+      ],
+      "nulidades": [
+        "ausencia_de_aviso",
+        "erro_no_endereco",
+        "prejuizo_ao_contraditorio"
+      ]
+    },
+    "audiencias": {
+      "conciliação": [
+        "tentativa_obrigatoria_inicial",
+        "tentativa_na_instrução",
+        "tentativa_na_execução"
+      ],
+      "instrução": [
+        "depoimento_pessoal",
+        "oitiva_de_testemunhas",
+        "prova_documental",
+        "prova_pericial",
+        "ordem_dos_atos"
+      ],
+      "ausencia": [
+        "confissao_ficta_empregado",
+        "revelia_empregador",
+        "efeitos_e_limites"
+      ],
+      "ata": [
+        "resumo_dos_atos",
+        "assinatura_digital",
+        "valor_probatório"
+      ]
+    },
+    "provas": {
+      "documental": [
+        "contrato_de_trabalho",
+        "holerites",
+        "cartao_de_ponto",
+        "atestados_e_laudos_medicos"
+      ],
+      "testemunhal": [
+        "limite_de_testemunhas",
+        "suspeicao_e_impedimento",
+        "contradicao_e_coerencia"
+      ],
+      "pericial": [
+        "pericia_insalubridade",
+        "pericia_periculosidade",
+        "pericia_medica_acidente",
+        "pericia_contabil"
+      ],
+      "confissao": [
+        "confissao_ficta",
+        "confissao_real"
+      ]
+    },
+    "sentenca_e_coisa_julgada": {
+      "sentenca": [
+        "relatorio",
+        "fundamentacao",
+        "dispositivo",
+        "condenacao_em_obrigacoes_de_fazer_e_pagar"
+      ],
+      "coisa_julgada": [
+        "limites_subjetivos",
+        "eficacia_preclusiva",
+        "acao_rescisoria"
+      ]
+    },
+    "recursos": {
+      "embargos_declaracao": [
+        "omissao",
+        "contradicao",
+        "obscuridade",
+        "erro_material"
+      ],
+      "recurso_ordinario": [
+        "prazo_8_dias",
+        "cabimento",
+        "efeito_devolutivo",
+        "deposito_recursal"
+      ],
+      "recurso_de_revista": [
+        "hipoteses",
+        "transcendencia",
+        "sumulas_e_oj_tst"
+      ],
+      "agravos": [
+        "agravo_de_peticao_execucao",
+        "agravo_de_instrumento",
+        "agravo_interno"
+      ],
+      "recursos_excepcionais": [
+        "recurso_extraordinario_stf",
+        "embargos_em_sd_tst",
+        "acao_rescisoria_trabalhista"
+      ]
+    },
+    "execucao_trabalhista": {
+      "iniciacao": [
+        "ex_officio",
+        "pedido_do_interessado",
+        "liquidacao_de_sentenca"
+      ],
+      "garantias_execucao": [
+        "penhora",
+        "arresto",
+        "bloqueio_sisbajud",
+        "renajud",
+        "arisp"
+      ],
+      "meios_defesa_execucao": [
+        "embargos_do_devedor",
+        "impugnacao_a_sentenca_de_liquidacao",
+        "excecao_de_pre_executividade"
+      ],
+      "preferencia_creditoria": [
+        "natureza_alimentar",
+        "preferencia_em_face_de_outros_creditos",
+        "concurso_de_credores"
+      ],
+      "execucao_provisoria": [
+        "garantias",
+        "limites",
+        "levantamento_de_valores"
+      ]
+    },
+    "processo_coletivo_trabalhista": {
+      "acao_civil_publica": [
+        "dano_moral_coletivo",
+        "substituicao_processual_pelo_mpt",
+        "sentenca_com_efeito_erga_omnes"
+      ],
+      "dissidio_coletivo": [
+        "natureza_e_finalidade",
+        "legitimados_sindicatos_mpt",
+        "convenção_coletiva",
+        "sentenca_normativa"
+      ]
+    },
+    "custas_e_honorarios": {
+      "custas": [
+        "percentual_sobre_valor_da_condenacao",
+        "isenções_beneficiario_justica_gratuita",
+        "prazo_para_pagamento"
+      ],
+      "deposito_recursal": [
+        "finalidade",
+        "valores_teto",
+        "dispensa_microempresas"
+      ],
+      "honorarios_sucumbenciais": [
+        "percentuais_minimos_maximos",
+        "beneficiario_justica_gratuita",
+        "compensacao_com_creditos"
+      ],
+      "honorarios_periciais": [
+        "responsabilidade_da_parte_sucumbente",
+        "beneficiario_da_gratuidade"
+      ]
+    }
+  },
+  "direito_tributario": {
+    "fundamentos_e_principios": {
+      "principios_constitucionais": [
+        "legalidade_tributaria",
+        "anterioridade",
+        "anterioridade_nonagesimal",
+        "irretroatividade",
+        "isonomia",
+        "capacidade_contributiva",
+        "vedacao_ao_confisco",
+        "progressividade",
+        "seletividade",
+        "uniformidade_geografica"
+      ],
+      "principios_infraconstitucionais": [
+        "simplicidade",
+        "transparencia_fiscal",
+        "cooperacao_fisco_contribuinte"
+      ]
+    },
+    "competencia_tributaria": {
+      "competencia_da_uniao": [
+        "impostos_federais",
+        "taxas_federais",
+        "contribuicoes_especiais"
+      ],
+      "competencia_dos_estados_df": [
+        "icms",
+        "ipva",
+        "itcmd"
+      ],
+      "competencia_dos_municipios": [
+        "iss",
+        "iptu",
+        "itbi",
+        "taxas_municipais"
+      ],
+      "competencia_residual_da_uniao": [
+        "novos_impostos",
+        "contribuicoes_residuais"
+      ],
+      "limitacoes_ao_poder_de_tributar": [
+        "imunidades",
+        "competencia_exclusiva",
+        "vedacao_de_tributos_confiscatorios"
+      ]
+    },
+    "obrigacao_tributaria": {
+      "conceito": [
+        "vinculo_juridico_fisco_contribuinte",
+        "obrigacao_principal",
+        "obrigacao_acessoria"
+      ],
+      "sujeitos": [
+        "ativo",
+        "passivo_direto",
+        "responsavel_tributario",
+        "solidariedade"
+      ],
+      "fato_gerador": [
+        "hipotese_de_incidencia",
+        "momento_de_ocorrencia",
+        "diferenciacao_entre_incidente_e_excluido"
+      ],
+      "credito_tributario": [
+        "constituicao_pelo_lancamento",
+        "suspensao",
+        "extincao",
+        "exclusao",
+        "garantias_e_privilegios"
+      ]
+    },
+    "lancamento_tributario": {
+      "modalidades": [
+        "de_oficio",
+        "por_declaracao",
+        "por_homologacao"
+      ],
+      "revisao": [
+        "lancamento_supletivo",
+        "revisao_por_erro",
+        "nulidade_e_inexistencia"
+      ]
+    },
+    "responsabilidade_tributaria": {
+      "solidaria": [
+        "varios_sujeitos_passivos",
+        "beneficio_de_ordem"
+      ],
+      "sucessores": [
+        "responsabilidade_por_sucessao_causa_mortis",
+        "responsabilidade_por_sucessao_empresarial",
+        "incorporacao_fusao_cisao"
+      ],
+      "terceiros": [
+        "administradores_socios",
+        "responsabilidade_por_infrazão",
+        "responsabilidade_por_substituicao_tributaria"
+      ],
+      "retencao_na_fonte": [
+        "irrf",
+        "iss_retido",
+        "contribuicoes_sociais_retidas"
+      ]
+    },
+    "prescricao_e_decadencia": {
+      "decadencia": [
+        "prazo_art_150_paragrafo_4",
+        "prazo_art_173_i",
+        "contagem_e_marcos_interruptivos"
+      ],
+      "prescricao": [
+        "prazo_quinquenal",
+        "prescricao_intercorrente",
+        "suspensao_interrupcao",
+        "renuncia_e_renovacao"
+      ]
+    },
+    "especies_tributarias": {
+      "impostos": {
+        "icms": [
+          "hipotese_de_incidencia",
+          "mercadorias_servicos_comunicacao_energia",
+          "substituicao_tributaria",
+          "difal_diferencial_de_aliquotas",
+          "creditos_e_compensacao",
+          "beneficios_fiscais"
+        ],
+        "ipi": [
+          "industrializacao",
+          "seletividade",
+          "creditos_presumidos"
+        ],
+        "ir": [
+          "pessoa_fisica",
+          "pessoa_juridica",
+          "ganho_de_capital",
+          "isencoes_e_deducoes"
+        ],
+        "iss": [
+          "lista_de_servicos",
+          "local_da_prestacao",
+          "retencao_na_fonte",
+          "planos_de_saude_cartoes_de_credito"
+        ],
+        "iptu": [
+          "fato_gerador_propriedade_urbana",
+          "progressividade_fiscal",
+          "imunidade_templos_entidades"
+        ],
+        "itbi": [
+          "transmissao_inter_vivos",
+          "base_de_calculo",
+          "imunidades"
+        ],
+        "itcmd": [
+          "doacao",
+          "heranca",
+          "competencia_estadual"
+        ],
+        "ipva": [
+          "propriedade_de_veiculo",
+          "responsabilidade_solidaria",
+          "imunidades"
+        ]
+      },
+      "taxas": [
+        "exercicio_do_poder_de_policia",
+        "utilizacao_de_servico_publico_especifico_divisivel",
+        "custas_e_emolumentos"
+      ],
+      "contribuicoes": [
+        "contribuicoes_sociais",
+        "contribuicoes_de_intervencao_no_dominio_economico",
+        "contribuicoes_de_categoria_profissional"
+      ],
+      "emprestimos_compulsorios": [
+        "calamidade_publica",
+        "guerra_externa",
+        "investimento_publico_relevante"
+      ],
+      "contribuicao_de_melhoria": [
+        "obra_publica",
+        "valorizacao_imobiliaria",
+        "limite_do_custo_total"
+      ]
+    },
+    "processo_administrativo_fiscal": {
+      "lancamento_e_impugnacao": [
+        "auto_de_infracao",
+        "defesa_do_contribuinte",
+        "julgamento_administrativo"
+      ],
+      "recursos": [
+        "conselhos_de_contribuintes",
+        "carf",
+        "efeito_suspensivo"
+      ]
+    },
+    "execucao_fiscal": {
+      "lei_6830_1980": [
+        "certidao_da_divida_ativa",
+        "presuncao_de_liquidez_e_certeza",
+        "citacao",
+        "penhora",
+        "prazo_para_embargos"
+      ],
+      "embargos_do_devedor": [
+        "cabimento",
+        "efeito_suspensivo",
+        "excesso_de_execucao",
+        "ilegitimidade_passiva"
+      ],
+      "excecao_de_pre_executividade": [
+        "matéria_de_ordem_publica",
+        "ilegitimidade_manifestada",
+        "nulidade_formal"
+      ],
+      "garantias_da_execucao": [
+        "penhora_online_sisbajud",
+        "arresto",
+        "hipoteca_legal",
+        "seguro_garantia_fianca_bancaria"
+      ]
+    },
+    "beneficios_e_incentivos": {
+      "isencao": [
+        "legal",
+        "convencional"
+      ],
+      "anistia": [
+        "perdao_de_creditos_tributarios",
+        "limites"
+      ],
+      "remissao": [
+        "extincao_por_equidade",
+        "hipossuficiencia"
+      ],
+      "transacao_tributaria": [
+        "parcelamento",
+        "negociacao_de_creditos",
+        "programas_de_recuperacao_fiscal_refis"
+      ]
+    }
+  },
+  "direito_do_consumidor": {
+    "fundamentos_e_principios": {
+      "principios_gerais": [
+        "vulnerabilidade_do_consumidor",
+        "boa_fe_objetiva",
+        "transparencia_e_informacao_clara",
+        "equilibrio_contratual",
+        "harmonia_das_relacoes_de_consumo",
+        "reparacao_integral"
+      ],
+      "direitos_basicos": [
+        "proteção_da_vida_saude_e_seguranca",
+        "educacao_e_informacao",
+        "liberdade_de_escolha",
+        "proteção_contra_publicidade_enganosa_e_abusiva",
+        "alteracao_de_clausulas_desproporcionais",
+        "acesso_a_orgaos_administrativos_e_justica",
+        "inversao_do_onus_da_prova"
+      ],
+      "sujeitos_e_relacao_de_consumo": [
+        "consumidor_equiparado_bystander_coletividade",
+        "fornecedor_cadeia_de_fornecimento",
+        "produto_e_servico_definicoes"
+      ]
+    },
+    "responsabilidade_do_fornecedor": {
+      "responsabilidade_objetiva": [
+        "fato_do_produto_defeito_de_seguranca",
+        "fato_do_servico_defeito_de_seguranca",
+        "nexo_causal_e_excludentes",
+        "solidariedade_na_cadeia"
+      ],
+      "vicio_do_produto_servico": [
+        "vicio_de_qualidade",
+        "vicio_de_quantidade",
+        "prazo_de_cura_sanacao",
+        "substituicao_restituicao_abatimento",
+        "inutilidade_do_produto_ou_servico"
+      ],
+      "garantias": [
+        "garantia_legal_indisponivel",
+        "garantia_contratual_certificado",
+        "assistencia_tecnica_prazo_e_reiteracao_do_vicio",
+        "pecas_de_reposicao"
+      ],
+      "recall_e_seguranca": [
+        "dever_de_informar_risco",
+        "campanha_de_recalls",
+        "autoridades_competentes_registros",
+        "medidas_cautelares_de_cessacao"
+      ]
+    },
+    "praticas_comerciais": {
+      "oferta_publicidade": [
+        "vinculacao_da_oferta",
+        "publicidade_enganosa",
+        "publicidade_abusiva",
+        "marketing_infantil",
+        "comparativa_e_hiperbolica",
+        "orçamento_previo_vinculante"
+      ],
+      "vendas": [
+        "venda_casada",
+        "venda_por_telefone_e_porta_a_porta",
+        "amostra_gratis_e_envio_nao_solicitado",
+        "black_friday_precos_e_estoque",
+        "preco_por_unidade_de_medida",
+        "taxas_ocultas_drip_pricing"
+      ],
+      "cobranca_de_dividas": [
+        "proibicao_de_exposicao_ao_ridiculo",
+        "horarios_e_meios_licitos",
+        "dano_moral_por_cobranca_abusiva",
+        "cessao_de_credito_notificacao_previa"
+      ],
+      "servico_de_atendimento_sac": [
+        "tempo_de_espera_razoavel",
+        "registro_e_protocolo",
+        "gravação_e_integridade_das_chamadas",
+        "acessibilidade"
+      ]
+    },
+    "contratos_e_clausulas": {
+      "contratos_de_adesao": [
+        "interpretacao_pro_consumidor",
+        "destacado_de_clausulas_limitativas",
+        "redacao_clara"
+      ],
+      "clausulas_abusivas": [
+        "renuncia_de_direitos",
+        "transf_responsabilidade_ao_consumidor",
+        "limitação_indenizatória_excessiva",
+        "foro_de_eleicao_que_dificulta_defesa",
+        "alteracao_unilateral_lesiva",
+        "indexadores_opacos_e_surpresas"
+      ],
+      "arbitragem_e_eleicao_de_forum": [
+        "arbitragem_so_valida_se_aceitacao_especial",
+        "foro_do_domicilio_do_consumidor",
+        "nulos_em_hipoteses_de_hipervulnerabilidade"
+      ],
+      "renovacao_e_fidelizacao": [
+        "renovacao_automatica_transparencia",
+        "multas_de_fidelidade_proporcionalidade",
+        "downgrade_e_migracao_sem_onus_oculto"
+      ]
+    },
+    "comercio_eletronico_e_entregas": {
+      "informacao_pre_contratual": [
+        "identificacao_do_fornecedor",
+        "caracteristicas_essenciais",
+        "preco_com_desmembramento_de_custos",
+        "prazo_de_entrega_estimado"
+      ],
+      "direito_de_arrependimento": [
+        "prazo_minimo_sete_dias",
+        "logistica_reversa",
+        "estorno_integral_sem_custo_ao_consumidor"
+      ],
+      "marketplaces_e_intermediacao": [
+        "responsabilidade_solidaria_em_casos_de_risco_ou_informacao_defeituosa",
+        "dever_de_seguranca_e_moderação",
+        "política_de_estorno_e_chargeback"
+      ],
+      "problemas_de_entrega": [
+        "produto_nao_entregue",
+        "atraso_excessivo",
+        "produto_em_desacordo",
+        "produto_avariado_transporte",
+        "no_show_e_extravio",
+        "provas_prints_rastreio_aviso_de_postagem"
+      ],
+      "pagamentos_online": [
+        "chargeback_cartao",
+        "pix_indevido_fraude",
+        "boletos_falsos",
+        "gateways_e_bancos_responsabilidade_concorrente"
+      ]
+    },
+    "servicos_financeiros_bancarios": {
+      "contas_cartoes_e_credito": [
+        "cartao_n_enviado_e_cobranca",
+        "anuidade_e_isencao_publicidade",
+        "aumento_unilateral_de_limite",
+        "tarifas_nao_contratadas",
+        "encargos_e_juros_abusivos",
+        "anatocismo_e_capitalizacao_opaca"
+      ],
+      "fraudes_e_seguranca": [
+        "phishing_whatsapp_sim_swap",
+        "transacoes_nao_reconhecidas",
+        "pix_chaves_e_estelionato",
+        "dever_de_seguranca_bancaria",
+        "responsabilidade_por_falha_do_sistema"
+      ],
+      "renegociacao_e_superendividamento": [
+        "diagnostico_de_superendividamento",
+        "plano_de_pagamento",
+        "vedacao_de_assedio_e_praticas_predatorias",
+        "educacao_financeira",
+        "priorizacao_de_itens_essenciais"
+      ],
+      "seguros_e_sinistros": [
+        "dever_de_informar_coberturas_e_exclusoes",
+        "negativa_indev_de_cobertura",
+        "prazo_para_liquidacao",
+        "seguro_cartao_e_seguro_embutido_venda_casada"
+      ]
+    },
+    "saude_e_planos": {
+      "planos_de_saude": [
+        "rede_credenciada_e_referencia",
+        "rol_de_procedimentos_e_cobertura_minima",
+        "urgencia_e_emergencia",
+        "reembolso_e_coparticipacao",
+        "reajustes_anuais_e_por_faixa_etaria",
+        "carencias_e_portabilidade",
+        "negativa_indev_de_cobertura",
+        "home_care_e_terapias_continuadas"
+      ],
+      "servicos_de_saude_privados": [
+        "cirurgias_e_prazos",
+        "orçamento_previo",
+        "materiais_especificos_e_transparencia_de_precos"
+      ]
+    },
+    "transportes_e_viagens": {
+      "aereo": [
+        "cancelamento_e_reembolso",
+        "remarcacao_sem_multa_excessiva",
+        "extravio_violacao_de_bagagem",
+        "overbooking_e_negativa_de_embarque",
+        "assistencia_material_atraso_conexao",
+        "dano_moral_por_perda_de_evento"
+      ],
+      "rodoviario_e_fretamento": [
+        "atraso_e_cancelamento",
+        "bagagem_extravio",
+        "poltronas_acessibilidade"
+      ],
+      "turismo_e_hospedagem": [
+        "pacotes_combinados_responsabilidade_solidaria",
+        "no_show_e_politicas_de_cancelamento",
+        "taxas_resort_fee_ocultas"
+      ]
+    },
+    "telecom_energia_agua_gas": {
+      "telecom": [
+        "qualidade_de_sinal_e_velocidade_minima",
+        "franquia_de_dados_e_reducao_de_velocidade",
+        "cobrança_de_servicos_nao_contratados_valor_adicionado",
+        "portabilidade_e_fidelidade",
+        "bloqueio_por_inadimplemento_limites"
+      ],
+      "energia": [
+        "corte_por_inadimplemento_requisitos",
+        "fatura_com_consumo_inesperado",
+        "danos_por_oscilacao_ou_queda_de_energia",
+        "ligacao_nova_e_prazo",
+        "tarifas_e_bandeiras"
+      ],
+      "agua_e_esgoto": [
+        "continuidade_do_servico",
+        "multas_e_taxas_irregulares",
+        "vicio_de_medicao_hidrômetro",
+        "vazamentos_na_via_publica_responsabilidade"
+      ],
+      "gas": [
+        "seguranca_em_instalacao",
+        "interrupcao_e_religacao",
+        "tarifas"
+      ]
+    },
+    "protecao_de_dados_e_privacidade": {
+      "dados_pessoais_na_relacao_de_consumo": [
+        "coleta_e_base_legal",
+        "finalidade_minimizacao_e_necessidade",
+        "compartilhamento_com_terceiros",
+        "direitos_do_titular_acesso_correção_exclusao",
+        "violacao_incidente_de_seguranca_notificacao"
+      ],
+      "marketing_e_telemarketing": [
+        "optin_optout",
+        "lista_de_nao_perturbe",
+        "assédio_comercial"
+      ]
+    },
+    "protecao_do_credito": {
+      "cadastros_negativos": [
+        "notificacao_previa_obrigatoria",
+        "exclusao_apos_quitacao",
+        "prazo_maximo_de_manuntecao",
+        "dano_moral_por_negativacao_indev",
+        "responsabilidade_por_debito_inexistente_ou_fraude"
+      ],
+      "score_de_credito": [
+        "transparencia_e_criterios",
+        "correcao_de_dados",
+        "consentimento_e_interesse_legitimo"
+      ],
+      "cadastros_positivos": [
+        "histórico_de_pagamento",
+        "beneficios_e_riscos",
+        "revogacao"
+      ]
+    },
+    "processual_consumidor": {
+      "provas_e_onus": [
+        "inversao_do_onus_da_prova_por_hipossuficiencia_ou_verossimilhanca",
+        "cadeia_de_custodia_digital_prints_logs",
+        "pericia_tecnica_produtos_servicos",
+        "gravações_sac_e_protocolos"
+      ],
+      "tutelas_de_urgencia_e_inibitorias": [
+        "suspensao_de_cobranca_e_inscricao",
+        "obrigacao_de_fazer_e_nao_fazer",
+        "entrega_imediata_substituicao_do_produto",
+        "restabelecimento_de_servico_essencial"
+      ],
+      "acoes_individuais_e_coletivas": [
+        "juizados_especiais_civeis",
+        "acao_civil_publica",
+        "substituicao_processual_por_associacoes_e_mp",
+        "coisa_julgada_coletiva"
+      ],
+      "danos_reparacao": [
+        "danos_materiais",
+        "danos_morais",
+        "lucros_cessantes",
+        "dano_moral_coletivo"
+      ],
+      "acordos_e_autocomposicao": [
+        "plataformas_de_conciliacao_consumidor_gov",
+        "procon_mediacao",
+        "tac_com_orgaos_de_defesa"
+      ]
+    },
+    "checklists_de_prova_por_cenario": {
+      "compra_online_nao_entregue": [
+        "print_com_url_data_hora",
+        "confirmacao_de_pedido_e_pagamento",
+        "codigo_de_rastreio_ou_manifesto",
+        "tentativas_de_solucao_sac_procon",
+        "prazo_prometido_e_estouro"
+      ],
+      "produto_defeituoso_segurança": [
+        "nota_fiscal",
+        "laudo_e_fotos_do_defeito",
+        "relato_de_risco_ou_acidente",
+        "ordem_de_servico_da_assistencia",
+        "registro_de_recall_se_houver"
+      ],
+      "negativacao_indev": [
+        "comprovantes_de_quitacao",
+        "print_do_cadastro_e_notificacao_previa",
+        "contestacao_ao_creditor",
+        "prova_de_fraude_b_o_se_houver"
+      ],
+      "cartao_transacao_nao_reconhecida": [
+        "fatura_e_extrato",
+        "registro_de_impugnacao_no_banco",
+        "boletim_de_ocorrencia",
+        "logs_de_localizacao_e_dispositivo"
+      ],
+      "plano_de_saude_negativa": [
+        "pedido_medico_e_laudos",
+        "negativa_formal_motivos",
+        "urgencia_emergencia_comprovada",
+        "orçamentos_e_prazos",
+        "precedentes_ou_normas_setoriais"
+      ],
+      "telecom_cobranca_indev": [
+        "contrato_plano_e_oferta",
+        "contas_detalhadas",
+        "protocolos_de_atendimento",
+        "medicoes_de_velocidade"
+      ],
+      "energia_dano_em_eletrodomestico": [
+        "comprovante_de_oscilacao_queda",
+        "laudo_tecnico_do_aparelho",
+        "protocolo_na_concessionaria",
+        "orcamento_de_conserto_substituicao"
+      ]
+    }
+  },
+  "direito_administrativo": {
+    "principios_e_fontes": {
+      "principios_constitucionais": [
+        "legalidade",
+        "impessoalidade",
+        "moralidade",
+        "publicidade",
+        "eficiencia",
+        "supremacia_do_interesse_publico",
+        "indisponibilidade_do_interesse_publico",
+        "proporcionalidade_razoabilidade",
+        "motivacao",
+        "seguranca_juridica_confiança_legitima",
+        "autotutela",
+        "continuidade_do_servico_publico"
+      ],
+      "fontes": [
+        "constitucionais",
+        "leis_ordinarias_e_complementares",
+        "decretos_regulamentos",
+        "jurisprudencia",
+        "costumes_e_principios_gerais",
+        "contratos_e_atos_normativos_internos"
+      ]
+    },
+    "organizacao_administrativa": {
+      "entidades": [
+        "administracao_direta",
+        "autarquias",
+        "fundacoes_publicas",
+        "empresas_publicas",
+        "sociedades_de_economia_mista",
+        "consorcios_publicos"
+      ],
+      "descentralizacao_e_desconcentracao": [
+        "outorga",
+        "delegacao",
+        "agencias_executivas",
+        "orgaos_e_competencias"
+      ],
+      "agencias_reguladoras": [
+        "natureza_juridica",
+        "autonomia",
+        "poder_normativo_sancionador",
+        "contrato_de_gestao",
+        "controle_judicial"
+      ]
+    },
+    "atos_administrativos": {
+      "conceito_elementos": [
+        "competencia",
+        "finalidade",
+        "forma",
+        "motivo",
+        "objeto"
+      ],
+      "atributos": [
+        "presuncao_de_legalidade_e_veracidade",
+        "imperatividade",
+        "autoexecutoriedade",
+        "tipicidade"
+      ],
+      "classificacao": [
+        "vinculados_e_discricionarios",
+        "gerais_e_individuais",
+        "simples_complexos_e_compostos"
+      ],
+      "valide_e_invalidade": [
+        "nulidade_e_anulabilidade",
+        "convalidacao",
+        "revogacao_por_oportunidade_e_conveniencia",
+        "cassacao_e_conversao"
+      ],
+      "controle_e_motivacao": [
+        "motivacao_explicita",
+        "teoria_dos_motivos_determinantes",
+        "desvio_de_finalidade",
+        "excesso_de_poder"
+      ]
+    },
+    "poderes_administrativos": {
+      "poder_hierarquico": [
+        "ordenacao_e_fiscalizacao",
+        "delegacao_e_avocacao"
+      ],
+      "poder_disciplinar": [
+        "sanção_a_servidores_e_particulares",
+        "pad_e_devido_processo"
+      ],
+      "poder_regulamentar": [
+        "decretos_autonomos_e_de_execucao",
+        "instrucoes_normativas"
+      ],
+      "poder_de_policia": [
+        "autoexecutoriedade",
+        "coercibilidade",
+        "ciclo_de_policia_ordine",
+        "limites_constitucionais",
+        "responsabilidade_por_excesso"
+      ]
+    },
+    "agentes_publicos_e_servidores": {
+      "categorias": [
+        "agentes_politicos",
+        "servidores_estatutarios",
+        "empregados_publicos_celetistas",
+        "temporarios",
+        "delegatarios"
+      ],
+      "ingresso_e_concurso_publico": [
+        "edital_e_vinculacao",
+        "direito_a_nomeacao_aprovado_dentro_das_vagas",
+        "pretericao_e_candidatos_reservas",
+        "cotase_inclusao",
+        "exames_psicologicos_e_testes_fisicos"
+      ],
+      "regime_juridico": [
+        "estabilidade",
+        "estagio_probatorio",
+        "acumulacao_de_cargos",
+        "ferias_licencas_adicionalidades",
+        "remuneracao_subsidio_teto"
+      ],
+      "responsabilidade_dos_agentes": [
+        "civil",
+        "administrativa",
+        "penal"
+      ]
+    },
+    "processo_administrativo_disciplinar_PAD": {
+      "principios_e_garantias": [
+        "contraditorio_e_ampla_defesa",
+        "devido_processo_legal",
+        "motivacao_da_decisao",
+        "proporcionalidade_da_sancao"
+      ],
+      "fase_preliminar": [
+        "sindicancia",
+        "instauracao_por_portaria",
+        "afastamento_preventivo"
+      ],
+      "instrucao": [
+        "citacao_e_defesa_previa",
+        "producao_de_provas",
+        "relatorio_da_comissao"
+      ],
+      "julgamento_e_recursos": [
+        "autoridade_competente",
+        "reconsideracao_e_recursos_hierarquicos",
+        "revisao_do_pad"
+      ],
+      "sancoes": [
+        "advertencia",
+        "suspensao",
+        "demissao",
+        "cassacao_de_aposentadoria",
+        "destituicao_de_cargo_em_comissao"
+      ]
+    },
+    "servicos_publicos": {
+      "conceito_e_principios": [
+        "continuidade",
+        "generalidade",
+        "modicidade_tarifaria",
+        "eficiencia",
+        "transparencia"
+      ],
+      "formas_de_prestacao": [
+        "centralizada",
+        "delegada_concessao_permissao_autorizacao",
+        "parcerias_publico_privadas_ppp"
+      ],
+      "regulacao_e_fiscalizacao": [
+        "contratos_e_metas",
+        "agencias_reguladoras",
+        "ouvidorias_e_participacao_social"
+      ],
+      "tarifas_e_precos_publicos": [
+        "natureza_juridica",
+        "reajuste_e_revisao",
+        "equilibrio_economico_financeiro"
+      ]
+    },
+    "licitacoes_e_contratos": {
+      "lei_14133_2021_estrutura": [
+        "planejamento_pnae_estudos_tecnicos",
+        "matriz_de_risco",
+        "instrumentos_convocatorios",
+        "modos_de_disputa_aberto_fechado",
+        "criterios_de_julgamento_menor_preco_tecnica_e_preco_maior_desconto",
+        "fase_recursal_unica"
+      ],
+      "modalidades_e_procedimentos": [
+        "concorrencia",
+        "concurso",
+        "leilao",
+        "pregao_para_bens_e_servicos_comuns",
+        "dialogo_competitivo"
+      ],
+      "contratacao_direta": [
+        "dispensa_de_licitacao_hipoteses",
+        "inexigibilidade_inviabilidade_de_competicao",
+        "credenciamento_e_chamamento_publico"
+      ],
+      "contratos_administrativos": [
+        "clausulas_exorbitantes",
+        "alteracao_unilateral",
+        "fiscalizacao_e_gestao_contratual",
+        "equilibrio_economico_financeiro_recomposicao",
+        "garantias",
+        "sanções_e_penalidades"
+      ],
+      "impugnacoes_e_controle": [
+        "impugnacao_do_edital",
+        "representacao_ao_tribunal_de_contas",
+        "controle_judicial"
+      ]
+    },
+    "parcerias_setor_privado": {
+      "ppp_e_concessoes": [
+        "concessao_comum",
+        "concessao_patrocinada",
+        "concessao_administrativa",
+        "equilibrio_economico_financeiro",
+        "matriz_de_riscos",
+        "step_in_rights",
+        "encampacao_caducidade",
+        "prorrogacao_e_relicitacao"
+      ],
+      "terceiro_setor": [
+        "os_oscip_ongs",
+        "termos_de_fomento_e_colaboracao",
+        "acordos_de_cooperacao",
+        "prestacao_de_contas_e_sancoes"
+      ],
+      "convenios_e_ajustes": [
+        "instrumentos_entre_entes_publicos",
+        "transferencias_voluntarias",
+        "plano_de_trabalho_e_objetos"
+      ]
+    },
+    "responsabilidade_civil_do_estado": {
+      "regra_geral": [
+        "responsabilidade_objetiva_teoria_do_risco_administrativo",
+        "omissao_estatal_e_responsabilidade_subjetiva",
+        "fato_de_terceiro_e_caso_fortuito",
+        "regresso_contra_agente_com_dolo_ou_culpa"
+      ],
+      "danos_e_reparacao": [
+        "dano_material_e_moral",
+        "lucros_cessantes",
+        "pessoas_privadas_em_estabelecimentos_penais",
+        "acidentes_em_servicos_publicos",
+        "saude_e_medicamentos"
+      ],
+      "responsabilidade_por_licenciamento_e_obra_publica": [
+        "desapropriacao_indireta",
+        "ocupacao_temporaria",
+        "restricao_de_acesso_e_lucro_cessante"
+      ]
+    },
+    "intervencao_na_propriedade_e_bens_publicos": {
+      "intervencao": [
+        "desapropriacao_por_utilidade_publica",
+        "desapropriacao_por_interesse_social",
+        "servidao_administrativa",
+        "requisicao_administrativa",
+        "tombamento",
+        "limitações_administrativas"
+      ],
+      "bens_publicos": [
+        "classificacao_de_uso_comum_especial_dominicais",
+        "afectacao_e_desafectacao",
+        "concessao_de_direito_real_de_uso",
+        "permicao_de_uso_autorizacao_de_uso",
+        "alienacao_e_doacao_com_encargo"
+      ]
+    },
+    "processo_administrativo_lei_9784_99": {
+      "principios": [
+        "oficialidade",
+        "informalismo_em_favor_do_administrado",
+        "verdade_material",
+        "motivacao",
+        "seguranca_juridica_confiança"
+      ],
+      "faseamento": [
+        "iniciacao_de_oficio_ou_a_pedido",
+        "instrução_probatória",
+        "decisao",
+        "recursos_e_revisao",
+        "prazo_razoavel_e_preclusao_adm"
+      ],
+      "participacao_e_transparencia": [
+        "vista_e_copia_dos_autos",
+        "intimacoes",
+        "audiencias_e_consultas_publicas"
+      ]
+    },
+    "improbidade_administrativa": {
+      "lei_8429_com_redacao_atual": [
+        "atos_tipificados_enriquecimento_ilicito",
+        "atos_que_causam_prejuizo_ao_erario",
+        "atos_contra_principios_da_administracao",
+        "exigencia_de_dolo_para_alguns_tipos",
+        "culpa_grave_em_hipoteses_restritas"
+      ],
+      "sancoes_e_efeitos": [
+        "perda_dos_bens",
+        "ressarcimento_ao_erario",
+        "suspensao_dos_direitos_politicos",
+        "multa_civil",
+        "proibicao_de_contratar_e_receber_beneficios",
+        "dosimetria_e_proporcionalidade"
+      ],
+      "processual": [
+        "legitimidade_ativa_mp_e_pessoa_juridica_interessada",
+        "acordo_de_nao_persecucao_civel_compatibilidades",
+        "prescricao_e_marcos_interrupcao",
+        "cooperacao_premiada_civel"
+      ]
+    },
+    "controle_da_administracao_publica": {
+      "controle_interno_e_externo": [
+        "orgaos_de_controle_interno",
+        "tribunais_de_contas_competencias",
+        "controle_legislativo",
+        "controle_judicial_ato_vinculado_e_discricionario"
+      ],
+      "acoes_constitucionais": [
+        "mandado_de_seguranca_individual_coletivo",
+        "mandado_de_injuncao",
+        "acao_popular",
+        "acao_civil_publica",
+        "habeas_data"
+      ],
+      "lei_de_acesso_a_informacao_LAI": [
+        "transparencia_ativa_e_passiva",
+        "sigilos_e_protecao_de_dados",
+        "prazo_e_recurso"
+      ]
+    },
+    "temas_transversais_frequentes": {
+      "concurso_publico": [
+        "direito_a_nomeacao_dentro_das_vagas",
+        "cadastro_de_reserva",
+        "cotas_e_criterios_objetivos",
+        "tratamento_igualitario_e_pretericao",
+        "exames_psicofisicos_criterios_e_publicidade"
+      ],
+      "saude_e_medicamentos": [
+        "fornecimento_de_medicamentos_nao_padronizados",
+        "reserva_do_possivel_vs_minimo_existencial",
+        "solidariedade_entre_entes_federados"
+      ],
+      "educacao_e_politicas_publicas": [
+        "creches_e_vagas",
+        "acesso_e_permanencia",
+        "transporte_escolar"
+      ],
+      "trânsito_e_poder_de_policia": [
+        "autuacoes_e_devido_processo",
+        "remocao_e_apreensao",
+        "bloqueio_de_circulacao_e_interesse_publico"
+      ]
+    }
+  },
+  "direito_empresarial": {
+    "teoria_geral_da_empresa": {
+      "conceito_de_empresa": [
+        "atividade_economica_organizada",
+        "empresario_individual",
+        "microempreendedor_individual_mei",
+        "profissoes_intelectuais_nao_empresariais"
+      ],
+      "estabelecimento": [
+        "fundo_de_comercio",
+        "aviamento",
+        "trespasse",
+        "contrato_de_exploracao"
+      ],
+      "nome_empresarial": [
+        "firma",
+        "denominacao",
+        "protecao_e_registro",
+        "colisao_com_marca"
+      ],
+      "capacidade_e_impedimentos": [
+        "empresario_menor_emancipado",
+        "incapacidade_relativa_absoluta",
+        "proibicoes_legais"
+      ]
+    },
+    "registro_empresarial": {
+      "junta_comercial": [
+        "competencias",
+        "atos_registraveis",
+        "certidoes"
+      ],
+      "escrituracao": [
+        "livros_obrigatorios",
+        "balanco_patrimonial",
+        "livro_diario",
+        "autenticacao_digital"
+      ],
+      "obrigacoes_contabeis": [
+        "principios_contabeis",
+        "escrituracao_regular_irregular",
+        "valor_probatório_dos_livros"
+      ]
+    },
+    "sociedades": {
+      "sociedade_em_comum": [
+        "caracteristicas",
+        "responsabilidade_dos_socios",
+        "eficacia_perante_terceiros"
+      ],
+      "sociedade_simples": [
+        "registro",
+        "responsabilidade",
+        "contrato_social"
+      ],
+      "sociedade_limitada": [
+        "contrato_social",
+        "capital_social",
+        "administracao",
+        "responsabilidade_dos_socios",
+        "conselho_fiscal",
+        "quotas_e_cedencia"
+      ],
+      "sociedade_anonima": {
+        "acoes": [
+          "ordinarias_preferenciais",
+          "nominativas_ao_portador",
+          "direitos_e_deveres_dos_acionistas"
+        ],
+        "assembleia_geral": [
+          "ordinaria",
+          "extraordinaria",
+          "competencias"
+        ],
+        "conselho_de_administracao": [
+          "atribuições",
+          "responsabilidade_dos_administradores"
+        ],
+        "diretoria": [
+          "representacao",
+          "competencias"
+        ],
+        "conselho_fiscal": [
+          "funcao_fiscalizadora",
+          "relatorios"
+        ],
+        "debentures_e_bonus_de_subscricao": [
+          "emissao",
+          "direitos_dos_titulares"
+        ]
+      },
+      "sociedade_em_comandita": [
+        "simples",
+        "por_acoes"
+      ],
+      "sociedade_unipessoal_limitada": [
+        "constituição",
+        "responsabilidade_limitada"
+      ],
+      "cooperativas": [
+        "principios",
+        "responsabilidade_dos_cooperados"
+      ],
+      "transformacao_fusao_cisao_incorporacao": [
+        "conceito_e_diferencas",
+        "procedimentos",
+        "efeitos_juridicos"
+      ],
+      "dissolucao_e_liquidacao": [
+        "causas",
+        "nomeacao_de_liquidante",
+        "prestacao_de_contas"
+      ]
+    },
+    "titulos_de_credito": {
+      "principios": [
+        "cartularidade",
+        "literalidade",
+        "autonomia",
+        "abstracao"
+      ],
+      "letra_de_cambio": [
+        "sacador",
+        "sacado",
+        "endosso",
+        "aval"
+      ],
+      "nota_promissoria": [
+        "requisitos_formais",
+        "endosso",
+        "aval"
+      ],
+      "cheque": [
+        "emissao",
+        "compensacao",
+        "sustacao",
+        "protesto"
+      ],
+      "duplicata": [
+        "emissao",
+        "aceite",
+        "protesto",
+        "execucao"
+      ],
+      "endosso": [
+        "translativo",
+        "mandato",
+        "caucao"
+      ],
+      "aval": [
+        "responsabilidade_solidaria",
+        "execucao"
+      ],
+      "protesto": [
+        "efeitos",
+        "prazo",
+        "cancelamento"
+      ]
+    },
+    "contratos_empresariais": {
+      "distribuicao": [
+        "exclusividade",
+        "responsabilidade_pelas_vendas"
+      ],
+      "representacao_comercial": [
+        "agencia",
+        "mediação",
+        "indenizacao_por_rescisao"
+      ],
+      "franquia": [
+        "lei_de_franquias",
+        "circular_de_oferta",
+        "responsabilidade_do_franqueador"
+      ],
+      "leasing": [
+        "arrendamento_mercantil",
+        "financeiro",
+        "operacional"
+      ],
+      "factoring": [
+        "cessao_de_credito",
+        "assuncao_de_risco",
+        "proibicao_de_fomento_comercial"
+      ],
+      "joint_ventures_e_parcerias": [
+        "contratos_de_cooperacao",
+        "clausula_de_nao_concorrencia",
+        "transferencia_de_tecnologia"
+      ]
+    },
+    "propriedade_industrial": {
+      "marcas": [
+        "registro_inpi",
+        "uso_exclusivo",
+        "nulidade",
+        "colisao_com_nome_empresarial"
+      ],
+      "patentes": [
+        "inovacao",
+        "modelo_de_utilidade",
+        "prazo_de_vigencia",
+        "licenciamento"
+      ],
+      "desenho_industrial": [
+        "registro",
+        "proteção",
+        "nulidade"
+      ],
+      "indicacao_geografica": [
+        "denominacao_de_origem",
+        "indicacao_de_procedencia"
+      ],
+      "concorrencia_desleal": [
+        "parasitismo",
+        "confusao",
+        "segredo_industrial",
+        "exploracao_de_clientela"
+      ]
+    },
+    "crise_da_empresa": {
+      "recuperacao_judicial": [
+        "requisitos",
+        "plano_de_recuperacao",
+        "assembleia_de_credores",
+        "classes_de_credores",
+        "cram_down"
+      ],
+      "recuperacao_extrajudicial": [
+        "homologacao",
+        "negociacao_privada"
+      ],
+      "falencia": [
+        "requisitos",
+        "convolacao_em_falencia",
+        "classificacao_de_creditos",
+        "quadro_geral_de_credores",
+        "arrecadacao_de_bens",
+        "realizacao_do_ativo",
+        "extincao_das_obrigacoes"
+      ],
+      "responsabilidade_dos_administradores": [
+        "atos_fraudulentos",
+        "desconsideracao_da_personalidade",
+        "responsabilidade_civil_e_penal"
+      ]
+    },
+    "temas_modernos": {
+      "governanca_corporativa": [
+        "compliance",
+        "auditoria",
+        "transparencia"
+      ],
+      "direito_concorrencial": [
+        "abuso_de_poder_economico",
+        "cartel",
+        "dumping",
+        "atos_de_concentracao_cade"
+      ],
+      "sociedade_digital": [
+        "empresas_de_tecnologia",
+        "proteção_de_dados_lgpd",
+        "blockchain_contratos_inteligentes"
+      ]
+    }
+  },
+  "direito_previdenciario": {
+    "seguridade_social": {
+      "conceitos_e_fundamentos": [
+        "seguridade_social_saude_previdencia_assistencia",
+        "principio_da_solidariedade",
+        "universalidade_da_cobertura",
+        "equidade_no_custeio",
+        "diversidade_da_base_de_financiamento"
+      ],
+      "organizacao": [
+        "rgps_regime_geral",
+        "rpps_regimes_proprios",
+        "militares",
+        "regimes_complementares"
+      ],
+      "custeio": [
+        "contribuicoes_dos_empregados",
+        "contribuicoes_dos_empregadores",
+        "contribuicoes_de_autonomos",
+        "contribuicoes_de_microempreendedores_mei",
+        "contribuicoes_de_entidades_economicas",
+        "ctc_certidao_de_tempo_de_contribuicao"
+      ]
+    },
+    "segurados": {
+      "obrigatorios": [
+        "empregado",
+        "empregado_domestico",
+        "contribuinte_individual",
+        "avulso",
+        "segurado_especial_rural"
+      ],
+      "facultativos": [
+        "estudantes",
+        "donas_de_casa",
+        "brasileiros_no_exterior"
+      ],
+      "qualidade_de_segurado": [
+        "manutencao_do_vinculo",
+        "periodo_de_graca",
+        "perda_da_qualidade",
+        "recuperacao_da_qualidade"
+      ],
+      "dependentes": [
+        "classe_i_conjuge_companheiro_filhos",
+        "classe_ii_pais",
+        "classe_iii_irmaos"
+      ]
+    },
+    "carencia_e_tempo_de_contribuicao": {
+      "carencia": [
+        "conceito",
+        "dispensa_em_acidentes",
+        "dispensa_em_beneficios_especificos"
+      ],
+      "tempo_de_contribuicao": [
+        "ctps",
+        "cnis",
+        "tempo_rural",
+        "tempo_especial_ppp_lcat_epi",
+        "contagem_recíproca"
+      ]
+    },
+    "beneficios_do_rgps": {
+      "aposentadorias": {
+        "aposentadoria_por_idade": [
+          "requisitos_idade_minima",
+          "carencia",
+          "regra_de_transicao"
+        ],
+        "aposentadoria_por_tempo_de_contribuicao": [
+          "pedagio",
+          "fator_previdenciario",
+          "regra_85_95_progressiva"
+        ],
+        "aposentadoria_especial": [
+          "exposicao_a_agentes_nocivos",
+          "tempo_de_atividade_especial",
+          "ppp_perfil_profissiografico",
+          "lcat_laudo_tecnico"
+        ],
+        "aposentadoria_por_invalidez": [
+          "incapacidade_total_permanente",
+          "conversao_de_auxilio_doenca",
+          "carencia"
+        ]
+      },
+      "pensao_por_morte": [
+        "qualidade_de_dependente",
+        "duracao_por_idade",
+        "acumulacao_com_outros_beneficios"
+      ],
+      "auxilios": [
+        "auxilio_doenca_incapacidade_temporaria",
+        "auxilio_acidente_reducao_da_capacidade",
+        "auxilio_reclusao"
+      ],
+      "salario_maternidade": [
+        "requisitos_carencia",
+        "duracao",
+        "segurada_especial"
+      ],
+      "salario_familia": [
+        "requisitos",
+        "valor",
+        "extincao"
+      ]
+    },
+    "beneficios_do_rpps": {
+      "aposentadorias": [
+        "voluntaria_idade",
+        "voluntaria_tempo_contribuicao",
+        "invalidez",
+        "compulsoria"
+      ],
+      "pensoes": [
+        "dependentes",
+        "regras_de_transicao"
+      ]
+    },
+    "acumulacao_de_beneficios": {
+      "vedacoes": [
+        "duas_aposentadorias_no_rgps",
+        "aposentadoria_com_auxilio_doenca",
+        "pensao_por_morte_com_pensao_por_morte"
+      ],
+      "permitidas": [
+        "aposentadoria_rgps_com_pensao_rpps",
+        "pensao_por_morte_com_aposentadoria"
+      ]
+    },
+    "revisoes_e_temas_repetitivos": {
+      "revisao_da_vida_toda": [
+        "inclusao_de_salarios_anteriores_a_94",
+        "posicionamento_do_stf_e_stj"
+      ],
+      "revisao_do_teto": [
+        "emendas_constitucionais",
+        "efeitos_financeiros"
+      ],
+      "revisao_de_beneficio": [
+        "erro_de_calculo",
+        "indice_de_correcao",
+        "revisao_de_fato_novo"
+      ],
+      "desaposentacao": [
+        "conceito",
+        "jurisprudencia_do_stf",
+        "impossibilidade",
+        "reaposentacao"
+      ]
+    },
+    "processo_previdenciario": {
+      "fase_administrativa": [
+        "requerimento_no_inss",
+        "pericia_medica",
+        "indeferimento_e_recurso_administrativo"
+      ],
+      "fase_judicial": [
+        "justica_federal",
+        "juizados_especiais_federais",
+        "tutelas_de_urgencia_em_beneficios",
+        "prova_pericial_medica_e_tecnica"
+      ]
+    }
+  }
+}
