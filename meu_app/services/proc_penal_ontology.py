@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 def _load_taxonomy_proc_penal() -> dict:
-    data_path = Path(__file__).resolve().parents[2] / 'data' / 'proc_penal.json'
+    data_path = Path(__file__).resolve().parents[2] / 'data' / 'taxonomias' / 'proc_penal.json'
     with data_path.open('r', encoding='utf-8') as f:
         return json.load(f)
 _PROC_PENAL_ONTOLOGY = _load_taxonomy_proc_penal()
