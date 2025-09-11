@@ -1,7 +1,4 @@
 from __future__ import annotations
-
-"""Geração estruturada de respostas usando function-calling."""
-
 from typing import Any, Dict, List
 import json
 
@@ -60,23 +57,34 @@ SYSTEM_ANSWER = (
     "Você é advogado. Responda SOMENTE com function_call emit_answer.\n"
     "REGRAS:\n"
     "- Proíba frases genéricas (ex.: 'trata-se de tema cível'). Seja concreto.\n"
-    "- Cada fundamento deve estar ANCORADO em algo do contexto RAG (leis/precedentes/trechos).\n"
+    "- Cada fundamento deve estar ANCORADO em algo do contexto RAG (leis/precedentes/trechos). Use [fonte:id].\n"
     "- Verbo no imperativo nos passos ('Notifique', 'Delibere', 'Protocole').\n"
-    "- Se houver variantes (Ltda x S.A; TJ x JEF), diga qual se aplica ao frame.\n"
+    "- Informe foro/órgão adequado e prazos quando cabíveis.\n"
+    "- Diferencie variantes relevantes (ex.: Ltda vs S.A; JEF vs Justiça Estadual) quando pertinentes ao frame.\n"
+    "- Se o contexto estiver escasso, use inferência jurídica mínima (texto objetivo), mas ainda cite pelo menos 3 itens do contexto.\n"
 )
 
 
 def generate_answer(llm: Any, pergunta: str, frame: Dict[str, Any], pack: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Gera resposta final a partir do frame e do contexto recuperado."""
     contexto = "\n\n".join(
-        [f"[{i+1}] {h['fonte']}:{h['id']} — {h['trecho'][:480]}" for i, h in enumerate(pack)]
+        [f"[{i+1}] {h['fonte']}:{h['id']} — { (h.get('trecho') or h.get('texto') or '')[:480] }" for i, h in enumerate(pack)]
     )
     user_msg = f"""Pergunta: {pergunta}\n\nFrame: {frame}\n\nContexto citável:\n{contexto}\n"""
-    resp = llm.client.chat.completions.create(  # type: ignore[attr-defined]
+    resp = llm.client.chat.completions.create(
         model=getattr(llm, "chat_model", None),
         messages=[{"role": "system", "content": SYSTEM_ANSWER}, {"role": "user", "content": user_msg}],
         tools=[ANSWER_SCHEMA],
         tool_choice={"type": "function", "function": {"name": "emit_answer"}},
     )
     tool_call = resp.choices[0].message.tool_calls[0]
-    return json.loads(tool_call.function.arguments or "{}")
+    out = json.loads(tool_call.function.arguments or "{}")
+
+    # fallback mínimo: se por algum motivo vier sem 3 citações, selecione até 3 do pack
+    if len(out.get("citacoes", [])) < 3:
+        extra = []
+        for h in pack[:6]:
+            extra.append({"fonte": h.get("fonte", "FAISS"), "id": str(h.get("id"))})
+            if len(extra) == 3:
+                break
+        out.setdefault("citacoes", []).extend(extra)
+    return out

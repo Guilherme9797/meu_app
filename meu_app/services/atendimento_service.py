@@ -2425,6 +2425,7 @@ class AtendimentoService:
             return "No momento não posso atender a esse pedido."
 
         frame = self._caseframe_extract(user_text)
+        print("FRAME", frame)
 
         auto_tags: list[str] = []
 
@@ -2495,6 +2496,7 @@ class AtendimentoService:
             if q not in queries:
                 queries.append(q)
         logging.info("queries=%s", queries[:4])
+        print("QTERMS", queries)
         chunks = self._retrieve_multi(queries, k=self.conf.retriever_k)
         if len(chunks) < self.conf.min_rag_chunks:
             rew = self._query_rewrite(user_text)
@@ -2505,6 +2507,7 @@ class AtendimentoService:
                 if len(chunks2) > len(chunks):
                     chunks = chunks2
         chunks = self._filter_by_relevance(user_text, chunks, min_keep=3, thr=0.12)
+        print("CTX", [getattr(c, "text", "")[:200] for c in chunks])
         coverage = self._score_pdf_coverage(chunks)
         logging.info(
              "RAG multi: q=%d chunks=%d coverage=%.2f", len(queries), len(chunks), coverage
