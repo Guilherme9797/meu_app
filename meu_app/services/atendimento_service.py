@@ -117,12 +117,6 @@ class AtendimentoService:
         self._active_domains.update({"dfam"})
         self._domain_aliases["direito_de_familia"] = "dfam"
 
-        # Direito das Sucessões
-        self._taxonomy.update(self._load_taxonomy_sucessoes())
-        self._index_ontology(prefix="dsuc", tree=self._taxonomy["direito_das_sucessoes"])
-        self._active_domains.update({"dsuc"})
-        self._domain_aliases["direito_das_sucessoes"] = "dsuc"
-
     def _index_ontology(self, prefix: str, tree: dict, path: str = "") -> None:
         for key, val in tree.items():
             new_path = f"{path}.{key}" if path else key
