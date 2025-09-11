@@ -17,6 +17,8 @@ from .administrativo_ontology import _ADMINISTRATIVO_ONTOLOGY
 from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY
 from .trabalho_ontology import _TRABALHO_ONTOLOGY
 from .proc_trab_ontology import _PROC_TRAB_ONTOLOGY
+from .familia_ontology import _FAMILIA_ONTOLOGY
+from .sucessoes_ontology import _SUCESSOES_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -105,6 +107,38 @@ class AtendimentoService:
         self.refinador = refinador
         self.conf = conf or AtendimentoConfig()
         self.conf.greeting_mode = getattr(self.conf, "greeting_mode", "deterministic")
+        self._taxonomy = {}
+        self._indexed_terms = {}
+        self._active_domains = set()
+        self._domain_aliases = {}
+
+        # Direito de Família
+        self._taxonomy.update(self._load_taxonomy_familia())
+        self._index_ontology(prefix="dfam", tree=self._taxonomy["direito_de_familia"])
+        self._active_domains.update({"dfam"})
+        self._domain_aliases["direito_de_familia"] = "dfam"
+
+        # Direito das Sucessões
+        self._taxonomy.update(self._load_taxonomy_sucessoes())
+        self._index_ontology(prefix="dsuc", tree=self._taxonomy["direito_das_sucessoes"])
+        self._active_domains.update({"dsuc"})
+        self._domain_aliases["direito_das_sucessoes"] = "dsuc"
+
+    def _index_ontology(self, prefix: str, tree: dict, path: str = "") -> None:
+        for key, val in tree.items():
+            new_path = f"{path}.{key}" if path else key
+            if isinstance(val, dict) and val:
+                self._index_ontology(prefix, val, new_path)
+            else:
+                tag = f"{prefix}_{new_path.replace('.', '_')}"
+                self._indexed_terms.setdefault(prefix, set()).add(tag)
+
+    def _load_taxonomy_familia(self) -> dict:
+        return _FAMILIA_ONTOLOGY
+
+    def _load_taxonomy_sucessoes(self) -> dict:
+        return _SUCESSOES_ONTOLOGY
+    
     
     def _gen(self, messages, max_new: int = 900, temperature: Optional[float] = None) -> str:
         """Wrapper resiliente para self.llm.generate."""
@@ -1451,6 +1485,85 @@ class AtendimentoService:
                 "multas administrativas", "ciclo de polícia", "limites constitucionais"
             ],
          }
+        # -----------------------------
+        # DIREITO DE FAMÍLIA (DFAM)
+        # -----------------------------
+        syn.update({
+            "dfam_divorcio_partilha": [
+                "divórcio", "separação de fato", "partilha de bens", "meação",
+                "ocultação de bens", "uso do lar", "medidas de urgência familiares"
+            ],
+            "dfam_uniao_estavel": [
+                "união estável", "contrato de convivência", "reconhecimento de união",
+                "partilha na união estável", "direito real de habitação", "união homoafetiva"
+            ],
+            "dfam_alimentos": [
+                "pensão alimentícia", "alimentos provisórios", "alimentos gravídicos",
+                "alimentos avoengos", "revisão de alimentos", "exoneração de alimentos",
+                "execução de alimentos", "prisão civil por alimentos"
+            ],
+            "dfam_guarda_visitas": [
+                "guarda compartilhada", "guarda unilateral", "regulamentação de visitas",
+                "plano parental", "comunicação virtual", "viagem com menor"
+            ],
+            "dfam_alienacao_parental": [
+                "alienação parental", "inversão de guarda", "laudo psicossocial",
+                "interferência na convivência", "descumprimento de visitas"
+            ],
+            "dfam_filiacao": [
+                "investigação de paternidade", "DNA", "multiparentalidade",
+                "reconhecimento de paternidade", "socioafetiva", "RIT reprodução assistida"
+            ],
+            "dfam_medidas_protetivas": [
+                "Lei Maria da Penha", "medida protetiva", "afastamento do lar",
+                "proibição de contato", "violência doméstica", "home care de urgência familiar"
+            ],
+            "dfam_tutela_curatela": [
+                "interdição", "curatela", "tomada de decisão apoiada",
+                "tutela de menor", "curatela do idoso", "prestação de contas do tutor"
+            ],
+            "dfam_checklists": [
+                "checklist de divórcio", "checklist de união estável",
+                "checklist de execução de alimentos", "laudos médicos interdição"
+            ],
+        })
+
+        # -----------------------------
+        # DIREITO DAS SUCESSÕES (DSUC)
+        # -----------------------------
+        syn.update({
+            "dsuc_inventario": [
+                "inventário", "inventário extrajudicial", "arrolamento",
+                "partilha", "sobrepartilha", "nomeação de inventariante",
+                "ITCMD", "multas por atraso de inventário"
+            ],
+            "dsuc_herdeiros_legitima": [
+                "herdeiros necessários", "legítima", "colação", "adiantamento da legítima",
+                "sonegados", "direito de acrescer", "meação x herança"
+            ],
+            "dsuc_testamento": [
+                "testamento público", "testamento particular", "testamento cerrado",
+                "codicilo", "revogação de testamento", "nulidade de testamento",
+                "interpretação da vontade do testador", "fideicomisso"
+            ],
+            "dsuc_planejamento": [
+                "holding familiar", "doação com reserva de usufruto",
+                "pactos sucessórios (vedação)", "seguros e previdência",
+                "blindagem patrimonial", "governança familiar"
+            ],
+            "dsuc_litigios": [
+                "petição de herança", "impugnação à avaliação",
+                "uso exclusivo de bem comum", "aluguel compensatório",
+                "fruição do imóvel pelo cônjuge sobrevivente"
+            ],
+            "dsuc_internacional": [
+                "sucessão internacional", "lex rei sitae", "lex domicilii",
+                "homologação de sentença estrangeira", "exequatur", "Apostila de Haia"
+            ],
+            "dsuc_checklists": [
+                "checklist inventário", "colação e sonegados", "anulação de testamento"
+            ],
+        })
         # -----------------------------
         # DIREITO PROCESSUAL DO TRABALHO (PTRAB)
         # -----------------------------
