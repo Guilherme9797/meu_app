@@ -18,7 +18,6 @@ from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY
 from .trabalho_ontology import _TRABALHO_ONTOLOGY
 from .proc_trab_ontology import _PROC_TRAB_ONTOLOGY
 from .familia_ontology import _FAMILIA_ONTOLOGY
-from .sucessoes_ontology import _SUCESSOES_ONTOLOGY
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -135,9 +134,6 @@ class AtendimentoService:
 
     def _load_taxonomy_familia(self) -> dict:
         return _FAMILIA_ONTOLOGY
-
-    def _load_taxonomy_sucessoes(self) -> dict:
-        return _SUCESSOES_ONTOLOGY
     
     
     def _gen(self, messages, max_new: int = 900, temperature: Optional[float] = None) -> str:
