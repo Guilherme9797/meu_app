@@ -47,6 +47,14 @@ pip install -r requirements.txt
 # meu_app
 ```
 
+### Executando o CLI
+
+Com as dependências instaladas, execute o utilitário de linha de comando via
+módulo:
+
+```bash
+python -m meu_app.main chat
+```
 ### Indexação de PDFs
 
 Utilize o utilitário de linha de comando para construir ou inspecionar o índice de documentos:
