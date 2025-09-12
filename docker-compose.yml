@@ -99,7 +99,7 @@ services:
       APP_DB_PATH: /app/data/app.db
       # Use Redis local do compose se perfil 'extras' estiver ativo
       RATELIMIT_STORAGE_URI: ${RATELIMIT_STORAGE_URI:-memory://}
-    command: python server.py
+    command: python run_server.py
     ports:
       - "5000:5000"
     volumes:

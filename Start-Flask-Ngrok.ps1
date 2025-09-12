@@ -29,8 +29,7 @@ Import-DotEnv ".env"
 Get-Process ngrok, python -ErrorAction SilentlyContinue | Stop-Process -Force
 
 # 2) sobe o Flask
-$flask = Start-Process -FilePath $PythonExe -ArgumentList @(".\server.py") -WorkingDirectory (Get-Location) -PassThru -NoNewWindow
-
+$flask = Start-Process -FilePath $PythonExe -ArgumentList @(".\run_server.py") -WorkingDirectory (Get-Location) -PassThru -NoNewWindow
 # 3) espera /health local
 $ok = $false
 for ($i=0; $i -lt 60; $i++) {

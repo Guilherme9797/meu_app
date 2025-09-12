@@ -261,8 +261,8 @@ atendimento_service = AtendimentoService(
 def health():
     checks = {"db": "ok"}
     try:
-        conn = get_conn()
-        _ = conn.execute("SELECT 1").fetchone()
+        with get_conn() as conn:
+            _ = conn.execute("SELECT 1").fetchone()
         checks["db"] = "ok"
     except Exception:
         checks["db"] = "fail"

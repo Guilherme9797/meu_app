@@ -41,7 +41,7 @@ help:
 	@echo "Targets úteis:"
 	@echo "  venv                - cria venv"
 	@echo "  install             - instala dependências no venv"
-	@echo "  run                 - roda o servidor Flask (server.py)"
+	@echo "  run                 - roda o servidor Flask (run_server.py)"
 	@echo "  run-ngrok           - Flask + ngrok (configura webhook na Z-API)"
 @echo "  health              - GET /health"
 @echo "  metrics             - GET /metrics"
@@ -85,14 +85,15 @@ install: venv
 .PHONY: run
 run:
 	@echo "▶️  Flask na porta $(PORT)"
-	@$(PY) server.py
+    	@$(PY) run_server.py
 
 .PHONY: run-ngrok
 run-ngrok:
 	@echo "🌐 Subindo Flask + ngrok (porta $(PORT))"
-	@$(PY) server.py &
-	@$(SLEEP)
-	@$(PY) tools/ngrok_runner.py
+        @$(PY) run_server.py &
+        @$(SLEEP)
+        @$(PY) tools/ngrok_runner.py
+
 
 .PHONY: health
 health:

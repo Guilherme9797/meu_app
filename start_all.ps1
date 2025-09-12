@@ -1,5 +1,3 @@
-cd "C:\Users\Larissa Moura\Documents\meu_app"
-Set-Content -Path .\start_all.ps1 -Encoding UTF8 -Value @'
 <# 
   start_all.ps1
   Sobe server (python ou exe), abre ngrok com domínio reservado, checa /health e configura webhook da Z-API.
@@ -108,4 +106,3 @@ Write-Host "  Server PID: $(Get-Content $serverPidFile)"
 if (Test-Path $ngrokPidFile) { Write-Host "  Ngrok  PID: $(Get-Content $ngrokPidFile)" }
 Write-Host ""
 Write-Host "Para encerrar, rode: .\stop_all.ps1" -ForegroundColor Yellow
-'@
