@@ -53,9 +53,20 @@ def test_responder_medium_greeting(monkeypatch):
 
 def test_responder_low_signal_skips_web(monkeypatch):
     svc, called = _service(monkeypatch)
+    class DummyPitch:
+        def __init__(self):
+            self.called = False
+
+        def compose(self, user_message, extra_context=None):
+            self.called = True
+            return "PITCH"
+
+    svc.pitch = DummyPitch()
     resp = svc.responder("aluguel atrasado?")
-    assert "Diagnóstico" in resp
     assert called["web"] is False
+    assert svc.pitch.called
+    assert resp == "PITCH"
+
 
 
 def test_legal_query_boost(monkeypatch):
@@ -94,10 +105,20 @@ def test_fallback_infers_from_text(monkeypatch):
         conf=AtendimentoConfig(),
     )
     monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
+    class DummyPitch:
+        def __init__(self):
+            self.called = False
+
+        def compose(self, user_message, extra_context=None):
+            self.called = True
+            return "PITCH"
+
+    svc.pitch = DummyPitch()
     resp = svc.responder(
         "divulgaram uma imagem minha na rede social com a frase: me paga caloteiro"
     )
-    assert "tema civel" in resp.lower()
+    assert svc.pitch.called
+    assert resp == "PITCH"
 
 
 class PenalChunk:
@@ -120,8 +141,18 @@ def test_fallback_infers_from_chunks(monkeypatch):
         conf=AtendimentoConfig(),
     )
     monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
+    class DummyPitch:
+        def __init__(self):
+            self.called = False
+
+        def compose(self, user_message, extra_context=None):
+            self.called = True
+            return "PITCH"
+
+    svc.pitch = DummyPitch()
     resp = svc.responder("fui acusado de furto em uma loja")
-    assert "tema penal" in resp.lower()
+    assert svc.pitch.called
+    assert resp == "PITCH"
 
 
 def test_penal_detect_and_tags(monkeypatch):
@@ -204,6 +235,30 @@ def test_responder_inserts_min_sref_when_missing(monkeypatch):
     monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
     resp = svc.responder("pergunta")
     assert resp.endswith("[S1]")
+
+def test_generic_fallback_uses_pitch(monkeypatch):
+    svc = AtendimentoService(
+        sess_repo=None,
+        msg_repo=None,
+        retriever=DummyRetriever(),
+        tavily=None,
+        llm=EmptyLLM(),
+        conf=AtendimentoConfig(),
+    )
+    monkeypatch.setattr(svc, "_safe_web_search", lambda q: "")
+    class DummyPitch:
+        def __init__(self):
+            self.called = False
+
+        def compose(self, user_message, extra_context=None):
+            self.called = True
+            return "PITCH"
+
+    dummy = DummyPitch()
+    svc.pitch = dummy
+    resp = svc.responder("questao sem detalhes")
+    assert dummy.called
+    assert resp == "PITCH"
 
 
 def test_emp_detect_and_tags(monkeypatch):

@@ -26,6 +26,7 @@ from meu_app.retrievers.datajud import (
 from meu_app.retrievers.web_tavily import WebRetriever
 from meu_app.retrievers.query_expander import expand as expand_query
 from meu_app.providers.bnp_provider import BNPProvider
+from meu_app.generator.client_pitch_generator import ClientPitchGenerator
 @dataclass
 
 class AtendimentoConfig:
@@ -104,6 +105,7 @@ class AtendimentoService:
         self.classifier = classifier
         self.extractor = extractor
         self.refinador = refinador
+        self.pitch = ClientPitchGenerator(llm=llm, logger=logging.getLogger(__name__))
         self.conf = conf or AtendimentoConfig()
         self.conf.greeting_mode = getattr(self.conf, "greeting_mode", "deterministic")
         self._taxonomy = {}
@@ -2580,6 +2582,17 @@ class AtendimentoService:
                 answer = self.refinador.refinar(answer)
             except Exception:
                 logging.exception("Falha no refinador.")
+        
+        if (
+            "Diagnóstico" in answer
+            and "O que fazer agora" in answer
+            and (coverage is None or coverage < 0.55)
+        ):
+            logging.info(
+                "Cobertura baixa/saída genérica — usando ClientPitchGenerator."
+            )
+            return self.pitch.compose(user_text, extra_context={"frame": frame})
+
 
         return answer
 
