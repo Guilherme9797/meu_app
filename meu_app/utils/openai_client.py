@@ -133,28 +133,66 @@ class OpenAIClient:
                 return self._chat_create(params)
             raise
 
-    def chat(self, system: str, user: str, *, extra: Optional[Dict[str, Any]] = None) -> str:
-        """Envia prompt com mensagens de sistema e usuário."""
-        params: Dict[str, Any] = {
-            "model": self.chat_model,
-            "messages": [
+    def chat(
+        self,
+        system: Optional[str] = None,
+        user: Optional[str] = None,
+        *,
+        messages: Optional[List[Dict[str, str]]] = None,
+        extra: Optional[Dict[str, Any]] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_completion_tokens: Optional[int] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Envia um conjunto de mensagens ao modelo.
+
+        Aceita tanto parâmetros ``system``/``user`` (compatibilidade com a versão
+        anterior) quanto uma lista ``messages`` já pronta, no formato da API do
+        OpenAI. Parâmetros como ``temperature`` e limites de tokens podem ser
+        passados diretamente ou via ``extra``.
+        """
+
+        if messages is None:
+            if system is None or user is None:
+                raise TypeError("Forneça 'messages' ou 'system' e 'user'.")
+            messages = [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
-            ],
-        }
-        extra = dict(extra or {})
-        temp = extra.pop("temperature", self.temperature)
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ]
+
+        params: Dict[str, Any] = {"model": self.chat_model, "messages": messages}
+        extra_params = dict(extra or {})
+
+        temp = (
+            temperature
+            if temperature is not None
+            else extra_params.pop("temperature", self.temperature)
+        )
         if temp != 1.0 and self._supports_temperature:
             params["temperature"] = temp
+
         token_key = self._token_key()
-        max_tokens = extra.pop("max_tokens", None)
-        max_completion = extra.pop("max_completion_tokens", None)
+        
         if max_tokens is not None:
             params[token_key] = max_tokens
-        elif max_completion is not None:
-            params["max_completion_tokens"] = max_completion
-        if extra:
-            params.update(extra)
+        elif max_completion_tokens is not None:
+            params["max_completion_tokens"] = max_completion_tokens
+        else:
+            mt = extra_params.pop("max_tokens", None)
+            mc = extra_params.pop("max_completion_tokens", None)
+            if mt is not None:
+                params[token_key] = mt
+            elif mc is not None:
+                params["max_completion_tokens"] = mc
+
+        if extra_params:
+            params.update(extra_params)
+        if kwargs:
+            params.update(kwargs)
+
         try:
             resp = self._chat_create(params)
         except Exception as e:  # pragma: no cover - depende de modelo externo
@@ -163,13 +201,14 @@ class OpenAIClient:
                 token_key == "max_tokens"
                 and "max_tokens" in msg
                 and "max_completion_tokens" in msg
-                and "max_tokens" in params
+                and token_key in params
             ):
-                mt = params.pop("max_tokens")
+                mt = params.pop(token_key)
                 params["max_completion_tokens"] = mt
                 resp = self._chat_create(params)
             else:
                 raise
+            
         return (resp.choices[0].message.content or "").strip()
 
 

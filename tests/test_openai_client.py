@@ -71,6 +71,15 @@ def test_default_temperature_omitted(monkeypatch):
     assert "temperature" not in client.client.last_params
 
 
+def test_chat_with_messages_param(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyOpenAI)
+    client = OpenAIClient(api_key="x", chat_model="gpt")
+    msgs = [{"role": "user", "content": "oi"}]
+    resp = client.chat(messages=msgs)
+    assert resp == "ok"
+    assert client.client.last_params["messages"] == msgs
+
+
 def test_custom_temperature_forwarded(monkeypatch):
     monkeypatch.setattr(oc, "OpenAI", DummyOpenAI)
     client = OpenAIClient(api_key="x", chat_model="gpt", temperature=0.5)
