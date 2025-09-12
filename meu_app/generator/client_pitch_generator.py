@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """Gerador de respostas comerciais curtas com CTA."""
-from typing import Dict, Any, Optional
+
+from __future__ import annotations
+
+import logging
+from textwrap import dedent
+from typing import Any, Dict, Optional
 
 DEFAULT_BRANDING = {
     "firm_name": "Seu Escritório de Advocacia",
@@ -10,80 +15,135 @@ DEFAULT_BRANDING = {
     "cta_city": "atuação nacional",
 }
 
-SYSTEM_PROMPT = (
-    "Você é um ADVOGADO BRASILEIRO ESPECIALISTA. "
-    "Responda SEMPRE em PT-BR, com linguagem simples, carismática, empática e objetiva. "
-    "Trate quem pergunta como um potencial cliente. "
-    "Traga soluções práticas e claras; explique os próximos passos; "
-    "e convide a falar com o escritório (CTA). "
-    "Evite juridiquês, evite respostas genéricas e evite longos avisos legais. "
-    "Se faltar algum dado essencial, peça só o mínimo necessário em 1–2 bullets. "
-    "Formate em seções curtas com bullets. "
-)
+SALES_SYSTEM_PROMPT = dedent(
+    """
+    Você é um advogado brasileiro especialista. Escreva em linguagem simples, humana e acolhedora.
+    Objetivo: ajudar de forma prática e convidar o cliente a nos contatar.
+    Regras:
+    - Foque nas providências e caminhos legais (sem jargão excessivo).
+    - Não invente fatos. Se faltar dado essencial, peça até 3 informações objetivas no final.
+    - Use estrutura clara: diagnóstico, o que dá para fazer, documentos, prazos/risco, próximos passos, convite para contato.
+    - Seja cordial, direto e positivo — sem prometer resultado.
+    """
+).strip()
 
-USER_TEMPLATE = (
-    "Pergunta do potencial cliente (copie a essência e responda de forma direta):\n"
-    "«{user_question}»\n\n"
-    "Instruções de estilo e objetivos:\n"
-    "- Explique o que está acontecendo juridicamente em linguagem humana.\n"
-    "- Traga 2–5 soluções/estratégias possíveis (com prós/cons e quando usar).\n"
-    "- Diga o que o cliente pode fazer HOJE (checklist de provas e passos imediatos).\n"
-    "- Argumente 3–5 vantagens de resolver com nosso escritório.\n"
-    "- Termine com um CTA claro para contato (tel/WhatsApp/e-mail).\n"
-    "- Máximo ~12 linhas úteis (seções curtas com bullets)."
-)
 
-CTA_FOOTER = (
-    "\n\nEntre em contato agora:\n"
-    "• Telefone: {cta_phone}\n"
-    "• WhatsApp: {cta_whatsapp}\n"
-    "• E-mail: {cta_email}\n"
-    "• Atendimento: {cta_city}\n"
-)
+def render_sales_user_prompt(pergunta_do_cliente: str) -> str:
+    return dedent(
+        f"""
+        Pergunta do cliente (texto literal):
+        ---
+        {pergunta_do_cliente.strip()}
+        ---
+
+        Redija a resposta como um advogado brasileiro especialista, de forma simples e carismática.
+        Traga soluções práticas e caminho processual/administrativo possível.
+        Explique vantagens de nos contratar (organização do caso, estratégia, agilidade, acompanhamento).
+        No final, inclua um convite claro para contato.
+
+        Formato sugerido:
+        1) Diagnóstico resumido
+        2) O que dá para fazer agora (passo a passo)
+        3) Documentos essenciais
+        4) Prazos e riscos
+        5) Próximos passos + CTA (contato)
+        """
+    ).strip()
+
+
+def _extract_text(resp: Any) -> str:
+    """Normaliza a saída entre Chat Completions e Completions."""
+
+    try:  # objetos estilo openai
+        return (resp.choices[0].message.content or "").strip()
+    except Exception:
+        pass
+    try:
+        return (resp.choices[0].text or "").strip()
+    except Exception:
+        pass
+    try:  # dicts aninhados
+        ch0 = resp.get("choices", [{}])[0]
+        return (ch0.get("message", {}).get("content") or ch0.get("text") or "").strip()
+    except Exception:
+        pass
+    return ""
 
 
 class ClientPitchGenerator:
-    """
-    Gera respostas 'comerciais' universais: advogado brasileiro, simples e carismático,
-    propondo soluções e chamando para contato (CTA). Independe da área do direito.
-    """
+     """Gera respostas comerciais universais com CTA."""
 
-    def __init__(self, llm, logger, branding: Optional[Dict[str, str]] = None):
+     def __init__(
+        self,
+        llm: Any,
+        logger: Optional[logging.Logger] = None,
+        branding: Optional[Dict[str, str]] = None,
+    ) -> None:
         self.llm = llm
-        self.logger = logger
+        self.logger = logger or logging.getLogger(__name__)
         self.branding = {**DEFAULT_BRANDING, **(branding or {})}
-
-    def compose(self, user_message: str, extra_context: Optional[Dict[str, Any]] = None) -> str:
-        system = SYSTEM_PROMPT
-        user = USER_TEMPLATE.format(user_question=user_message)
-
-        # logs úteis para depuração
+        self.contact_block = (
+            "Entre em contato agora:\n"
+            f"• Telefone: {self.branding['cta_phone']}\n"
+            f"• WhatsApp: {self.branding['cta_whatsapp']}\n"
+            f"• E-mail: {self.branding['cta_email']}\n"
+            f"• Atendimento: {self.branding['cta_city']}"
+        )
+    
+     def compose(
+        self, user_utterance: str, extra_context: Optional[Dict[str, Any]] = None
+    ) -> str:
+        sys_prompt = SALES_SYSTEM_PROMPT
+        user_prompt = render_sales_user_prompt(user_utterance)
         if self.logger:
-            self.logger.info("ClientPitchGenerator: enviando prompt comercial direto ao LLM.")
+            self.logger.info(
+                "ClientPitchGenerator: enviando prompt comercial direto ao LLM."
+            )
 
         try:
-            # Usa a interface de chat do seu wrapper LLM (ajuste nomes conforme seu wrapper)
-            out = self.llm.chat(
+            resp = self.llm.chat(
                 messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": user_prompt},
                 ],
-                temperature=0.4,
-                max_tokens=700,
-                top_p=1.0,
+                temperature=0.35,
+                max_tokens=900,
+                extra_body={"top_k": 40},
             )
-            text = out.strip()
-        except Exception:
+        except Exception as e:
             if self.logger:
-                self.logger.exception("Falha no LLM (ClientPitchGenerator).")
-            # fallback minimalista, ainda com CTA:
-            text = (
-                "Entendi seu caso. Podemos atuar com uma estratégia sob medida, começando por reunir documentos "
-                "básicos e definir a medida jurídica correta. Fale com a gente para avançar."
+                self.logger.warning(
+                    "Falha no chat (com temperature); tentando sem parâmetros sensíveis: %s",
+                    e,
+                )
+            resp = self.llm.chat(
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
             )
+        text = _extract_text(resp)
 
-        # anexa CTA padronizado
-        text += CTA_FOOTER.format(**self.branding)
-        # reforça marca (opcional, discreto)
+        if not text or len(text) < 80:
+            if self.logger:
+                self.logger.warning(
+                    "Saída curta/genérica; reforçando prompt e reintentando."
+                )
+            user_prompt2 = (
+                user_prompt
+                + "\n\nReforce o plano com medidas concretas e finalize com um convite para falar com nosso time."
+            )
+            resp2 = self.llm.chat(
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": user_prompt2},
+                ]
+            )
+            text2 = _extract_text(resp2)
+            text = text2 or text
+
+        if "WhatsApp" not in text and "whatsapp" not in text and "contato@" not in text:
+            text = text.rstrip() + "\n\n" + self.contact_block
+
         text = f"{self.branding['firm_name']}\n\n{text}"
         return text
