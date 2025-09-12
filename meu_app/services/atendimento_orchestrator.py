@@ -1,45 +1,66 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
-from .legal_frame import frame_case
-from .concepts import ConceptBank
-from .query_planner import plan_queries
+from ..nlu import UniversalInterpreter, LegalIntent
 from .rag import search_all
 from .generator import generate_answer
 from .guardrails import refine_if_needed
 
-def atender(llm: Any, pergunta: str, taxonomies: List[Dict], topk_each: int = 6) -> Dict[str, Any]:
-    # 1) Frame
-    frame = frame_case(llm, pergunta)
-    # 2) Concept expansion (melhorado) + Planner
-    bank = ConceptBank(taxonomies)
-    concept_terms = bank.expand(frame, pergunta=pergunta)
+class AtendimentoOrchestrator:
+    """High level orchestrator for legal assistance."""
 
-    qplan = plan_queries(llm, pergunta, frame, concept_terms)
+    def __init__(self, llm: Any, pattern_dir: str, *, topk_each: int = 6, max_qterms: int = 16) -> None:
+        self.llm = llm
+        self.topk_each = topk_each
+        self.max_qterms = max_qterms
+        self.interpreter = UniversalInterpreter(pattern_dir=pattern_dir)
 
-    # 3) Rodada 1: lexicais + sinônimos
-    qterms_round1 = list(dict.fromkeys((qplan.get("lexicais", []) + qplan.get("sinonimos", []) + concept_terms)))
-    pack = search_all(llm, qterms_round1, frame, topk_each=topk_each, query_text=pergunta)
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    def _intent_to_qterms(self, intent: LegalIntent) -> List[str]:
+        qterms: List[str] = []
+        for seq in [intent.keywords, intent.topics, intent.entities, intent.requests]:
+            for token in seq:
+                token = token.strip()
+                if len(token) < 3:
+                    continue
+                if token not in qterms:
+                    qterms.append(token)
+                if len(qterms) >= self.max_qterms:
+                    break
+            if len(qterms) >= self.max_qterms:
+                break
+        return qterms
 
-    # 4) Se fraco, rodada 2: estatutos e booleanas
-    if len(pack) < 6:
-        qterms_round2 = list(dict.fromkeys(qterms_round1 + qplan.get("estatutos", []) + qplan.get("booleanas_datajud", []) + qplan.get("booleanas_bnp", [])))
-        pack = search_all(llm, qterms_round2, frame, topk_each=topk_each, query_text=pergunta)
+    # ------------------------------------------------------------------
+    # Main API
+    # ------------------------------------------------------------------
+    def atender(self, pergunta: str) -> Dict[str, Any]:
+        intent = self.interpreter.interpret(pergunta)
+        qterms = self._intent_to_qterms(intent)
+        frame = intent.to_dict()
+        pack = search_all(self.llm, qterms, frame, topk_each=self.topk_each, query_text=pergunta)
+        answer = generate_answer(self.llm, pergunta, frame, pack)
+        answer = refine_if_needed(self.llm, pergunta, frame, pack, answer)
+        answer["_debug"] = {
+            "intent": frame,
+            "qterms": qterms,
+            "ctx": pack,
+        }
+        return answer
 
-    # 5) Se ainda fraco, alonga com n-grams (ConceptBank já faz) e reitera
-    if len(pack) < 6:
-        extra = [t for t in concept_terms if len(t.split()) >= 2]
-        qterms_round3 = list(dict.fromkeys(qterms_round2 + extra))
-        pack = search_all(llm, qterms_round3, frame, topk_each=topk_each, query_text=pergunta)
 
-    # 6) Geração + refine com guardrails
-    answer = generate_answer(llm, pergunta, frame, pack)
-    answer = refine_if_needed(llm, pergunta, frame, pack, answer)
-    # 7) Anexa debug
-    answer["_debug"] = {
-        "frame": frame,
-        "qplans": qplan,
-        "qterms": (qterms_round1[:20] if len(pack) >= 6 else (qterms_round3[:20] if 'qterms_round3' in locals() else qterms_round2[:20])),
-        "ctx": pack,
-    }
-    return answer
+# Utility function for quick usage ------------------------------------------------
+
+def atender(
+    llm: Any,
+    pergunta: str,
+    *,
+    pattern_dir: str,
+    topk_each: int = 6,
+    max_qterms: int = 16,
+) -> Dict[str, Any]:
+    """Convenience wrapper used by service handlers."""
+    orch = AtendimentoOrchestrator(llm, pattern_dir, topk_each=topk_each, max_qterms=max_qterms)
+    return orch.atender(pergunta)
