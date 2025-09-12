@@ -31,8 +31,8 @@ if ($UseExe) {
   $exePath = Join-Path (Join-Path $ProjectRoot "dist") "meu_app_server.exe"
   if (-not (Test-Path $exePath)) { Write-Err "EXE não encontrado: $exePath"; exit 1 }
 } else {
-  $serverPy = Join-Path $ProjectRoot "server.py"
-  if (-not (Test-Path $serverPy)) { Write-Err "server.py não encontrado em $ProjectRoot"; exit 1 }
+  $serverPy = Join-Path $ProjectRoot "run_server.py"
+  if (-not (Test-Path $serverPy)) { Write-Err "run_server.py não encontrado em $ProjectRoot"; exit 1 }
 }
 
 Write-Info "Iniciando servidor na porta $Port ..."
@@ -41,7 +41,7 @@ try {
   if ($UseExe) {
     $serverProc = Start-Process -FilePath (Join-Path $ProjectRoot "dist\meu_app_server.exe") -PassThru
   } else {
-    $serverProc = Start-Process -FilePath "python" -ArgumentList "server.py" -WorkingDirectory $ProjectRoot -PassThru
+    $serverProc = Start-Process -FilePath "python" -ArgumentList "run_server.py" -WorkingDirectory $ProjectRoot -PassThru
   }
   $serverProc.Id | Out-File -FilePath $serverPidFile -Encoding ascii
   $ok = $false
