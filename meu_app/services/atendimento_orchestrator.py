@@ -1,66 +1,38 @@
-from __future__ import annotations
+# -*- coding: utf-8 -*-
+"""Orquestrador principal do atendimento jurídico."""
+from typing import Dict, Any
+from os import getenv
+from meu_app.nlu.interpreter import UniversalInterpreter
+from meu_app.services.buscador_pdf import BuscadorPDF
+from meu_app.generator.generator import LegalComposer
+from meu_app.generator.client_pitch_generator import ClientPitchGenerator
 
-from typing import Any, Dict, List
-from ..nlu import UniversalInterpreter, LegalIntent
-from .rag import search_all
-from .generator import generate_answer
-from .guardrails import refine_if_needed
+USE_PITCH_ALWAYS = getenv("USE_PITCH_ALWAYS", "false").lower() in ("1", "true", "yes")
 
 class AtendimentoOrchestrator:
-    """High level orchestrator for legal assistance."""
-
-    def __init__(self, llm: Any, pattern_dir: str, *, topk_each: int = 6, max_qterms: int = 16) -> None:
+    def __init__(self, llm, logger, branding: Dict[str, str] | None = None):
         self.llm = llm
-        self.topk_each = topk_each
-        self.max_qterms = max_qterms
-        self.interpreter = UniversalInterpreter(pattern_dir=pattern_dir)
+        self.logger = logger
+        self.nlu = UniversalInterpreter()
+        self.buscador = BuscadorPDF(logger=logger)
+        self.legal = LegalComposer(llm=llm, logger=logger)
+        self.pitch = ClientPitchGenerator(llm=llm, logger=logger, branding=branding)
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-    def _intent_to_qterms(self, intent: LegalIntent) -> List[str]:
-        qterms: List[str] = []
-        for seq in [intent.keywords, intent.topics, intent.entities, intent.requests]:
-            for token in seq:
-                token = token.strip()
-                if len(token) < 3:
-                    continue
-                if token not in qterms:
-                    qterms.append(token)
-                if len(qterms) >= self.max_qterms:
-                    break
-            if len(qterms) >= self.max_qterms:
-                break
-        return qterms
+    def handle(self, mensagem: str, cliente: Dict[str, Any]) -> str:
+        """Processa a mensagem do usuário e decide entre resposta legal ou pitch."""
+        # Se você quiser SEMPRE usar o pitch comercial:
+        if USE_PITCH_ALWAYS:
+            return self.pitch.compose(mensagem, extra_context={"cliente": cliente})
 
-    # ------------------------------------------------------------------
-    # Main API
-    # ------------------------------------------------------------------
-    def atender(self, pergunta: str) -> Dict[str, Any]:
-        intent = self.interpreter.interpret(pergunta)
-        qterms = self._intent_to_qterms(intent)
-        frame = intent.to_dict()
-        pack = search_all(self.llm, qterms, frame, topk_each=self.topk_each, query_text=pergunta)
-        answer = generate_answer(self.llm, pergunta, frame, pack)
-        answer = refine_if_needed(self.llm, pergunta, frame, pack, answer)
-        answer["_debug"] = {
-            "intent": frame,
-            "qterms": qterms,
-            "ctx": pack,
-        }
-        return answer
+        # Caso contrário, roda o pipeline normal e, se vier genérico ou com baixa cobertura, usa pitch:
+        frame = self.nlu.parse(mensagem)
+        pack, coverage = self.buscador.search_hybrid(frame.queries, top_k=12, bm25=True, semantic=True)
 
+        resposta = self.legal.compose(mensagem, frame, pack, coverage)
+        # Heurística: se a resposta ficou muito genérica/triagem, troca para pitch comercial
+        if "Diagnóstico" in resposta and "O que fazer agora" in resposta and coverage and coverage < 0.35:
+            if self.logger:
+                self.logger.info("Cobertura baixa/saída genérica — usando ClientPitchGenerator.")
+            return self.pitch.compose(mensagem, extra_context={"frame": frame, "cliente": cliente})
 
-# Utility function for quick usage ------------------------------------------------
-
-def atender(
-    llm: Any,
-    pergunta: str,
-    *,
-    pattern_dir: str,
-    topk_each: int = 6,
-    max_qterms: int = 16,
-) -> Dict[str, Any]:
-    """Convenience wrapper used by service handlers."""
-    orch = AtendimentoOrchestrator(llm, pattern_dir, topk_each=topk_each, max_qterms=max_qterms)
-    return orch.atender(pergunta)
+        return resposta
