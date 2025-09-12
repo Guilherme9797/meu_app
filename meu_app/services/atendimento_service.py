@@ -119,6 +119,42 @@ class AtendimentoService:
         self._active_domains.update({"dfam"})
         self._domain_aliases["direito_de_familia"] = "dfam"
 
+    def handle_incoming(self, phone: str, text: str):
+        """Adaptador para compatibilidade com versões anteriores."""
+        phone = phone or "anon"
+        text = (text or "").strip()
+
+        candidates = (
+            "handle_message",
+            "handle",
+            "chat",
+            "process",
+            "run",
+            "__call__",
+            "receber_mensagem",
+        )
+        last_err = None
+
+        for name in candidates:
+            fn = getattr(self, name, None)
+            if callable(fn):
+                try:
+                    out = fn(phone, text)
+                    return out if isinstance(out, str) else str(out)
+                except TypeError as e:
+                    last_err = e
+                    try:
+                        out = fn(text)
+                        return out if isinstance(out, str) else str(out)
+                    except TypeError as e2:
+                        last_err = e2
+                        continue
+
+        raise AttributeError(
+            f"{self.__class__.__name__} não possui handler compatível (testados: {', '.join(candidates)})."
+        ) from last_err
+
+
     def _index_ontology(self, prefix: str, tree: dict, path: str = "") -> None:
         for key, val in tree.items():
             new_path = f"{path}.{key}" if path else key
