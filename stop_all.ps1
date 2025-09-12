@@ -1,4 +1,3 @@
-Set-Content -Path .\stop_all.ps1 -Encoding UTF8 -Value @'
 <# 
   stop_all.ps1 — encerra processos do server e do ngrok iniciados pelo start_all.ps1
 #>
@@ -29,4 +28,3 @@ Get-Process python -ErrorAction SilentlyContinue | Where-Object { $_.Path -like 
 Get-Process meu_app_server -ErrorAction SilentlyContinue | Stop-Process -Force
 
 Write-Host "[ OK ] Encerrado." -ForegroundColor Green
-'@
