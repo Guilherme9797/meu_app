@@ -30,7 +30,12 @@ class AtendimentoOrchestrator:
 
         resposta = self.legal.compose(mensagem, frame, pack, coverage)
         # Heurística: se a resposta ficou muito genérica/triagem, troca para pitch comercial
-        if "Diagnóstico" in resposta and "O que fazer agora" in resposta and coverage and coverage < 0.35:
+        # Considera também cobertura ausente ou abaixo de 0.55 (valor mais alto que 0.35 anterior)
+        if (
+            "Diagnóstico" in resposta
+            and "O que fazer agora" in resposta
+            and (coverage is None or coverage < 0.55)
+        ):
             if self.logger:
                 self.logger.info("Cobertura baixa/saída genérica — usando ClientPitchGenerator.")
             return self.pitch.compose(mensagem, extra_context={"frame": frame, "cliente": cliente})
