@@ -2,9 +2,15 @@ import os, json, time, uuid, logging, unicodedata, traceback
 from functools import wraps
 from typing import Optional
 from flask import Flask, jsonify, request, g, make_response, has_request_context
-import zoneinfo
-from datetime import datetime
+from datetime import datetime, timezone
 
+try:
+    from zoneinfo import ZoneInfo
+except Exception:  # pragma: no cover - fallback para Python < 3.9 ou sem tzdata
+    try:
+        from backports.zoneinfo import ZoneInfo  # type: ignore
+    except Exception:  # pragma: no cover - último recurso
+        ZoneInfo = None  # type: ignore
 try:
     from flask_cors import CORS
 except Exception:
@@ -77,7 +83,10 @@ app = Flask(__name__)
 
 # Configurações de marca e fuso horário
 BRAND = "Moura Martins Advogados"
-TZ = zoneinfo.ZoneInfo("America/Sao_Paulo")
+try:
+    TZ = ZoneInfo("America/Sao_Paulo") if ZoneInfo else timezone.utc
+except Exception:  # pragma: no cover - timezone não disponível
+    TZ = timezone.utc
 
 # logger de módulo apontando para o logger do app (evita NameError em logger.info)
 logger = app.logger
