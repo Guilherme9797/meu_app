@@ -2643,7 +2643,7 @@ def get_index_dir() -> str:
 def _build_atendimento_service() -> AtendimentoService:
     """Constrói um AtendimentoService com dependências padrão."""
     try:
-        from tavily import TavilyClient
+        from meu_app.services.tavily_service import TavilyClient
     except Exception:  # pragma: no cover - opcional
         TavilyClient = None  # type: ignore
 

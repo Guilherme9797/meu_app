@@ -44,7 +44,11 @@ class WebRetriever:
 
     def _make_client(self):
         try:
-            from tavily import TavilyClient
+            try:
+                from meu_app.services.tavily_service import TavilyClient
+            except Exception:
+                from tavily import TavilyClient  # type: ignore
+                
             key = os.getenv("TAVILY_API_KEY")
             if not key:
                 raise RuntimeError("TAVILY_API_KEY ausente")

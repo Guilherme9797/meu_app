@@ -128,6 +128,19 @@ def normalize_zapi_incoming(payload: dict) -> dict | None:
 def zapi_webhook_received():
     data = request.get_json(silent=True, force=True) or {}
     app.logger.info(f"[webhook] path={request.path} raw={str(data)[:800]}")
+
+    # Ignore callbacks que não representam mensagens de clientes ou eventos
+    # disparados pela própria API/bot.
+    kind = str(data.get("type") or "").lower()
+    if kind in {"deliverycallback", "messagestatuscallback", "presencechatcallback"}:
+        return jsonify({"ok": True, "ignored": kind})
+
+    flags = [data.get("fromApi"), data.get("fromMe")]
+    inner = data.get("data") if isinstance(data.get("data"), dict) else {}
+    flags.append(inner.get("fromApi"))
+    flags.append(inner.get("fromMe"))
+    if any(bool(f) for f in flags):
+        return jsonify({"ok": True, "ignored": True})
     try:
         normalized = zapi_client.parse_incoming(data)
     except ValueError:
