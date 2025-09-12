@@ -2,6 +2,8 @@ import os, json, time, uuid, logging, unicodedata, traceback
 from functools import wraps
 from typing import Optional
 from flask import Flask, jsonify, request, g, make_response, has_request_context
+import zoneinfo
+from datetime import datetime
 
 try:
     from flask_cors import CORS
@@ -27,6 +29,9 @@ from meu_app.services.zapi_client import ZapiClient, NormalizedMessage  # <-- co
 from meu_app.services.media_processor import MediaProcessor
 from meu_app.persistence.db import init_db, get_conn
 from meu_app.utils.paths import get_index_dir
+from meu_app.utils.greetings import is_greeting
+from meu_app.services.greeting_service import generate_human_greeting
+
 
 # ====== JSON logger “safe” (único) ======
 def _json_log_format(record: logging.LogRecord) -> str:
@@ -69,6 +74,10 @@ def _ensure_ctx_defaults(phone: str, sender_name: str) -> dict:
         return {"autor": "cliente", "phone": phone, "sender_name": sender_name}
 
 app = Flask(__name__)
+
+# Configurações de marca e fuso horário
+BRAND = "Moura Martins Advogados"
+TZ = zoneinfo.ZoneInfo("America/Sao_Paulo")
 
 # logger de módulo apontando para o logger do app (evita NameError em logger.info)
 logger = app.logger
@@ -180,8 +189,27 @@ def zapi_webhook_received():
     sender_name = "Contato"
     _ensure_ctx_defaults(phone, sender_name)
 
+    user_text = computed_text.strip()
+    if is_greeting(user_text):
+        now_local = datetime.now(TZ)
+        msg = generate_human_greeting(
+            llm=llm,
+            name=sender_name,
+            brand=BRAND,
+            now_local=now_local,
+        )
+        if "—" not in msg:
+            msg = f"{msg}\n— {BRAND}"
+        try:
+            zapi_client.send_message(phone, msg)
+            sent = True
+        except Exception as e:
+            sent = False
+            app.logger.exception("Falha ao responder via Z-API: %s", e)
+        return jsonify({"ok": True, "client_id": phone, "msg_id": normalized.msg_id, "sent": sent})
+
     try:
-        resposta = atendimento_service.handle_incoming(phone, computed_text)
+        resposta = atendimento_service.handle_incoming(phone, user_text)
     except Exception as e:
         app.logger.exception("Falha no processamento da mensagem: %s", e)
         resposta = "Desculpe, ocorreu um erro ao processar sua mensagem."
