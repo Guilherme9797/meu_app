@@ -53,6 +53,8 @@ def render_sales_user_prompt(pergunta_do_cliente: str) -> str:
 
 def _extract_text(resp: Any) -> str:
     """Normaliza a saída entre Chat Completions e Completions."""
+    if isinstance(resp, str):
+        return resp.strip()
 
     try:  # objetos estilo openai
         return (resp.choices[0].message.content or "").strip()
@@ -108,7 +110,6 @@ class ClientPitchGenerator:
                 ],
                 temperature=0.35,
                 max_tokens=900,
-                extra_body={"top_k": 40},
             )
         except Exception as e:
             if self.logger:
