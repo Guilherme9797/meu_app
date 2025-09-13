@@ -47,6 +47,8 @@ def generate_human_greeting(
     dependências do LLM não estão disponíveis (por exemplo durante os testes).
     """
 
-    nome = (name or "cliente").strip()
     saudacao = "Olá" if is_greeting("oi") else "Olá"  # reuso leve da função
+    if not name:
+        return f"{saudacao}! Qual é o seu nome?"
+    nome = name.strip()
     return f"{saudacao} {nome}, bem-vindo à {brand}!"

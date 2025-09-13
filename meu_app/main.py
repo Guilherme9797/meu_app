@@ -22,6 +22,7 @@ logging.basicConfig(
 )
 
 from meu_app.services.atendimento_service import _build_atendimento_service
+from meu_app.utils.names import normalize_display_name
 
 # -------------------------------------------------------------------------
 # Suporte para execução direta OU como módulo (-m meu_app.main)
@@ -163,6 +164,7 @@ def _build_atendimento_for(phone: Optional[str], nome: str) -> Atendimento:
     init_db()
     cliente_repo = ClienteRepository()
     contato_repo = ContatoRepository()
+    nome_final = normalize_display_name(cliente_data["nome"] if cliente_data else nome) or phone or "Cliente"
 
     if phone:
         ctt = contato_repo.get_by_phone(phone)
