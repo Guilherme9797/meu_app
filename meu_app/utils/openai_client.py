@@ -59,6 +59,7 @@ class OpenAIClient:
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
         self._supports_temperature = True
         self._supports_top_p = True
+        self._supports_presence_penalty = True
     
     def _token_key(self) -> str:
         """Retorna o nome do parâmetro de limite de tokens suportado."""
@@ -91,6 +92,17 @@ class OpenAIClient:
                 self._supports_top_p = False
                 params.pop("top_p", None)
                 logging.warning("Modelo sem suporte a top_p; repetindo sem o parâmetro.")
+                return self._chat_create(params)
+            if (
+                "presence_penalty" in params
+                and "presence_penalty" in lower
+                and ("unsupported" in lower or "not supported" in lower)
+            ):
+                self._supports_presence_penalty = False
+                params.pop("presence_penalty", None)
+                logging.warning(
+                    "Modelo sem suporte a presence_penalty; repetindo sem o parâmetro."
+                )
                 return self._chat_create(params)
             logging.error("OpenAI 400: %s", msg)
             if (
@@ -150,6 +162,17 @@ class OpenAIClient:
                 params.pop("top_p", None)
                 logging.warning("Modelo sem suporte a top_p; repetindo sem o parâmetro.")
                 return self._chat_create(params)
+            if (
+                "presence_penalty" in params
+                and "presence_penalty" in lower
+                and ("unsupported" in lower or "not supported" in lower)
+            ):
+                self._supports_presence_penalty = False
+                params.pop("presence_penalty", None)
+                logging.warning(
+                    "Modelo sem suporte a presence_penalty; repetindo sem o parâmetro."
+                )
+                return self._chat_create(params)
             raise
 
     def chat(
@@ -196,6 +219,12 @@ class OpenAIClient:
         if top_p_val is not None and self._supports_top_p:
             params["top_p"] = top_p_val
 
+        presence_val = kwargs.pop(
+            "presence_penalty", extra_params.pop("presence_penalty", None)
+        )
+        if presence_val is not None and self._supports_presence_penalty:
+            params["presence_penalty"] = presence_val
+            
         token_key = self._token_key()
         
         if max_tokens is not None:

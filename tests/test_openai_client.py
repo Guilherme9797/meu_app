@@ -48,6 +48,7 @@ class DummyTempUnsupported:
             message = type("msg", (), {"content": "ok"})
         return type("Resp", (), {"choices": [Choice()]})()
 
+
 class DummyBadModel:
     def __init__(self, *args, **kwargs):
         self.chat = self
@@ -77,6 +78,23 @@ class DummyTopPUnsupported:
             message = type("msg", (), {"content": "ok"})
         return type("Resp", (), {"choices": [Choice()]})()
 
+
+class DummyPresencePenaltyUnsupported:
+    def __init__(self, *args, **kwargs):
+        self.chat = self
+        self.completions = self
+        self.calls = []
+
+    def create(self, **params):
+        self.calls.append(params)
+        if params.get("presence_penalty") not in (None, 0.0):
+            raise Exception(
+                "Unsupported parameter: 'presence_penalty' is not supported with this model."
+            )
+        class Choice:
+            message = type("msg", (), {"content": "ok"})
+        return type("Resp", (), {"choices": [Choice()]})()
+    
 
 def test_default_temperature_omitted(monkeypatch):
     monkeypatch.setattr(oc, "OpenAI", DummyOpenAI)
@@ -163,3 +181,24 @@ def test_chat_top_p_cache(monkeypatch):
     assert calls[0]["top_p"] == 0.9
     assert "top_p" not in calls[1]
     assert "top_p" not in calls[2]
+
+
+def test_chat_presence_penalty_fallback(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyPresencePenaltyUnsupported)
+    client = OpenAIClient(api_key="x", chat_model="gpt")
+    resp = client.chat("sys", "usr", presence_penalty=0.3)
+    assert resp == "ok"
+    calls = client.client.calls
+    assert calls[0]["presence_penalty"] == 0.3
+    assert "presence_penalty" not in calls[1]
+
+
+def test_chat_presence_penalty_cache(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyPresencePenaltyUnsupported)
+    client = OpenAIClient(api_key="x", chat_model="gpt")
+    client.chat("sys", "usr", presence_penalty=0.3)
+    client.chat("sys", "usr", presence_penalty=0.2)
+    calls = client.client.calls
+    assert calls[0]["presence_penalty"] == 0.3
+    assert "presence_penalty" not in calls[1]
+    assert "presence_penalty" not in calls[2]
