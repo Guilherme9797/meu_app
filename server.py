@@ -37,8 +37,7 @@ from meu_app.services.zapi_client import ZapiClient, NormalizedMessage  # <-- co
 from meu_app.services.media_processor import MediaProcessor
 from meu_app.persistence.db import init_db, get_conn
 from meu_app.utils.paths import get_index_dir
-from meu_app.utils.greetings import is_greeting
-from meu_app.services.greeting_service import generate_human_greeting
+from meu_app.services.human_first_service import HumanFirstService
 
 
 # ====== JSON logger “safe” (único) ======
@@ -223,57 +222,10 @@ def zapi_webhook_received():
     _ensure_ctx_defaults(phone, sender_name or "Contato")
 
     user_text = computed_text.strip()
-    if not sender_name:
-        if is_greeting(user_text):
-            now_local = datetime.now(TZ)
-            msg = generate_human_greeting(
-                llm=llm,
-                name=None,
-                brand=BRAND,
-                now_local=now_local,
-            )
-            if "—" not in msg:
-                msg = f"{msg}\n— {BRAND}"
-            try:
-                zapi_client.send_message(phone, msg)
-                sent = True
-            except Exception as e:
-                sent = False
-                app.logger.exception("Falha ao responder via Z-API: %s", e)
-            return jsonify({"ok": True, "client_id": phone, "msg_id": normalized.msg_id, "sent": sent})
-        else:
-            sender_name = user_text.strip()
-            cliente_repo.atualizar_nome(cliente_id, sender_name)
-            contato_repo.upsert(phone, cliente_id, nome=sender_name)
-            _ensure_ctx_defaults(phone, sender_name)
-            now_local = datetime.now(TZ)
-            msg = generate_human_greeting(
-                llm=llm,
-                name=sender_name,
-                brand=BRAND,
-                now_local=now_local,
-            )
-            if "—" not in msg:
-                msg = f"{msg}\n— {BRAND}"
-            try:
-                zapi_client.send_message(phone, msg)
-                sent = True
-            except Exception as e:
-                sent = False
-                app.logger.exception("Falha ao responder via Z-API: %s", e)
-            return jsonify({"ok": True, "client_id": phone, "msg_id": normalized.msg_id, "sent": sent})
-    if is_greeting(user_text):
-        now_local = datetime.now(TZ)
-        msg = generate_human_greeting(
-            llm=llm,
-            name=sender_name,
-            brand=BRAND,
-            now_local=now_local,
-        )
-        if "—" not in msg:
-            msg = f"{msg}\n— {BRAND}"
+    msg = human_first.handle_opening(user_text, sender_name)
+    if msg:
         try:
-            zapi_client.send_message(phone, msg)
+            zapi_client.send_text(phone, msg)
             sent = True
         except Exception as e:
             sent = False
@@ -347,6 +299,7 @@ except Exception:
             return {"allowed": True}
 
     guard = _NoopGuard()
+human_first = HumanFirstService(llm, BRAND)
 classifier = Classifier()
 extractor = Extractor()
 
