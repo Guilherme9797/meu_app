@@ -1,7 +1,9 @@
 from typing import List, Dict, Any
+from pathlib import Path
 from meu_app.utils.openai_client import LLM
 
-REALIZER_SYS = open("prompts/whatsapp_system_universal.txt", "r", encoding="utf-8").read()
+PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
+REALIZER_SYS = (PROMPTS_DIR / "whatsapp_system_universal.txt").read_text(encoding="utf-8")
 
 REALIZER_USER_TMPL = """Preencha as 4 bolhas a partir destes slots:
 
