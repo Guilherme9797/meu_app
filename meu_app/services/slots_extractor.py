@@ -23,7 +23,7 @@ def extract_slots(llm: LLM, user_text: str) -> Dict[str, Any]:
         {"role": "system", "content": EXTRACTION_SYS},
         {"role": "user", "content": EXTRACTION_USER_TMPL.format(user_text=user_text)},
     ]
-    resp = llm.chat(messages, temperature=0.2, top_p=0.9)
+    resp = llm.chat(messages=messages, temperature=0.2, top_p=0.9)
     # sanear JSON:
     import json, re
 

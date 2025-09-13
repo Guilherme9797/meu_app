@@ -33,7 +33,7 @@ def realize(llm: LLM, slots: Dict[str, Any]) -> List[str]:
         {"role": "system", "content": REALIZER_SYS},
         {"role": "user", "content": msg},
     ]
-    out = llm.chat(messages, temperature=0.4, presence_penalty=0.3, top_p=0.9)
+    out = llm.chat(messages=messages, temperature=0.4, presence_penalty=0.3, top_p=0.9)
     # split em bolhas
     bubbles: List[str] = []
     cur: List[str] = []
