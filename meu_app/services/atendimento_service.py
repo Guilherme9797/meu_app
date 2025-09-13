@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging, re
 import os
+import random, time
 from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple
 
@@ -18,6 +19,8 @@ from .imobiliario_ontology import _IMOBILIARIO_ONTOLOGY
 from .trabalho_ontology import _TRABALHO_ONTOLOGY
 from .proc_trab_ontology import _PROC_TRAB_ONTOLOGY
 from .familia_ontology import _FAMILIA_ONTOLOGY
+from .slots_extractor import extract_slots
+from .universal_responder import realize
 from meu_app.retrievers.datajud import (
     DatajudClient,
     DatajudRetriever,
@@ -2434,9 +2437,34 @@ class AtendimentoService:
     # Rotina principal (simplificada)
     # ------------------------------------------------------------------
     
-    def handle_message(self, phone: str, text: str) -> str:
-        """Compatibilidade com despachantes que passam phone/text."""
-        return self.responder(text)
+    def handle_message(self, *args) -> List[str]:
+        """Pipeline universal para atendimento rápido via WhatsApp.
+
+        Aceita tanto (phone, text) quanto apenas (text) para compatibilidade.
+        Retorna a lista de bolhas geradas.
+        """
+        if len(args) == 1:
+            text = args[0]
+        elif len(args) >= 2:
+            text = args[1]
+        else:
+            raise TypeError("handle_message requer ao menos o texto da mensagem")
+
+        slots = extract_slots(self.llm, text)
+        bubbles = realize(self.llm, slots)
+
+        if "quanto custa" in text.lower() and slots.get("price_anchor"):
+            bubbles.insert(
+                -1,
+                f"Faixa típica: {slots['price_anchor']} (passo simples). Vendo seus docs eu te passo o valor exato.",
+            )
+
+        if getattr(self, "zapi", None) and getattr(self, "chat_id", None):
+            for b in bubbles:
+                self.zapi.send_message(self.chat_id, b)
+                time.sleep(random.uniform(0.8, 1.7))
+
+        return bubbles
     
     def responder(self, user_text: str) -> str:
         """Orquestra a resposta usando CaseFrame, RAG multi e guard."""
