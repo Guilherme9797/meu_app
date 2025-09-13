@@ -63,6 +63,21 @@ class DummyBadModel:
         return type("Resp", (), {"choices": [Choice()]})()
 
 
+class DummyTopPUnsupported:
+    def __init__(self, *args, **kwargs):
+        self.chat = self
+        self.completions = self
+        self.calls = []
+
+    def create(self, **params):
+        self.calls.append(params)
+        if params.get("top_p") not in (None, 1.0):
+            raise Exception("Unsupported parameter: 'top_p' is not supported with this model.")
+        class Choice:
+            message = type("msg", (), {"content": "ok"})
+        return type("Resp", (), {"choices": [Choice()]})()
+
+
 def test_default_temperature_omitted(monkeypatch):
     monkeypatch.setattr(oc, "OpenAI", DummyOpenAI)
     client = OpenAIClient(api_key="x", chat_model="gpt")
@@ -127,3 +142,24 @@ def test_chat_model_fallback(monkeypatch):
     calls = client.client.calls
     assert calls[0]["model"] == "bad-model"
     assert calls[1]["model"] == "gpt-5-mini"
+
+
+def test_chat_top_p_fallback(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyTopPUnsupported)
+    client = OpenAIClient(api_key="x", chat_model="gpt")
+    resp = client.chat("sys", "usr", top_p=0.9)
+    assert resp == "ok"
+    calls = client.client.calls
+    assert calls[0]["top_p"] == 0.9
+    assert "top_p" not in calls[1]
+
+
+def test_chat_top_p_cache(monkeypatch):
+    monkeypatch.setattr(oc, "OpenAI", DummyTopPUnsupported)
+    client = OpenAIClient(api_key="x", chat_model="gpt")
+    client.chat("sys", "usr", top_p=0.9)
+    client.chat("sys", "usr", top_p=0.8)
+    calls = client.client.calls
+    assert calls[0]["top_p"] == 0.9
+    assert "top_p" not in calls[1]
+    assert "top_p" not in calls[2]

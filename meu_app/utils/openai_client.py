@@ -58,6 +58,7 @@ class OpenAIClient:
         self.chat_model = model
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", str(temperature)))
         self._supports_temperature = True
+        self._supports_top_p = True
     
     def _token_key(self) -> str:
         """Retorna o nome do parâmetro de limite de tokens suportado."""
@@ -81,6 +82,15 @@ class OpenAIClient:
                 self._supports_temperature = False
                 params.pop("temperature", None)
                 logging.warning("Modelo sem suporte a temperature; repetindo sem o parâmetro.")
+                return self._chat_create(params)
+            if (
+                "top_p" in params
+                and "top_p" in lower
+                and ("unsupported" in lower or "not supported" in lower)
+            ):
+                self._supports_top_p = False
+                params.pop("top_p", None)
+                logging.warning("Modelo sem suporte a top_p; repetindo sem o parâmetro.")
                 return self._chat_create(params)
             logging.error("OpenAI 400: %s", msg)
             if (
@@ -131,6 +141,15 @@ class OpenAIClient:
                 params.pop("temperature", None)
                 logging.warning("Modelo sem suporte a temperature; repetindo sem o parâmetro.")
                 return self._chat_create(params)
+            if (
+                "top_p" in params
+                and "top_p" in lower
+                and ("unsupported" in lower or "not supported" in lower)
+            ):
+                self._supports_top_p = False
+                params.pop("top_p", None)
+                logging.warning("Modelo sem suporte a top_p; repetindo sem o parâmetro.")
+                return self._chat_create(params)
             raise
 
     def chat(
@@ -165,7 +184,6 @@ class OpenAIClient:
 
         params: Dict[str, Any] = {"model": self.chat_model, "messages": messages}
         extra_params = dict(extra or {})
-
         temp = (
             temperature
             if temperature is not None
@@ -173,6 +191,10 @@ class OpenAIClient:
         )
         if temp != 1.0 and self._supports_temperature:
             params["temperature"] = temp
+
+        top_p_val = kwargs.pop("top_p", extra_params.pop("top_p", None))
+        if top_p_val is not None and self._supports_top_p:
+            params["top_p"] = top_p_val
 
         token_key = self._token_key()
         
