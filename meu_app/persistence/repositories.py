@@ -72,6 +72,14 @@ class ClienteRepository:
             ).fetchone()
             return dict(row) if row else None
 
+    def atualizar_nome(self, cliente_id: str, nome: str) -> None:
+        """Atualiza o nome do cliente já existente."""
+        with get_conn() as con:
+            con.execute(
+                "UPDATE clientes SET nome = ? WHERE cliente_id = ?",
+                (nome, cliente_id),
+            )
+            con.commit()
 
 # ========= Contatos =========
 class ContatoRepository:

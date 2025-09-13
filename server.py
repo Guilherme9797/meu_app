@@ -29,6 +29,8 @@ from meu_app.services.analisador import Classifier, Extractor
 from meu_app.persistence.repositories import (
     SessionRepository,
     MessageRepository,
+    ClienteRepository,
+    ContatoRepository,
 )
 from meu_app.services.atendimento_service import AtendimentoService, AtendimentoConfig
 from meu_app.services.zapi_client import ZapiClient, NormalizedMessage  # <-- corrige nome da classe
@@ -195,10 +197,71 @@ def zapi_webhook_received():
         return jsonify({"ok": True, "ignored": True})
 
     phone = normalized.client_id
-    sender_name = "Contato"
-    _ensure_ctx_defaults(phone, sender_name)
+    raw_info = normalize_zapi_incoming(data) or {}
+    payload_name = (raw_info.get("sender_name") or "").strip() or None
+    contato = contato_repo.get_by_phone(phone)
+    cliente_id = None
+    sender_name = None
+    if contato:
+        cliente_id = contato["cliente_id"]
+        if contato.get("nome"):
+            sender_name = contato["nome"]
+        elif payload_name:
+            sender_name = payload_name
+            cliente_repo.atualizar_nome(cliente_id, sender_name)
+            contato_repo.upsert(phone, cliente_id, nome=sender_name)
+    else:
+        cliente_id = uuid.uuid4().hex
+        base_nome = payload_name or f"Contato {phone}"
+        cliente_repo.criar(cliente_id, base_nome)
+        if payload_name:
+            sender_name = payload_name
+            contato_repo.upsert(phone, cliente_id, nome=payload_name)
+        else:
+            contato_repo.upsert(phone, cliente_id)
+
+    _ensure_ctx_defaults(phone, sender_name or "Contato")
 
     user_text = computed_text.strip()
+    if not sender_name:
+        if is_greeting(user_text):
+            now_local = datetime.now(TZ)
+            msg = generate_human_greeting(
+                llm=llm,
+                name=None,
+                brand=BRAND,
+                now_local=now_local,
+            )
+            if "—" not in msg:
+                msg = f"{msg}\n— {BRAND}"
+            try:
+                zapi_client.send_message(phone, msg)
+                sent = True
+            except Exception as e:
+                sent = False
+                app.logger.exception("Falha ao responder via Z-API: %s", e)
+            return jsonify({"ok": True, "client_id": phone, "msg_id": normalized.msg_id, "sent": sent})
+        else:
+            sender_name = user_text.strip()
+            cliente_repo.atualizar_nome(cliente_id, sender_name)
+            contato_repo.upsert(phone, cliente_id, nome=sender_name)
+            _ensure_ctx_defaults(phone, sender_name)
+            now_local = datetime.now(TZ)
+            msg = generate_human_greeting(
+                llm=llm,
+                name=sender_name,
+                brand=BRAND,
+                now_local=now_local,
+            )
+            if "—" not in msg:
+                msg = f"{msg}\n— {BRAND}"
+            try:
+                zapi_client.send_message(phone, msg)
+                sent = True
+            except Exception as e:
+                sent = False
+                app.logger.exception("Falha ao responder via Z-API: %s", e)
+            return jsonify({"ok": True, "client_id": phone, "msg_id": normalized.msg_id, "sent": sent})
     if is_greeting(user_text):
         now_local = datetime.now(TZ)
         msg = generate_human_greeting(
@@ -291,6 +354,8 @@ extractor = Extractor()
 media_processor = MediaProcessor(llm=llm)
 
 # instancia o AtendimentoService (era usado mas não existia -> NameError)
+cliente_repo = ClienteRepository()
+contato_repo = ContatoRepository()
 sess_repo = SessionRepository()
 msg_repo = MessageRepository()
 config = AtendimentoConfig(use_web=tavily is not None)
