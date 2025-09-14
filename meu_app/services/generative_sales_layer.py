@@ -16,10 +16,19 @@ class PricingPolicy:
     """
     tiers: Dict[str, str]
 
+# valores mínimos segundo tabela de honorários da OAB/GO (2025)
+# ajustar conforme atualização oficial
+OAB_MIN_FEES: Dict[str, int] = {
+    "consulta": 300,
+    "medida_extrajudicial": 500,
+    "acao_judicial": 1500,
+}
+
+
 DEFAULT_PRICING = PricingPolicy(tiers={
-    "consulta": "acessível",
-    "medida_extrajudicial": "em conta",
-    "acao_judicial": "somente se necessário"
+    "consulta": "R$300",
+    "medida_extrajudicial": "R$500",
+    "acao_judicial": "R$1500"
 })
 
 # ----------------------------------------------------------------------------
@@ -72,16 +81,32 @@ def detect_objection(text: str) -> str:
             return label
     return "nenhum"
 
+def _floor_price(desc: str, floor: int) -> str:
+    """Enforces minimum price based on OAB table.
+    If `desc` contains numbers, ensure the lowest value respects `floor`.
+    """
+    nums = [int(n) for n in re.findall(r"\d+", desc)]
+    if not nums:
+        return desc
+    low = max(nums[0], floor)
+    if len(nums) == 1:
+        return f"R${low}"
+    high = max(nums[1], low)
+    return f"R${low}–R${high}"
+
 
 def price_anchor(policy: PricingPolicy) -> List[str]:
     tiers = policy.tiers or {}
-    out = []
+    out: List[str] = []
     if tiers.get("consulta"):
-        out.append(f"Consulta {tiers['consulta']}")
+        desc = _floor_price(tiers["consulta"], OAB_MIN_FEES["consulta"])
+        out.append(f"Consulta {desc}")
     if tiers.get("medida_extrajudicial"):
-        out.append(f"Medida extrajudicial {tiers['medida_extrajudicial']}")
+        desc = _floor_price(tiers["medida_extrajudicial"], OAB_MIN_FEES["medida_extrajudicial"])
+        out.append(f"Medida extrajudicial {desc}")
     if tiers.get("acao_judicial"):
-        out.append(f"Ação judicial {tiers['acao_judicial']}")
+        desc = _floor_price(tiers["acao_judicial"], OAB_MIN_FEES["acao_judicial"])
+        out.append(f"Ação judicial {desc}")
     return out or ["Começamos pelo passo mais econômico e só escalamos se precisar."]
 
 
