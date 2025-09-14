@@ -1,4 +1,4 @@
-import os, json, time, uuid, logging, unicodedata, traceback
+import os, json, time, uuid, logging, unicodedata, traceback, re
 from functools import wraps
 from typing import Optional
 from flask import Flask, jsonify, request, g, make_response, has_request_context
@@ -38,7 +38,8 @@ from meu_app.services.media_processor import MediaProcessor
 from meu_app.persistence.db import init_db, get_conn
 from meu_app.utils.paths import get_index_dir
 from meu_app.services.human_first_service import HumanFirstService
-
+from meu_app.services.context_store import InMemoryCaseRepository
+from meu_app.services.generative_sales_layer_v2 import GenerativeSalesLayer, DEFAULT_PRICING
 
 # ====== JSON logger “safe” (único) ======
 def _json_log_format(record: logging.LogRecord) -> str:
@@ -195,7 +196,7 @@ def zapi_webhook_received():
     if not computed_text:
         return jsonify({"ok": True, "ignored": True})
 
-    phone = normalized.client_id
+    phone = re.sub(r"\D", "", normalized.client_id or "")
     raw_info = normalize_zapi_incoming(data) or {}
     payload_name = (raw_info.get("sender_name") or "").strip() or None
     contato = contato_repo.get_by_phone(phone)
@@ -291,6 +292,8 @@ except Exception:
             return ""
 
     llm = _StubLLM()
+case_repo = InMemoryCaseRepository()
+sales = GenerativeSalesLayer(llm_client=llm, pricing=DEFAULT_PRICING, repo=case_repo)
 try:
     guard = GroundingGuard()
 except Exception:
