@@ -4,6 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import json
 import re
 
+# NOVO: memória de caso
+from .context_store import CaseRepository, InMemoryCaseRepository
+from .case_state import CaseState
 # ----------------------------------------------------------------------------
 # Config
 # ----------------------------------------------------------------------------
@@ -115,16 +118,21 @@ def price_anchor(policy: PricingPolicy) -> List[str]:
 # ----------------------------------------------------------------------------
 
 class GenerativeSalesLayer:
-    def __init__(self, llm_client, pricing: Optional[PricingPolicy] = None):
+    def __init__(self, llm_client, pricing: Optional[PricingPolicy] = None, repo: Optional[CaseRepository] = None):
         self.llm = llm_client
         self.pricing = pricing or DEFAULT_PRICING
+        # armazenamento persistente de estado do caso
+        self.repo: CaseRepository = repo or InMemoryCaseRepository()
 
     def _build_system(self) -> str:
         return GEN_PROMPT + "Schema:" + json.dumps(GEN_SCHEMA, ensure_ascii=False)
 
-    def _llm_plan(self, text: str) -> Dict[str, Any]:
+    def _llm_plan_v2(self, text: str, facts: Dict[str, Any]) -> Dict[str, Any]:
+        system = self._build_system_v2()
+        if facts:
+            system += "\nFatos conhecidos:" + json.dumps(facts, ensure_ascii=False)
         messages = [
-            {"role": "system", "content": self._build_system()},
+            {"role": "system", "content": system},
             {"role": "user", "content": text.strip()[:4000]},
         ]
         # Use your LLM wrapper (must return string)
@@ -135,7 +143,15 @@ class GenerativeSalesLayer:
         return j
 
     def compose_reply(self, session, user_text: str) -> str:
-        plan = self._llm_plan(user_text)
+        chat_id = getattr(session, "chat_id", "")
+        state: CaseState = self.repo.get(chat_id) if chat_id else CaseState()
+        plan = self._llm_plan_v2(user_text, state.to_prompt_facts())
+
+        # merge domains/slots conhecidos
+        allowed = set(state.__dict__.keys()) | {"docs"}
+        merge_data = {k: v for k, v in plan.items() if k in allowed}
+        if merge_data:
+            state.merge(merge_data)
         # Objection (LLM label OR heuristic)
         llm_label = plan.get("objection_label", "nenhum")
         heur_label = detect_objection(user_text)
@@ -172,6 +188,7 @@ class GenerativeSalesLayer:
         # Step question + CTA
         q = plan.get("step_question") or "Qual é exatamente o problema e o resultado desejado?"
         blocks.append(q)
+        state.mark_asked(q)
         cta = plan.get("cta_primary")
         alts = plan.get("cta_alternatives", [])
         if cta:
@@ -184,6 +201,8 @@ class GenerativeSalesLayer:
         # Persist a simple step index if available
         if hasattr(session, "meta"):
             session.meta["q_step"] = int(session.meta.get("q_step", 0)) + 1
+        if chat_id:
+            self.repo.save(chat_id, state)
         return reply
 
 
