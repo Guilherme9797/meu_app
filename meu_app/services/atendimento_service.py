@@ -143,12 +143,18 @@ class AtendimentoService:
             if callable(fn):
                 try:
                     out = fn(phone, text)
-                    return out if isinstance(out, str) else str(out)
+                    if isinstance(out, (list, tuple)):
+                        out = "\n".join(str(item) for item in out if item is not None)
+                    out = out if isinstance(out, str) else str(out)
+                    return re.sub(r"^\s*\d+\)\s*", "", out, flags=re.MULTILINE)
                 except TypeError as e:
                     last_err = e
                     try:
                         out = fn(text)
-                        return out if isinstance(out, str) else str(out)
+                        if isinstance(out, (list, tuple)):
+                            out = "\n".join(str(item) for item in out if item is not None)
+                        out = out if isinstance(out, str) else str(out)
+                        return re.sub(r"^\s*\d+\)\s*", "", out, flags=re.MULTILINE)
                     except TypeError as e2:
                         last_err = e2
                         continue
