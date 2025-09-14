@@ -22,7 +22,18 @@ except Exception:
 
 # ===== imports do domínio (use o pacote "meu_app") =====
 from meu_app.utils.openai_client import Embeddings, LLM
-from meu_app.services.buscador_pdf import Retriever
+try:
+    from meu_app.services.buscador_pdf import Retriever
+except Exception as e:  # pragma: no cover - fallback se dependências estiverem ausentes
+    logging.getLogger(__name__).warning("Retriever indisponível: %s", e)
+
+    class Retriever:  # type: ignore
+        def __init__(self, *a, **kw) -> None:  # noqa: D401 - stub simples
+            """Stub que ignora inicialização."""
+
+        def _safe_retrieve(self, *a, **kw):  # noqa: D401 - stub simples
+            """Retorna lista vazia quando retriever real não estiver disponível."""
+            return []
 from meu_app.services.tavily_service import TavilyClient
 from meu_app.services.refinador import GroundingGuard
 from meu_app.services.analisador import Classifier, Extractor
