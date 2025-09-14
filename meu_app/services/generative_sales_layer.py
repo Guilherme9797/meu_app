@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+from .context_store import CaseRepository, InMemoryCaseRepository
 import json
 import re
 
@@ -119,6 +120,7 @@ class GenerativeSalesLayer:
     def __init__(self, llm_client, pricing: Optional[PricingPolicy] = None, repo: Optional[CaseRepository] = None):
         self.llm = llm_client
         self.pricing = pricing or DEFAULT_PRICING
+        self.repo: CaseRepository = repo or InMemoryCaseRepository()
          # armazenamento persistente de estado do caso
         self.repo: CaseRepository = repo or InMemoryCaseRepository()
 
