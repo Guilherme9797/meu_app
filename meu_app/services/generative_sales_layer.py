@@ -11,7 +11,6 @@ from .case_state import CaseState
 # ----------------------------------------------------------------------------
 # Config
 # ----------------------------------------------------------------------------
-
 @dataclass
 class PricingPolicy:
     """Optional ranges to anchor copy. If field missing, use generic wording.
@@ -63,7 +62,6 @@ GEN_PROMPT = (
     "Se você detectar objeção (caro, posso fazer sozinho, medo de processo, demora, parcelar, risco), responda a objeção ANTES do restante.\n"
     "Saída em JSON no schema fornecido.\n"
 )
-
 # ----------------------------------------------------------------------------
 # Utilities
 # ----------------------------------------------------------------------------
@@ -76,14 +74,13 @@ OBJ_MAP = {
     "tempo": ["demora", "demorado", "quanto tempo"],
     "risco": ["perder", "risco", "problema maior"],
 }
-
-
 def detect_objection(text: str) -> str:
     t = (text or "").lower()
     for label, kws in OBJ_MAP.items():
         if any(k in t for k in kws):
             return label
     return "nenhum"
+
 
 def _floor_price(desc: str, floor: int) -> str:
     """Enforces minimum price based on OAB table.
@@ -122,14 +119,13 @@ class GenerativeSalesLayer:
     def __init__(self, llm_client, pricing: Optional[PricingPolicy] = None, repo: Optional[CaseRepository] = None):
         self.llm = llm_client
         self.pricing = pricing or DEFAULT_PRICING
-        # armazenamento persistente de estado do caso
+         # armazenamento persistente de estado do caso
         self.repo: CaseRepository = repo or InMemoryCaseRepository()
 
     def _build_system(self) -> str:
         return GEN_PROMPT + "Schema:" + json.dumps(GEN_SCHEMA, ensure_ascii=False)
 
-    def _llm_plan_v2(self, text: str, facts: Dict[str, Any]) -> Dict[str, Any]:
-        def _chat_id(self, session) -> str:
+    def _chat_id(self, session) -> str:
         raw = getattr(session, "phone", None) or getattr(session, "chat_id", "") or ""
         return re.sub(r"\D", "", raw)
 
@@ -167,6 +163,7 @@ class GenerativeSalesLayer:
                 state.cid = cid_match.group(0)
 
     def _llm_plan_v2(self, text: str, facts: Dict[str, Any]) -> Dict[str, Any]:
+        system = self._build_system()
         messages = [
             {"role": "system", "content": system},
             {
@@ -181,7 +178,7 @@ class GenerativeSalesLayer:
         # Extract JSON from response
         m = re.search(r"\{[\s\S]*\}$", raw.strip())
         j = json.loads(m.group(0)) if m else json.loads(raw)
-        return json.loads(m.group(0)) if m else json.loads(raw)
+        return j
 
     def _missing_slots(self, state: CaseState) -> List[str]:
         wants = [
