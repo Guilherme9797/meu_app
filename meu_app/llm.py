@@ -38,5 +38,4 @@ def llm_json(system: str, user: str, schema: Dict[str, Any]) -> Dict[str, Any]:
         data.setdefault("pricing_services", ["Consulta Estratégica","Acompanhamento Inicial"])
         data.setdefault("cta", "Posso iniciar hoje. Prefere essencial ou intermediário?")
     return data
-meu_app/oab_catalog.py
-Novo
+
