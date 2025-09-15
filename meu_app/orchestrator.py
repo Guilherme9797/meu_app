@@ -4,25 +4,33 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from .storage import load_case, save_case
-from .sales import build_offer_text
+from .generative_playbook import generate_playbook
+from .sales import build_offer_from_playbook
 
-HOURS_FOR_RECAP = 72  # após 72h, sempre recapitula
+OURS_FOR_RECAP = 72
+QUESTION_COOLDOWN_SEC = 90
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class CaseFrame:
     phone: str
-    area: str = ""          # ex: "trânsito"
-    subtype: str = ""       # ex: "recusa 165-A"
-    stage: str = "triage"   # triage|collect|offer|closing
-    slots: Dict[str, str] = field(default_factory=dict)       # respostas
-    asked: Dict[str, str] = field(default_factory=dict)       # slot->pergunta feita
-    answered: List[str] = field(default_factory=list)         # slots respondidos
-    budget_tone: Optional[str] = None                         # "apertado", etc.
-    deadline: Optional[str] = None                            # data/prazo útil
-    last_user_at: Optional[str] = None                        # ISO str
-    last_bot_at: Optional[str] = None                         # ISO str
+    area: str = ""
+    subtype: str = ""
+    stage: str = "triage"
+    slots: Dict[str, str] = field(default_factory=dict)
+    asked: Dict[str, str] = field(default_factory=dict)
+    answered: List[str] = field(default_factory=list)
+    budget_tone: Optional[str] = None
+    deadline: Optional[str] = None
+    last_user_at: Optional[str] = None
+    last_bot_at: Optional[str] = None
     buy_signal: bool = False
     value_drop_done: bool = False
+    last_question_slot: Optional[str] = None
+    last_question_at: Optional[str] = None
+
+    playbook: Optional[Dict] = None  # Playbook serializado
 
     def now(self) -> datetime:
         return datetime.utcnow()
@@ -33,79 +41,63 @@ class CaseFrame:
         last = datetime.fromisoformat(self.last_user_at)
         return (self.now() - last) > timedelta(hours=HOURS_FOR_RECAP)
 
-logger = logging.getLogger(__name__)
-
-
-CASE_REQUIRED_SLOTS = {
-    # exemplo para CTB 165-A
-    ("trânsito", "recusa 165-A"): [
-        "prazo_defesa",
-        "assinou_ciencia",
-        "oferta_exame_alternativo",
-    ]
-}
-
-
-QUESTION_TEXTS = {
-    "data_notificacao": "Qual a data da ciência da notificação (dd/mm/aaaa)?",
-    "prazo_defesa": "Confirma qual data limite aparece para a defesa?",
-    "auto_enquadramento": "O auto menciona 165-A (recusa) exatamente?",
-    "oferta_exame_alternativo": "Chegaram a oferecer exame de sangue ou outro teste? Foi por escrito ou só verbal?",
-    "assinou_ciencia": "Você apenas assinou o campo de ciência no AIT, certo?",
-    "provas_fotos": "Você tem fotos do auto e da sinalização? Pode enviar aqui?",
-    "provas_video": "Tem vídeo da abordagem? Se sim, pode anexar?",
-    "testemunhas": "Há testemunhas que presenciaram a abordagem? Quantas?",
-}
-
-
-MISSING_DESCRIPTIONS = {
-    "prazo_defesa": "confirmar a data-limite",
-    "assinou_ciencia": "confirmar se assinou só o campo de ciência",
-    "oferta_exame_alternativo": "me dizer se ofereceram exame alternativo",
-    "data_notificacao": "confirmar a data da notificação",
-    "auto_enquadramento": "confirmar o enquadramento exato",
-    "provas_fotos": "enviar as fotos",
-    "provas_video": "enviar o vídeo",
-    "testemunhas": "contar quem testemunhou",
-}
-
-def detect_case(text: str, case: CaseFrame) -> None:
-    t = text.lower()
-    if any(k in t for k in ["165-a", "bafômetro", "etilômetro", "recusa"]):
-        case.area = "trânsito"
-        case.subtype = "recusa 165-A"
+def _cooldown_ok(case: CaseFrame, slot: str) -> bool:
+    if case.last_question_slot != slot or not case.last_question_at:
+        return True
+    try:
+        dt = datetime.fromisoformat(case.last_question_at)
+        return (datetime.utcnow() - dt).total_seconds() >= QUESTION_COOLDOWN_SEC
+    except Exception:
+        return True
 
 def extract_slots(text: str) -> Dict[str, str]:
     import re
     t = text.lower()
-    out: Dict[str, str] = {}
+    out: Dict[str,str] = {}
 
-    if re.search(r"\\bassinei\\b.*ci[eê]n[cç]ia", t):
-        out["assinou_ciencia"] = "sim"
-    if re.search(r"\b(n[aã]o\s+(foi\s+)?ofere(c|ç)ido|n[aã]o\s+ofereceram|sem\s+oferta|sem\s+exame\s+alternativo)\b", t):
-        out["oferta_exame_alternativo"] = "não"
-    elif re.search(r"\b(ofereceram|foi\s+ofere(c|ç)ido)\b.*(sangue|exame)", t):
-        out["oferta_exame_alternativo"] = "sim"
-
-    if re.search(r"\b(v[ií]deo|video)\b", t):
-        out["provas_video"] = "sim"
-    if re.search(r"\bfoto(s)?\b", t):
-        out["provas_fotos"] = "sim"
-    if re.search(r"testemunh", t):
-        out["testemunhas"] = "sim"
-    m = re.search(r"at[eé]\s+(\d{2}/\d{2}/\d{4})", t)
-    if m:
-        out["prazo_defesa"] = m.group(1)
-    m2 = re.search(r"recebi\s+a?\s*notifica[cç][aã]o.*?(\d{2}/\d{2}/\d{4})", t)
-    if m2:
-        out["data_notificacao"] = m2.group(1)
-    
-    if any(k in t for k in ["apertado", "parcel", "mais barato", "caminho mais barato"]):
-        out["_budget_tone"] = "apertado"
-    if any(k in t for k in ["preço", "preco", "valor", "honorár", "honorar", "quanto custa", "parcel"]):
+    # sinais de orçamento/comercial
+    if any(k in t for k in ["preço", "preco", "honorár", "honorar", "valor", "quanto custa", "parcel"]):
         out["_buy_signal"] = "1"
+    if any(k in t for k in ["apertado", "mais barato", "parcel", "desconto"]):
+        out["_budget_tone"] = "apertado"
+
+    # datas comuns: dd/mm/aaaa
+    m = re.search(r"(\d{2}/\d{2}/\d{4})", t)
+    if m:
+        out["data"] = m.group(1)
+        # heurística: se houver 'audiên' próximo
+        if "audiên" in t or "audien" in t:
+            out["data_audiencia"] = m.group(1)
+            out["prazo"] = m.group(1)
+        if "prazo" in t or "até" in t or "limite" in t:
+            out["prazo"] = m.group(1)
+
+    # documentos
+    if any(k in t for k in ["pdf", "foto", "print", "cópia", "copia", "anexo"]):
+        out["documentos"] = "sim"
 
     return out
+
+def ensure_playbook(case: CaseFrame, user_text: str):
+    regenerate = False
+    if not case.playbook:
+        regenerate = True
+    # se conversa esfriou, regenerar (pode mudar CTA, perguntas)
+    if case.needs_recap():
+        regenerate = True
+    if regenerate:
+        pb = generate_playbook(user_text, case)
+        case.playbook = {
+            "area": pb.area, "subtype": pb.subtype,
+            "goals": pb.goals, "risks": pb.risks,
+            "required_slots": pb.required_slots,
+            "questions": pb.questions,
+            "pricing_services": pb.pricing_services,
+            "cta": pb.cta, "created_at": pb.created_at, "version": pb.version
+        }
+        # propagar área/subtipo para analytics
+        case.area = case.area or pb.area
+        case.subtype = case.subtype or pb.subtype
 
 def mark_answered(case: CaseFrame, new_slots: Dict[str, str]):
     for k, v in new_slots.items():
@@ -114,7 +106,12 @@ def mark_answered(case: CaseFrame, new_slots: Dict[str, str]):
         case.slots[k] = v
         if k not in case.answered:
             case.answered.append(k)
-        if k == "prazo_defesa":
+        if k in case.asked:
+            case.asked.pop(k, None)
+        if case.last_question_slot == k:
+            case.last_question_slot = None
+            case.last_question_at = None
+        if k in ("prazo","prazo_defesa","data_audiencia"):
             case.deadline = v
     if "_budget_tone" in new_slots:
         case.budget_tone = new_slots["_budget_tone"]
@@ -122,133 +119,82 @@ def mark_answered(case: CaseFrame, new_slots: Dict[str, str]):
         case.buy_signal = True
 
 def missing_slots(case: CaseFrame) -> List[str]:
-    req = CASE_REQUIRED_SLOTS.get((case.area, case.subtype), [])
+    req = []
+    if case.playbook and case.playbook.get("required_slots"):
+        req.extend(case.playbook["required_slots"])
+    # slots universais úteis sempre
+    for g in ["prazo","documentos","objetivo","orçamento"]:
+        if g not in req:
+            req.append(g)
     return [s for s in req if s not in case.answered]
 
-def ask_once(case: CaseFrame, slot: str, question: str) -> Optional[str]:
-    # Não repete perguntas já feitas e ainda não respondidas
-    if slot in case.answered:
-        return None
-    if slot in case.asked:
-        return None
-    case.asked[slot] = question
-    return question
-
-def next_stage(case: CaseFrame):
-    # Se já tem slots essenciais preenchidos, ir para oferta
-    miss = missing_slots(case)
-    if case.buy_signal:
-        case.stage = "offer"
-        return
-    if case.stage == "triage":
-        case.stage = "collect" if miss else "offer"
-    elif case.stage == "collect":
-        case.stage = "collect" if miss else "offer"
-    elif case.stage == "offer":
-        # se usuário demonstrou intenção/price, ir a closing
-        case.stage = "closing"
-    # closing permanece
-
 def compose_message(case: CaseFrame) -> str:
-    text_parts: List[str] = []
-    miss = missing_slots(case)
+    parts: List[str] = []
 
-    # Recap automático se conversa "fria"
+    # Empatia + valor (uma vez)
+    if not case.value_drop_done:
+        parts.append("Entendi seu caso — dá pra agir já para reduzir risco e conduzir a melhor saída.")
+        case.value_drop_done = True
+        # Recap se “fria”
     if case.needs_recap():
-        case.asked = {k: v for k, v in case.asked.items() if k in case.answered}
-        resumo = []
-        if case.slots.get("prazo_defesa"):
-            resumo.append(f"prazo até {case.slots['prazo_defesa']}")
-        if "oferta_exame_alternativo" in case.slots:
-            if case.slots["oferta_exame_alternativo"] == "não":
-                resumo.append("sem oferta de exame alternativo")
-            elif case.slots["oferta_exame_alternativo"] == "sim":
-                resumo.append("houve oferta de exame alternativo")
-        if case.slots.get("assinou_ciencia") == "sim":
-            resumo.append("assinou apenas ciência")
-        if resumo:
-            text_parts.append("Resumo do que já tenho: " + "; ".join(resumo) + ".")
-        if miss:
-            slot = miss[0]
-            desc = MISSING_DESCRIPTIONS.get(slot, f"confirmar {slot}")
-            text_parts.append(f"Falta apenas {desc}.")
-        offer = build_offer_text(
-            area=case.area,
-            subtype=case.subtype,
-            budget_tone=case.budget_tone,
-            deadline=case.deadline,
-        )
-        text_parts.append(offer)
-        text_parts.append("Posso já iniciar pelo Plano Essencial enquanto isso. Fechamos assim?")
-        return "\n\n".join(text_parts)
+        rec = []
+        if case.deadline: rec.append(f"prazo/audiência {case.deadline}")
+        if case.area or case.subtype: rec.append(f"área: {case.area}/{case.subtype or '—'}")
+        if rec: parts.append("Resumo: " + " | ".join(rec) + ".")
 
-    if case.stage in ("triage", "collect") and miss:
-        unasked = [s for s in miss if s not in case.asked]
-        if unasked:
-            slot = unasked[0]
-            question = QUESTION_TEXTS.get(slot, f"Pode confirmar {slot}?")
-            q = ask_once(case, slot, question)
-            if q:
-                if not case.value_drop_done:
-                    text_parts.append(
-                        "Entendi seu caso e dá pra atacar por vícios formais (sem oferta de exame alternativo, campos do etilômetro em branco etc.)."
-                    )
-                    case.value_drop_done = True
-                text_parts.append(q)
-                return "\n\n".join(text_parts)
-        else:
-            offer = build_offer_text(
-                area=case.area,
-                subtype=case.subtype,
-                budget_tone=case.budget_tone,
-                deadline=case.deadline,
-            )
-            text_parts.append(offer)
-            text_parts.append("Enquanto você separa os documentos, posso começar pelo **Plano Essencial**. Fechamos assim?")
-            return "\n\n".join(text_parts)
+    # OFERTA sempre a partir do playbook
+    pricing_services = (case.playbook or {}).get("pricing_services", []) if case.playbook else []
+    offer = build_offer_from_playbook(pricing_services, case.budget_tone, case.deadline)
+    parts.append(offer)
 
-    # Pivô comercial
-    if case.stage in ("offer", "closing"):
-        offer = build_offer_text(
-            area=case.area,
-            subtype=case.subtype,
-            budget_tone=case.budget_tone,
-            deadline=case.deadline,
-        )
-        text_parts.append(offer)
-        # CTA claro
-        text_parts.append("Posso iniciar sua defesa **hoje**. Prefere começar pelo Plano Essencial ou Intermediário?")
-        return "\n\n".join(text_parts)
+    # CTA curto
+    cta = (case.playbook or {}).get("cta") or "Posso iniciar hoje. Prefere o pacote essencial ou intermediário?"
+    parts.append(cta)
 
-    # Fallback (deve quase nunca acontecer)
-    return "Para garantir sua defesa no prazo, me confirme a data-limite da notificação, por favor."
-    
+    # UMA pergunta: priorize slots do playbook
+    miss = missing_slots(case)
+    q_text = None
+    if case.playbook and case.playbook.get("questions"):
+        for s in miss:
+            if s in case.playbook["questions"] and _cooldown_ok(case, s):
+                q_text = case.playbook["questions"][s]
+                case.asked[s] = q_text
+                case.last_question_slot = s
+                case.last_question_at = datetime.utcnow().isoformat()
+                break
+    # fallback de pergunta global
+    if not q_text and miss:
+        s = miss[0]
+        if _cooldown_ok(case, s):
+            default_q = {
+                "prazo": "Existe algum prazo ou audiência marcada? Qual a data?",
+                "documentos": "Consegue enviar a intimação/BO/contrato aqui (PDF/foto)?",
+                "objetivo": "Seu objetivo imediato é acordo, arquivamento, ação ou outra medida?",
+                "orçamento": "Prefere à vista com desconto ou parcelado?"
+            }
+            q_text = default_q.get(s, f"Pode confirmar {s}?")
+            case.asked[s] = q_text
+            case.last_question_slot = s
+            case.last_question_at = datetime.utcnow().isoformat()
+
+    if q_text:
+        parts.append(q_text)
+
+    return "\n\n".join(parts)
 
 def handle_message(phone: str, user_text: str, ts: Optional[str] = None) -> str:
     case = load_case(phone) or CaseFrame(phone=phone)
-    if not case.deadline and case.slots.get("prazo_defesa"):
-        case.deadline = case.slots["prazo_defesa"]
-    detect_case(user_text, case)
+
+    ensure_playbook(case, user_text)        # <<< gerativo por mensagem
     new = extract_slots(user_text)
     mark_answered(case, new)
-    # Decide próximo estágio
-    next_stage(case)
-
-    # Gera mensagem
     reply = compose_message(case)
-
-    miss = missing_slots(case)
     logger.info(
-        "orchestrator_state phone=%s stage=%s missing=%s asked_keys=%s answered_keys=%s buy_signal=%s",
-        case.phone,
-        case.stage,
-        miss,
-        sorted(case.asked.keys()),
-        sorted(case.answered),
-        case.buy_signal,
+        "state phone=%s stage=%s area=%s subtype=%s asked=%s answered=%s deadline=%s",
+        case.phone, case.stage, case.area, case.subtype, list(case.asked.keys()), case.answered, case.deadline
     )
-
     case.last_user_at = ts or datetime.utcnow().isoformat()
     case.last_bot_at = datetime.utcnow().isoformat()
     save_case(case)
+
     return reply

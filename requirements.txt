@@ -13,3 +13,5 @@ gunicorn>=22,<23
 numpy>=2,<3
 tzdata>=2024.1,<2025
 langchain-community>=0.2.0,<0.4
+rapidfuzz>=3,<4
+pdfplumber>=0.11,<1
