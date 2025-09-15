@@ -22,6 +22,7 @@ class CaseFrame:
     last_user_at: Optional[str] = None                        # ISO str
     last_bot_at: Optional[str] = None                         # ISO str
     buy_signal: bool = False
+    value_drop_done: bool = False
 
     def now(self) -> datetime:
         return datetime.utcnow()
@@ -75,33 +76,35 @@ def detect_case(text: str, case: CaseFrame) -> None:
         case.subtype = "recusa 165-A"
 
 def extract_slots(text: str) -> Dict[str, str]:
-    t = text.lower()
-    out = {}
-    # Exemplos simples (use seu LLM/NLP aí se tiver):
-    if "assinei" in t and "ciên" in t:
-        out["assinou_ciencia"] = "sim"
-    if "não me ofereceram" in t or "sem exame" in t:
-        out["oferta_exame_alternativo"] = "não"
-    if "vídeo" in t or "video" in t:
-        out["provas_video"] = "sim"
-    if "foto" in t or "fotos" in t:
-        out["provas_fotos"] = "sim"
-    if "testemunh" in t:
-        out["testemunhas"] = "sim"
-    # Datas/prazos
-    # ex.: "prazo ... até 30/09/2025"
     import re
-    m = re.search(r"até\s+(\d{2}/\d{2}/\d{4})", t)
+    t = text.lower()
+    out: Dict[str, str] = {}
+
+    if re.search(r"\\bassinei\\b.*ci[eê]n[cç]ia", t):
+        out["assinou_ciencia"] = "sim"
+    if re.search(r"\b(n[aã]o\s+(foi\s+)?ofere(c|ç)ido|n[aã]o\s+ofereceram|sem\s+oferta|sem\s+exame\s+alternativo)\b", t):
+        out["oferta_exame_alternativo"] = "não"
+    elif re.search(r"\b(ofereceram|foi\s+ofere(c|ç)ido)\b.*(sangue|exame)", t):
+        out["oferta_exame_alternativo"] = "sim"
+
+    if re.search(r"\b(v[ií]deo|video)\b", t):
+        out["provas_video"] = "sim"
+    if re.search(r"\bfoto(s)?\b", t):
+        out["provas_fotos"] = "sim"
+    if re.search(r"testemunh", t):
+        out["testemunhas"] = "sim"
+    m = re.search(r"at[eé]\s+(\d{2}/\d{2}/\d{4})", t)
     if m:
         out["prazo_defesa"] = m.group(1)
-    m2 = re.search(r"recebi a notifica[cç][aã]o.*?(\d{2}/\d{2}/\d{4})", t)
+    m2 = re.search(r"recebi\s+a?\s*notifica[cç][aã]o.*?(\d{2}/\d{2}/\d{4})", t)
     if m2:
         out["data_notificacao"] = m2.group(1)
-    # Sinal de orçamento apertado
+    
     if any(k in t for k in ["apertado", "parcel", "mais barato", "caminho mais barato"]):
         out["_budget_tone"] = "apertado"
     if any(k in t for k in ["preço", "preco", "valor", "honorár", "honorar", "quanto custa", "parcel"]):
         out["_buy_signal"] = "1"
+
     return out
 
 def mark_answered(case: CaseFrame, new_slots: Dict[str, str]):
@@ -111,6 +114,8 @@ def mark_answered(case: CaseFrame, new_slots: Dict[str, str]):
         case.slots[k] = v
         if k not in case.answered:
             case.answered.append(k)
+        if k == "prazo_defesa":
+            case.deadline = v
     if "_budget_tone" in new_slots:
         case.budget_tone = new_slots["_budget_tone"]
     if "_buy_signal" in new_slots:
@@ -154,8 +159,13 @@ def compose_message(case: CaseFrame) -> str:
         resumo = []
         if case.slots.get("prazo_defesa"):
             resumo.append(f"prazo até {case.slots['prazo_defesa']}")
-        if case.slots.get("oferta_exame_alternativo"):
-            resumo.append("sem oferta de exame alternativo")
+        if "oferta_exame_alternativo" in case.slots:
+            if case.slots["oferta_exame_alternativo"] == "não":
+                resumo.append("sem oferta de exame alternativo")
+            elif case.slots["oferta_exame_alternativo"] == "sim":
+                resumo.append("houve oferta de exame alternativo")
+        if case.slots.get("assinou_ciencia") == "sim":
+            resumo.append("assinou apenas ciência")
         if resumo:
             text_parts.append("Resumo do que já tenho: " + "; ".join(resumo) + ".")
         if miss:
@@ -166,7 +176,7 @@ def compose_message(case: CaseFrame) -> str:
             area=case.area,
             subtype=case.subtype,
             budget_tone=case.budget_tone,
-            deadline=case.slots.get("prazo_defesa"),
+            deadline=case.deadline,
         )
         text_parts.append(offer)
         text_parts.append("Posso já iniciar pelo Plano Essencial enquanto isso. Fechamos assim?")
@@ -179,10 +189,11 @@ def compose_message(case: CaseFrame) -> str:
             question = QUESTION_TEXTS.get(slot, f"Pode confirmar {slot}?")
             q = ask_once(case, slot, question)
             if q:
-                # Mesmo na coleta, já entrega valor + mini plano
-                text_parts.append(
-                    "Entendi seu caso e dá pra atacar por vícios formais (sem oferta de exame alternativo, campos do etilômetro em branco etc.)."
-                )
+                if not case.value_drop_done:
+                    text_parts.append(
+                        "Entendi seu caso e dá pra atacar por vícios formais (sem oferta de exame alternativo, campos do etilômetro em branco etc.)."
+                    )
+                    case.value_drop_done = True
                 text_parts.append(q)
                 return "\n\n".join(text_parts)
         else:
@@ -190,7 +201,7 @@ def compose_message(case: CaseFrame) -> str:
                 area=case.area,
                 subtype=case.subtype,
                 budget_tone=case.budget_tone,
-                deadline=case.slots.get("prazo_defesa"),
+                deadline=case.deadline,
             )
             text_parts.append(offer)
             text_parts.append("Enquanto você separa os documentos, posso começar pelo **Plano Essencial**. Fechamos assim?")
@@ -202,7 +213,7 @@ def compose_message(case: CaseFrame) -> str:
             area=case.area,
             subtype=case.subtype,
             budget_tone=case.budget_tone,
-            deadline=case.slots.get("prazo_defesa")
+            deadline=case.deadline,
         )
         text_parts.append(offer)
         # CTA claro
@@ -215,6 +226,8 @@ def compose_message(case: CaseFrame) -> str:
 
 def handle_message(phone: str, user_text: str, ts: Optional[str] = None) -> str:
     case = load_case(phone) or CaseFrame(phone=phone)
+    if not case.deadline and case.slots.get("prazo_defesa"):
+        case.deadline = case.slots["prazo_defesa"]
     detect_case(user_text, case)
     new = extract_slots(user_text)
     mark_answered(case, new)
