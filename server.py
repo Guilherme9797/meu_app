@@ -49,7 +49,6 @@ from meu_app.services.media_processor import MediaProcessor
 from meu_app.persistence.db import init_db, get_conn
 from meu_app.utils.paths import get_index_dir
 from meu_app.services.human_first_service import HumanFirstService
-from meu_app.services.context_store import InMemoryCaseRepository
 from meu_app.services.generative_sales_layer_v2 import GenerativeSalesLayer, DEFAULT_PRICING
 
 # ====== JSON logger “safe” (único) ======
@@ -301,10 +300,16 @@ except Exception:
 
         def complete(self, *a, **kw):
             return ""
+        
+        def transcribe_audio(self, *a, **kw):
+            return ""
+
+        def ocr_image(self, *a, **kw):
+            return ""
 
     llm = _StubLLM()
-case_repo = InMemoryCaseRepository()
-sales = GenerativeSalesLayer(llm_client=llm, pricing=DEFAULT_PRICING, repo=case_repo)
+
+sales = GenerativeSalesLayer(llm_client=llm, pricing=DEFAULT_PRICING)
 try:
     guard = GroundingGuard()
 except Exception:
