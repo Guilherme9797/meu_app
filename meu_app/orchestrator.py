@@ -7,7 +7,7 @@ from .storage import load_case, save_case
 from .generative_playbook import generate_playbook
 from .sales import build_offer_from_playbook
 
-OURS_FOR_RECAP = 72
+HOURS_FOR_RECAP = 72
 QUESTION_COOLDOWN_SEC = 90
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,8 @@ def compose_message(case: CaseFrame) -> str:
 
     # OFERTA sempre a partir do playbook
     pricing_services = (case.playbook or {}).get("pricing_services", []) if case.playbook else []
-    offer = build_offer_from_playbook(pricing_services, case.budget_tone, case.deadline)
+    plan_steps = (case.playbook or {}).get("goals", []) if case.playbook else []
+    offer = build_offer_from_playbook(pricing_services, plan_steps, case.budget_tone, case.deadline)
     parts.append(offer)
 
     # CTA curto

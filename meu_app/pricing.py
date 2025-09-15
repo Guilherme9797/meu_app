@@ -50,9 +50,19 @@ class Pricing:
                 if isinstance(v, (int,float)) and v > 0:
                     resolved.append((label, float(v), "TAVILY_MATCH"))
                 else:
-                    # fallback seguro: consulta
-                    logger.debug("pricing_catalog_fallback label=%s", label)
-                    resolved.append((label, 300.00, "CONSULTA_FALLBACK"))
+                    base = 0.0
+                    try:
+                        base_item = (search_codes_by_label("Consulta", limit=1) or [None])[0]
+                        if base_item is not None:
+                            base = getattr(base_item, "min_fee", 0.0) or 0.0
+                    except Exception as exc:
+                        logger.debug("pricing_catalog_consulta_lookup_failed label=%s error=%s", label, exc)
+                    if base > 0:
+                        logger.debug("pricing_catalog_fallback_piso label=%s base=%s", label, base)
+                        resolved.append((label, float(base), "CONSULTA_PISO"))
+                    else:
+                        logger.debug("pricing_catalog_generic_fallback label=%s", label)
+                        resolved.append((label + " (sob consulta)", 600.00, "GENERIC_FALLBACK"))
         return resolved
 
     def anchor_price(self, min_fee: float) -> float:

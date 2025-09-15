@@ -14,14 +14,22 @@ def llm_json(system: str, user: str, schema: Dict[str, Any]) -> Dict[str, Any]:
     body = {
         "model": OPENAI_MODEL,
         "messages": [
-            {"role":"system","content":system},
-            {"role":"user","content":user}
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+
         ],
-        "temperature": 0.3
+         "temperature": 0.3,
+        "response_format": {"type": "json_object"},
     }
     r = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=body, timeout=20)
     r.raise_for_status()
     content = r.json()["choices"][0]["message"]["content"]
+    stripped = content.strip()
+    if stripped.startswith("```"):
+        stripped = stripped.strip("`")
+        if stripped.lower().startswith("json"):
+            stripped = stripped[4:]
+        content = stripped.strip()
     try:
         data = json.loads(content)
     except Exception:
